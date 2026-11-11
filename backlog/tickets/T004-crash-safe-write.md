@@ -1,6 +1,6 @@
 # T004 Crash-safe file writing
 
-**Type:** task · **Status:** ready for development · **Story:** S01 · **Task:** S01.6
+**Type:** task · **Status:** done · **Story:** S01 · **Task:** S01.6
 
 One function that replaces a file so that an interruption never leaves a broken file.
 
@@ -31,4 +31,4 @@ None.
 - The folder itself is not fsynced: Java has no portable way to do it. If a power cut loses the rename, the old, intact file remains. Autosave (S07) keeps that loss small.
 
 ## Progress
-Not started.
+Done. Build, tests and ktlint are green.
