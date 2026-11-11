@@ -19,9 +19,9 @@ so that my work is safe, easy to diff and share, and the original can always be 
 - The data of the sample PDF fits the format.
 
 ## Tasks
-- [ ] S01.1 Decide the layout: one project folder or a single file, one file per page or not
+- [x] S01.1 Decide the layout: one project folder or a single file, one file per page or not → decided in D03 (docs/decisions.md)
 - [ ] S01.2 Define the data model: project, page, region, line, word; original and corrected layers
-- [ ] S01.3 Choose the serialization (e.g. JSON, YAML, or a custom line format)
+- [x] S01.3 Choose the serialization (e.g. JSON, YAML, or a custom line format) → decided in D03 (docs/decisions.md)
 - [ ] S01.4 Write the format spec
 - [ ] S01.5 Implement reading and writing, with round-trip tests
 - [ ] S01.6 Implement crash-safe writing (write to a temporary file, then rename)
