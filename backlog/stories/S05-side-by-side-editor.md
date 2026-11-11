@@ -9,6 +9,8 @@ S05 puts the page viewer (S04) next to a text panel. Keyboard navigation (S06), 
 
 Sync works at the line level. A line keeps its box when its text is edited. Matching individual words to their boxes again after an edit comes later, so the optional word overlay (S04) shows the original OCR boxes. This needs the data model (S01.2) to allow corrected lines whose words have no boxes.
 
+**Note from the UI spike (D01):** the spike used one text field for the whole page and matched text lines to OCR lines by their position in the list. That breaks as soon as a line is added or deleted. The real implementation needs a stable identity per line (from the data model, S01.2) that survives editing, splitting and joining.
+
 ## Acceptance criteria
 - The scan is on the left and the text on the right, with a divider you can drag. Its position is remembered in the app settings.
 - The text panel shows the page's corrected lines in reading order, one row per line.
