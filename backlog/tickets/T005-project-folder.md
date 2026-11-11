@@ -1,6 +1,6 @@
 # T005 Project folder: project.json, PDF copy, create and open
 
-**Type:** task · **Status:** ready for development · **Story:** S01 · **Task:** S01.5
+**Type:** task · **Status:** done · **Story:** S01 · **Task:** S01.5
 
 Create, open and save a `<title>.korrektur` folder (D03) on top of T003 and T004.
 
@@ -52,4 +52,4 @@ T002, T003, T004.
 - The format marker is `korrektur-project` (the folder extension is `.korrektur`, D03).
 
 ## Progress
-Not started.
+Done. Build, tests and ktlint are green. Notes: page numbers `n` are positions in the page list; a layer whose `pdfPage` does not match its entry is rejected; `open` also requires `source.pdf` to exist; create wraps IO errors in `FormatException`. Create refuses an existing folder.
