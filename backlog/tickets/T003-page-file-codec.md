@@ -1,6 +1,6 @@
 # T003 Page files: canonical JSON, read and write
 
-**Type:** task · **Status:** ready for development · **Story:** S01 · **Task:** S01.5
+**Type:** task · **Status:** done · **Story:** S01 · **Task:** S01.5
 
 Read and write a `PageLayer` as a canonical JSON file (`pages/0001.json` and `pages/0001.ocr.json`).
 
@@ -53,4 +53,4 @@ T002.
 - Null fields are omitted: smaller files, and a new line without a box looks like what it is.
 
 ## Progress
-Not started.
+Done. Build, tests and ktlint are green. Added: `Box` rejects non-finite values (T002 follow-up). Words with unknown fields use an object form `{"t": ..., "b": ..., extras}`, since an array has no room for them. `.gitattributes` forces LF for `*.json` and `*.jsonl`, so byte-exact fixtures also work on Windows checkouts.
