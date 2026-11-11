@@ -1,6 +1,6 @@
 # T006 Undo history: append-only log
 
-**Type:** task · **Status:** ready for development · **Story:** S01 · **Task:** S01.5
+**Type:** task · **Status:** done · **Story:** S01 · **Task:** S01.5
 
 The file layer for `history/0001.jsonl`: one JSON object per line, only appended, readable from the end. What a change contains is defined by S08; this ticket stores opaque entries.
 
@@ -32,4 +32,4 @@ T003 (writer).
 - A bad line in the middle is an error rather than skipped: it means damage that the user should know about.
 
 ## Progress
-Not started.
+Done. Build, tests and ktlint are green. A last line without its newline counts as torn even if it parses. Keys of entries are written in alphabetical order (shared CanonicalJson rule).

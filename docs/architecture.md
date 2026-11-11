@@ -10,3 +10,4 @@ An overview of the code structure. Every ticket that changes the structure updat
   - `CanonicalJson.kt`: the shared writing rules (separators, key order, number format, string escapes) and parsing with `FormatException`.
   - `PageCodec.kt`: reads and writes a `PageLayer` as the text of a page file, one book line per file line.
   - `Project.kt`: a project folder. `Project.create` and `Project.open`, `project.json` (format marker, version, page list, unknown fields kept), read-only `source.pdf` copy, page files through `PageCodec` and `AtomicFile`; original OCR layers are written once.
+  - `HistoryLog.kt`: the append-only undo history of one page (JSON Lines), read from the end, tolerant of a torn last line.
