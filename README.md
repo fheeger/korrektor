@@ -9,6 +9,9 @@ This is a hobby project in early development.
 - Development process: [concept/process.md](concept/process.md)
 - Backlog: [backlog/overview.md](backlog/overview.md)
 
+## Using korrektor
+Start the app from the project folder with `./gradlew run`. There is nothing to use yet; features arrive with the stories in the [backlog](backlog/overview.md).
+
 ## Development
 Requires JDK 21. From the project folder:
 

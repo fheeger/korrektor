@@ -38,5 +38,5 @@ None.
 - **No `docs/architecture.md` yet.** There is no structure worth describing; it is written when the first story adds modules.
 
 ## Progress
-- Done: JDK installed, Gradle skeleton, `./gradlew build` green locally, app starts, CI workflow written.
+- Done: JDK installed, Gradle skeleton, `./gradlew build` green locally, app starts, CI workflow written. Criterion 4 checked by adding a badly formatted file once: `ktlintCheck` failed. Code review fixes applied: workflow permissions, current action versions, `.gitattributes`, executable `gradlew`, "Using korrektor" README section.
 - Next: push, open PR, check CI, set branch protection, code review.
