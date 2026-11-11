@@ -1,6 +1,7 @@
 package korrektor.format
 
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import java.io.IOException
@@ -32,12 +33,30 @@ data class PageInfo(
 class Project private constructor(
     val folder: Path,
     val pages: List<PageInfo>,
+    metadata: Metadata?,
     private val extra: Map<String, JsonElement>,
 ) {
+    /** The metadata, or null for a project that has none (made before S02). */
+    var metadata: Metadata? = metadata
+        private set
+
     val sourcePdf: Path get() = folder.resolve(SOURCE_PDF)
 
     /** Writes `project.json` again. Without changes, the bytes are identical to what was read. */
-    fun saveProjectFile() = AtomicFile.write(folder.resolve(PROJECT_FILE), encodeProjectFile(pages, extra).toByteArray(Charsets.UTF_8))
+    fun saveProjectFile() =
+        AtomicFile.write(folder.resolve(PROJECT_FILE), encodeProjectFile(pages, metadata, extra).toByteArray(Charsets.UTF_8))
+
+    /** Replaces the metadata and writes `project.json`. If writing fails, the old metadata stays. */
+    fun updateMetadata(new: Metadata) {
+        val old = metadata
+        metadata = new
+        try {
+            saveProjectFile()
+        } catch (e: Throwable) {
+            metadata = old
+            throw e
+        }
+    }
 
     /** The corrected layer of page [n]. */
     fun readPage(n: Int): PageLayer = read(pageFile(n, ".json"), n)
@@ -126,13 +145,15 @@ class Project private constructor(
             folder: Path,
             sourcePdf: Path,
             pages: List<PageInfo>,
-        ): Project = create(folder, sourcePdf, pages, AtomicFile::copy)
+            metadata: Metadata? = null,
+        ): Project = create(folder, sourcePdf, pages, metadata, AtomicFile::copy)
 
         /** [copyPdf] is a seam for tests, to simulate a failure while copying. */
         internal fun create(
             folder: Path,
             sourcePdf: Path,
             pages: List<PageInfo>,
+            metadata: Metadata?,
             copyPdf: (Path, Path) -> Unit,
         ): Project {
             if (!Files.isRegularFile(sourcePdf)) throw FormatException("The PDF $sourcePdf does not exist")
@@ -142,7 +163,7 @@ class Project private constructor(
                 try {
                     copyPdf(sourcePdf, folder.resolve(SOURCE_PDF))
                     folder.resolve(PAGES_DIR).createDirectories()
-                    val project = Project(folder, pages, emptyMap())
+                    val project = Project(folder, pages, metadata, emptyMap())
                     project.saveProjectFile()
                     // Last step: a read-only file would make cleanup after a failure harder. Best effort: not every file system supports it.
                     project.sourcePdf.toFile().setReadOnly()
@@ -161,10 +182,10 @@ class Project private constructor(
             if (!folder.isDirectory()) throw FormatException("$folder is not a project folder")
             val file = folder.resolve(PROJECT_FILE)
             if (!file.exists()) throw FormatException("$folder has no $PROJECT_FILE")
-            val (pages, extra) = decodeProjectFile(readText(file))
+            val parsed = decodeProjectFile(readText(file))
             if (!folder.resolve(SOURCE_PDF).exists()) throw FormatException("$folder has no $SOURCE_PDF")
             AtomicFile.cleanupTemp(folder)
-            return Project(folder, pages, extra)
+            return Project(folder, parsed.pages, parsed.metadata, parsed.extra)
         }
 
         private fun readText(file: Path): String =
@@ -183,9 +204,11 @@ class Project private constructor(
 
         private fun encodeProjectFile(
             pages: List<PageInfo>,
+            metadata: Metadata?,
             extra: Map<String, JsonElement>,
         ): String {
             val members = mutableListOf("  \"format\": ${CanonicalJson.quote(FORMAT)}", "  \"version\": $VERSION")
+            metadata?.let { members += "  \"metadata\": ${encodeMetadata(it)}" }
             members +=
                 if (pages.isEmpty()) {
                     "  \"pages\": []"
@@ -204,7 +227,52 @@ class Project private constructor(
             return "{" + members.joinToString(", ") + "}"
         }
 
-        private fun decodeProjectFile(text: String): Pair<List<PageInfo>, Map<String, JsonElement>> {
+        /** One line; empty author, year and source are left out. */
+        private fun encodeMetadata(m: Metadata): String {
+            val members = mutableListOf("\"title\": ${CanonicalJson.quote(m.title)}")
+            if (m.author.isNotEmpty()) members += "\"author\": ${CanonicalJson.quote(m.author)}"
+            if (m.year.isNotEmpty()) members += "\"year\": ${CanonicalJson.quote(m.year)}"
+            if (m.source.isNotEmpty()) members += "\"source\": ${CanonicalJson.quote(m.source)}"
+            m.extra.entries
+                .sortedBy { it.key }
+                .forEach { members += "${CanonicalJson.quote(it.key)}: ${CanonicalJson.write(it.value)}" }
+            return "{" + members.joinToString(", ") + "}"
+        }
+
+        private fun decodeMetadata(element: JsonElement): Metadata {
+            val o = element as? JsonObject ?: throw FormatException("$PROJECT_FILE: \"metadata\" must be an object")
+
+            fun text(key: String): String? =
+                when (val v = o[key]) {
+                    null, is JsonNull -> null
+                    is JsonPrimitive ->
+                        if (v.isString) {
+                            v.content
+                        } else {
+                            throw FormatException(
+                                "$PROJECT_FILE: metadata.$key must be a string",
+                            )
+                        }
+                    else -> throw FormatException("$PROJECT_FILE: metadata.$key must be a string")
+                }
+            val title = text("title")
+            if (title.isNullOrBlank()) throw FormatException("$PROJECT_FILE: metadata.title must be a non-blank string")
+            return Metadata(
+                title,
+                text("author") ?: "",
+                text("year") ?: "",
+                text("source") ?: "",
+                o.filterKeys { it !in setOf("title", "author", "year", "source") },
+            )
+        }
+
+        private class Parsed(
+            val pages: List<PageInfo>,
+            val metadata: Metadata?,
+            val extra: Map<String, JsonElement>,
+        )
+
+        private fun decodeProjectFile(text: String): Parsed {
             val root = CanonicalJson.parse(text) as? JsonObject ?: throw FormatException("$PROJECT_FILE: expected an object")
             val format = (root["format"] as? JsonPrimitive)?.takeIf { it.isString }?.content
             if (format != FORMAT) throw FormatException("$PROJECT_FILE: this is not a korrektur project (format is ${format ?: "missing"})")
@@ -218,7 +286,14 @@ class Project private constructor(
                     root["pages"] as? kotlinx.serialization.json.JsonArray
                         ?: throw FormatException("$PROJECT_FILE: \"pages\" must be an array")
                 ).mapIndexed { i, p -> decodePage(p, i) }
-            return pages to root.filterKeys { it !in setOf("format", "version", "pages") }
+            return Parsed(
+                pages,
+                root["metadata"]?.let { decodeMetadata(it) },
+                root.filterKeys {
+                    it !in
+                        setOf("format", "version", "metadata", "pages")
+                },
+            )
         }
 
         private fun decodePage(

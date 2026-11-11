@@ -60,6 +60,7 @@ Every JSON file is written canonically, so that opening and saving a project wit
 {
   "format": "korrektur-project",
   "version": 1,
+  "metadata": {"title": "Abhandlung über den kleinen Krieg", "author": "Johann von Ewald", "year": "1785", "source": "https://books.google.de/books?id=MhRLAAAAcAAJ"},
   "pages": [
     {"pdfPage": 1},
     {"pdfPage": 2},
@@ -72,10 +73,24 @@ Every JSON file is written canonically, so that opening and saving a project wit
 |---|---|---|
 | `format` | string | always `"korrektur-project"` |
 | `version` | integer | format version, 1 |
+| `metadata` | object, optional | title, author, year and source of the book (see below); missing in projects made before it existed |
 | `pages` | array | one entry per book page, in page order; one entry per line |
 | `pages[].pdfPage` | integer ≥ 1 | the page of `source.pdf` |
 
-Further fields (metadata, page status) are added by later stories as new fields. Unknown fields are kept, at the top level and in page entries. An empty book is written as `"pages": []`.
+### Metadata
+
+All values are free text, stored exactly as typed (no trimming, no normalization), so a year can be `ca. 1790` or `1785?`, and the source can be a link or a description. Empty values are left out.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `title` | string, not blank | the title of the book; required if `metadata` is present |
+| `author` | string, optional | the author |
+| `year` | string, optional | the year of publication |
+| `source` | string, optional | where the scan came from, e.g. a Google Books link |
+
+`metadata` is written on one line. Unknown fields inside it are kept and written after the known ones, in alphabetical order. It is a new optional field, so the format version is unchanged.
+
+Further fields (such as the page status) are added by later stories as new fields. Unknown fields are kept, at the top level and in page entries. An empty book is written as `"pages": []`.
 
 ## Page files
 
