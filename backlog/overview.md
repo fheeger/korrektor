@@ -26,4 +26,4 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 ## Tickets
 | ID | Ticket | Type | Story | Status |
 |---|---|---|---|---|
-| [T001](tickets/T001-development-setup.md) | Development setup | task | – | to be refined |
+| [T001](tickets/T001-development-setup.md) | Development setup | task | – | in progress |
