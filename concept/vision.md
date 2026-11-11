@@ -33,7 +33,8 @@ A native desktop app (later also for tablets) that turns a historical PDF into c
 - Native desktop (Windows first, then macOS and Linux).
 - Tablet later. The technology choice should not rule it out.
 
-## Open technical questions (for the technical concept)
-- Which UI technology works for desktop now and tablets later?
-- Which OCR engine and models can be bundled for Fraktur and Antiqua, and do they run on tablets?
-- What should the project file format be?
+## Technical questions (technical concept)
+The answers are recorded in [docs/decisions.md](../docs/decisions.md).
+- Which UI technology works for desktop now and tablets later? → D01 Kotlin with Compose Multiplatform (and D02 PDFium for PDFs)
+- Which OCR engine and models can be bundled for Fraktur and Antiqua, and do they run on tablets? → open, decided just before B1 (not needed for the MVP)
+- What should the project file format be? → D03 JSON project folder
