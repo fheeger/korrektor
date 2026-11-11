@@ -1,6 +1,6 @@
 # T008 The sample book fits the format
 
-**Type:** task · **Status:** ready for development · **Story:** S01 · **Task:** S01.5
+**Type:** task · **Status:** done · **Story:** S01 · **Task:** S01.5
 
 A cross-ticket test: a whole book of the sample's size goes through the format.
 
@@ -26,4 +26,4 @@ T003, T005.
 - Real OCR data of the sample can't be used before S03 (import). This test shows that the format can carry a book of that size and shape; S03 adds the check with real data.
 
 ## Progress
-Not started.
+Done. Build, tests and ktlint are green; with the sample PDF present all 4 tests run (165 pages, real page sizes), without it the PDF-specific test is skipped and the others use a synthetic PDF. Finding: the model does not round coordinates on construction, the codec rounds on read and write; code that builds boxes must use one-decimal values (S03 import must round).
