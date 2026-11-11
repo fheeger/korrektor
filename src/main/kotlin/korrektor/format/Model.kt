@@ -14,7 +14,11 @@ data class Box(
     val y: Double,
     val width: Double,
     val height: Double,
-)
+) {
+    init {
+        require(listOf(x, y, width, height).all { it.isFinite() }) { "Box values must be finite" }
+    }
+}
 
 /**
  * A word. [box] is null for words typed by the user.

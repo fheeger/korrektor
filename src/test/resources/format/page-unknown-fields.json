@@ -1,0 +1,11 @@
+{
+  "pdfPage": 1,
+  "width": 100.0,
+  "height": 200.0,
+  "regions": [
+    {"id": "r1", "type": "text", "order": 1, "lines": [
+      {"id": "l1", "words": [{"t": "ſo", "b": [1.0, 2.0, 3.0, 4.0], "conf": 0.93}, ["ꝛc."]], "tag": {"a": [1, 2], "b": null}}
+    ], "style": "bold"}
+  ],
+  "scanner": "x"
+}
