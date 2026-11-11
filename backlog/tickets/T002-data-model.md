@@ -1,6 +1,6 @@
 # T002 Data model
 
-**Type:** task · **Status:** ready for development · **Story:** S01 · **Task:** S01.2
+**Type:** task · **Status:** done · **Story:** S01 · **Task:** S01.2
 
 Define the in-memory data model of a project's pages as Kotlin types, with no file handling yet.
 
@@ -39,4 +39,4 @@ None.
 - Unknown fields are preserved rather than dropped, so a newer project opened and saved by an older app loses nothing.
 
 ## Progress
-Not started.
+Done. Build, tests and ktlint are green. Version of kotlinx-serialization-json: 1.13.0.
