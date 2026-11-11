@@ -6,6 +6,7 @@ This is a hobby project in early development.
 
 - Vision: [concept/vision.md](concept/vision.md)
 - Features: [concept/features.md](concept/features.md)
+- Project file format: [docs/project-format.md](docs/project-format.md)
 - Development process: [concept/process.md](concept/process.md)
 - Backlog: [backlog/overview.md](backlog/overview.md)
 

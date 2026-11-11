@@ -11,7 +11,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 ## MVP stories
 | ID | Story | Features | Status |
 |---|---|---|---|
-| [S01](stories/S01-project-format.md) | Project format | N5, N4 | ready for development |
+| [S01](stories/S01-project-format.md) | Project format | N5, N4 | in review |
 | [S02](stories/S02-create-project.md) | Create a project with metadata | A1 | ready for development |
 | [S03](stories/S03-import-pdf-with-ocr.md) | Import a PDF with OCR | A2 | ready for development |
 | [S04](stories/S04-page-viewer.md) | Page viewer | C2, N1 | ready for development |
@@ -27,3 +27,10 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | ID | Ticket | Type | Story | Status |
 |---|---|---|---|---|
 | [T001](tickets/T001-development-setup.md) | Development setup | task | – | done |
+| [T002](tickets/T002-data-model.md) | Data model | task | S01 | done |
+| [T003](tickets/T003-page-file-codec.md) | Page files: canonical JSON, read and write | task | S01 | done |
+| [T004](tickets/T004-crash-safe-write.md) | Crash-safe file writing | task | S01 | done |
+| [T005](tickets/T005-project-folder.md) | Project folder: project.json, PDF copy, create and open | task | S01 | done |
+| [T006](tickets/T006-history-log.md) | Undo history: append-only log | task | S01 | done |
+| [T007](tickets/T007-format-spec.md) | Project format specification | task | S01 | done |
+| [T008](tickets/T008-sample-fits-format.md) | The sample book fits the format | task | S01 | done |

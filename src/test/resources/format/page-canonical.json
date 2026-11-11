@@ -1,0 +1,12 @@
+{
+  "pdfPage": 3,
+  "width": 595.3,
+  "height": 841.9,
+  "regions": [
+    {"id": "r1", "type": "text", "order": 1, "box": [56.7, 80.2, 480.0, 600.4], "lines": [
+      {"id": "l1", "box": [56.7, 80.2, 480.0, 14.1], "origin": "l1", "words": [["Abhandlung", 56.7, 80.2, 70.3, 14.1], ["über", 130.0, 80.2, 30.0, 14.1]]},
+      {"id": "l2", "words": [["neu"]]}
+    ]},
+    {"id": "r2", "type": "marginalia", "order": 2, "lines": []}
+  ]
+}
