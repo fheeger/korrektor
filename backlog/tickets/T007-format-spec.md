@@ -1,6 +1,6 @@
 # T007 Project format specification
 
-**Type:** task · **Status:** ready for development · **Story:** S01 · **Task:** S01.4
+**Type:** task · **Status:** done · **Story:** S01 · **Task:** S01.4
 
 Write `docs/project-format.md`, the specification of the project format, from what T002–T006 actually implement.
 
@@ -28,7 +28,7 @@ The spec contains:
 T003, T005, T006.
 
 ## Decisions
-None yet.
+- Example blocks in the spec are tagged (` ```json page-original `) so the test can find them. Corrected layers keep the IDs of the original layer and refer to them with `origin`; new lines get new IDs.
 
 ## Progress
-Not started.
+Done. Build, tests and ktlint are green. The fields in the spec were checked against `PageCodec` and `Project` by hand.
