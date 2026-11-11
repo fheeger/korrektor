@@ -46,7 +46,7 @@ Claude lists the open loose tickets. Together we decide which of them to do firs
 6. **Review:** the user reviews the story PR. Changes become new tickets in the story, which Claude works through. The story goes to `done` when the user merges the story PR.
 
 ### Loose tickets
-- Worked on the same way when the user says "work on Txxx": refine, build, check. Claude then opens a PR into `main` and reports in chat. The ticket goes to `done` when the user merges it.
+- Worked on the same way when the user says "work on Txxx": refine, build, check. Before the PR, the ticket's changes get the same code review as a story (see "Code review"). Claude then opens a PR into `main` and reports in chat. The ticket goes to `done` when the user merges it.
 - Changes after the user has looked at it become new tickets.
 
 ### Decisions and when to stop
@@ -64,7 +64,7 @@ Claude lists the open loose tickets. Together we decide which of them to do firs
 
 ### Models
 - Coding and all other tasks: Sonnet 5.5 (the medium-cost model). It is the default in `.claude/settings.json`.
-- End-of-story code review: Opus 5.5, run as a separate agent.
+- Code review (end of story, loose tickets): Opus 5.5, run as a separate agent.
 
 ### State lives in the files
 - The ticket in progress has a "Progress" section that is kept up to date: what's done, what's next, open problems.
@@ -76,8 +76,10 @@ Claude lists the open loose tickets. Together we decide which of them to do firs
 - "continue": find what's in progress in `overview.md`, read its ticket including "Progress", and carry on.
 - If nothing is in progress: say so and list the open loose tickets.
 
-### Code review before the report
+### Code review
 - Before a story goes to `in review`, all of its changes get a code review using the review model. Claude fixes what it finds, and the report lists what was found and fixed.
+- Loose tickets go straight into `main`, so they get the same review before their PR. The PR description lists what was found and fixed.
+- Story tickets get no review of their own. The end-of-story review covers them.
 - Anything Claude can't check itself (especially in the UI) is listed in the report under "how to try it" for the user to check.
 
 ### What Claude may do on its own
@@ -87,7 +89,7 @@ Claude lists the open loose tickets. Together we decide which of them to do firs
 - Never: merge into `main`, force-push to `main`, or publish anything else without the user's go-ahead.
 
 ### Subagents
-- Not used by default. The only exception is the end-of-story code review.
+- Not used by default. The only exception is the code review.
 
 ### The user's own changes
 - Changes the user makes to code or files are the current state. Claude builds on them and doesn't undo them.
@@ -113,7 +115,7 @@ Claude lists the open loose tickets. Together we decide which of them to do firs
 ### Pull requests
 - **Ticket PR → story branch.** Title `T023: <ticket title>`. The description links the ticket and says what changed and how it was tested. Claude merges it with a squash merge once CI is green.
 - **Story PR → `main`.** Title `S07: <story title>`. The description links the story and its report, lists the ticket PRs and gives the code review results. Changes after the review come in as ticket PRs into the story branch. The user merges it with a merge commit, and the story goes to `done`.
-- **Loose ticket PR → `main`.** The user merges it with a squash merge, and the ticket goes to `done`.
+- **Loose ticket PR → `main`.** The description links the ticket, says what changed and how it was tested, and gives the code review results. The user merges it with a squash merge, and the ticket goes to `done`.
 
 ## Quality and tests
 The concrete tools (test framework, formatter, linter) are chosen with the technical concept.
