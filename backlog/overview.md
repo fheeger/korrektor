@@ -1,0 +1,28 @@
+# Backlog overview
+
+One file per story in `stories/`, one file per ticket in `tickets/`. Tasks are numbered `<story ID>.1`, `<story ID>.2`, … The workflow is described in [concept/process.md](../concept/process.md).
+
+**Story statuses:** to be refined → ready for development → in progress → in review → done
+
+**Ticket statuses:** to be refined → ready for development → in progress → done
+
+Refining a story means writing its acceptance criteria and tasks. After review it moves to *ready for development*.
+
+## MVP stories
+| ID | Story | Features | Status |
+|---|---|---|---|
+| [S01](stories/S01-project-format.md) | Project format | N5, N4 | ready for development |
+| [S02](stories/S02-create-project.md) | Create a project with metadata | A1 | ready for development |
+| [S03](stories/S03-import-pdf-with-ocr.md) | Import a PDF with OCR | A2 | ready for development |
+| [S04](stories/S04-page-viewer.md) | Page viewer | C2, N1 | ready for development |
+| [S05](stories/S05-side-by-side-editor.md) | Scan and text side by side | C1 | ready for development |
+| [S06](stories/S06-keyboard-navigation.md) | Keyboard navigation | C2 | ready for development |
+| [S07](stories/S07-autosave.md) | Autosave | N4 | ready for development |
+| [S08](stories/S08-undo-redo.md) | Undo/redo | F1 | ready for development |
+| [S09](stories/S09-page-status.md) | Page status | C5 | ready for development |
+| [S10](stories/S10-find-and-replace.md) | Find and replace with a preview | D2 | ready for development |
+| [S11](stories/S11-export-text-markdown.md) | Export plain text and Markdown | G1 | ready for development |
+
+## Tickets
+| ID | Ticket | Type | Story | Status |
+|---|---|---|---|---|

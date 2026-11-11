@@ -1,0 +1,9 @@
+# Test material (not redistributed, see README)
+samples/
+
+# Local Claude Code settings
+.claude/settings.local.json
+
+# OS files
+Thumbs.db
+.DS_Store
