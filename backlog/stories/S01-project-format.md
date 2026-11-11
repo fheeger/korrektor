@@ -1,6 +1,6 @@
 # S01 Project format
 
-**Features:** N5, N4 · **Status:** ready for development
+**Features:** N5, N4 · **Status:** in progress
 
 As a reader of historical sources, I want a stable, text-based project format that stores pages, layout regions, lines and words, and keeps the original OCR separate from my corrections
 so that my work is safe, easy to diff and share, and the original can always be compared.
@@ -20,8 +20,8 @@ so that my work is safe, easy to diff and share, and the original can always be 
 
 ## Tasks
 - [x] S01.1 Decide the layout: one project folder or a single file, one file per page or not → decided in D03 (docs/decisions.md)
-- [ ] S01.2 Define the data model: project, page, region, line, word; original and corrected layers
+- [ ] S01.2 Define the data model: project, page, region, line, word; original and corrected layers → [T002](../tickets/T002-data-model.md)
 - [x] S01.3 Choose the serialization (e.g. JSON, YAML, or a custom line format) → decided in D03 (docs/decisions.md)
-- [ ] S01.4 Write the format spec
-- [ ] S01.5 Implement reading and writing, with round-trip tests
-- [ ] S01.6 Implement crash-safe writing (write to a temporary file, then rename)
+- [ ] S01.4 Write the format spec → [T007](../tickets/T007-format-spec.md)
+- [ ] S01.5 Implement reading and writing, with round-trip tests → [T003](../tickets/T003-page-file-codec.md), [T005](../tickets/T005-project-folder.md), [T006](../tickets/T006-history-log.md), [T008](../tickets/T008-sample-fits-format.md)
+- [ ] S01.6 Implement crash-safe writing (write to a temporary file, then rename) → [T004](../tickets/T004-crash-safe-write.md)
