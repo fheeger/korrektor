@@ -11,7 +11,7 @@ Process, all as Markdown:
 2. Features (`concept/features.md`) – done
 3. MVP cut (priority column in `concept/features.md`) – done
 4. Stories and tasks (`backlog/stories/`) – done
-5. Development process, including how AI is used (`concept/process.md`) – in progress (only documentation still open)
+5. Development process, including how AI is used (`concept/process.md`) – done
 
 The tech stack is not a story. It is a separate decision (the "technical concept" in `vision.md`) made before development starts.
 

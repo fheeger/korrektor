@@ -27,6 +27,7 @@
   - Decisions made during the work, with reasons
   - Bugs only: steps to reproduce, expected vs. actual behaviour
 - A ticket is ready when its criteria can be checked, its approach and dependencies are clear, and it's small enough to review in one sitting.
+- A ticket is done when its criteria are met, CI is green and the documents it affects are updated (see "Documentation").
 
 ### Before starting a story
 Claude lists the open loose tickets. Together we decide which of them to do first. This step is interactive.
@@ -144,4 +145,33 @@ The concrete tools (test framework, formatter, linter) are chosen with the techn
 - No coverage target. The rule is that every criterion is tested.
 
 ## Documentation
-*Open.*
+
+### Where things live
+| What | Where | Changes |
+|---|---|---|
+| Vision, features, process | `concept/` | Only with the user's agreement |
+| Stories and tickets | `backlog/` | Kept up to date as the work goes on |
+| Rules for Claude | `AGENTS.md` | When a rule changes, with the user's agreement |
+| Architecture overview | `docs/architecture.md` | Written with the technical concept, updated by every ticket that changes the structure |
+| Project file format | `docs/project-format.md` | Written in S01, updated by every ticket that changes the format |
+| Important decisions | `docs/decisions.md` | When a big decision is made |
+| For users | `README.md`, section "Using korrektor" | Updated by every ticket that changes behaviour |
+
+### Project file format
+Projects are exchanged and must stay stable (V3), so the format has its own specification: files, fields, versioning. Every change to the format updates the specification in the same ticket.
+
+### Decisions
+- Small decisions are recorded in the ticket under "Decisions".
+- Big decisions go into `docs/decisions.md` as numbered entries (`D01`, `D02`, …), each with the decision, the reason and the alternatives considered. This covers the tech stack, the file format, and anything that falls under the stop case "hard to undo".
+
+### Code
+- Comments explain *why*, not *what*.
+- Public interfaces (modules, important functions) get a short description. There is no separate API documentation.
+
+### Users
+`README.md` has a short section "Using korrektor": how to start, the main steps, and a list of keyboard shortcuts.
+
+### Rules
+- A ticket is only done when the documents it affects are updated. The end-of-story code review checks this too.
+- Everything is in English: documentation, code, comments, commits.
+- No changelog until there are releases. Until then, the story PRs and the backlog serve that purpose.
