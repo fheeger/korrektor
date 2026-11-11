@@ -23,3 +23,23 @@ Big decisions with their reasons. Small decisions are recorded in the tickets.
 **Consequences:**
 - The app bundles a Java runtime (installer about 80–150 MB).
 - The editor features (highlights, line sync) are built by us. There's no ready-made editor like CodeMirror.
+
+## D02 PDF library: PDFium
+**Date:** 2026-11-11
+
+**Decision:** PDFs are rendered and their text layer read with PDFium (prebuilt binaries from `bblanchon/pdfium-binaries`), accessed from Kotlin through a small binding of our own.
+
+**Reasons:**
+- A spike with the sample PDF: about 9× faster than PDFBox (median 26 ms vs. 227 ms per page), well within S04's target of 0.3 s per page switch.
+- JBIG2 and JPEG2000, which Google Books uses, are built in. PDFBox needs a JPEG2000 plugin whose license is questionable for GPL-3.0.
+- All licenses involved are compatible with GPL-3.0.
+- Prebuilt binaries exist for every target platform, including Android and iOS.
+
+**Alternatives considered:**
+- Apache PDFBox: pure Java and simpler to integrate, but much slower and JPEG2000 only with a questionable license.
+- MuPDF: fast, and it delivers lines and blocks itself. But there are no prebuilt Java bindings for desktop, so they would have to be built from source for every platform. Its AGPL license would not be a real obstacle for this project.
+
+**Consequences:**
+- PDFium delivers characters with boxes, but no reliable lines. We detect lines ourselves from the geometry (part of S03).
+- PDFium isn't thread-safe: all calls go through one lock, in the background.
+- A native library per platform has to be bundled. Whether the binding uses JNA or Java's built-in FFM API is decided in S03.
