@@ -24,7 +24,7 @@ A project is a folder named `<title>.korrektur`:
 - **Page numbers.** The page number `n` of a book page is its position in the `pages` list of `project.json`, starting at 1. Page files are named with `n` padded to at least four digits (`0001`, `0042`, `12345`).
 - **PDF pages.** Each page entry says which page of `source.pdf` it shows (`pdfPage`, 1-based). Today these are the same numbers in the same order, but the format does not rely on it.
 - **Not content.** `.lock` and files ending in `.tmp` are working files. `.tmp` files are leftovers of an interrupted write; they are deleted when a project is opened and must be ignored when sharing or comparing projects.
-- Files and folders the reader does not know are left alone.
+- Other files and folders the reader does not know are left alone; only `*.tmp` files anywhere in the project folder are deleted on opening.
 
 ## Version and compatibility
 
@@ -159,7 +159,7 @@ Readers accept both forms for every word.
 
 ### Unknown fields
 
-Any object (page, region, line, word object) can carry unknown fields. They are written after the known ones, in alphabetical order, on the same line as the known fields of that object:
+Any object (page, region, line, word object) can carry unknown fields. They are written after the known ones, in alphabetical order. In a line or a word they stay on the same line; in a region they follow the closing `]` of `lines`; on the page each is a member of its own line. Their names must differ from the names of known fields:
 
 ```json page-unknown
 {

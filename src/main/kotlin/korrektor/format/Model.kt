@@ -8,6 +8,19 @@ class FormatException(
     cause: Throwable? = null,
 ) : Exception(message, cause)
 
+/** Largest coordinate or page size accepted; far beyond any real page, and safe for one-decimal rounding. */
+internal const val MAX_COORDINATE = 1e9
+
+/** Unknown fields must not reuse the name of a known field: the file would contain it twice. */
+internal fun requireUnknownKeys(
+    extra: Map<String, JsonElement>,
+    known: Set<String>,
+    what: String,
+) {
+    val clash = extra.keys.firstOrNull { it in known }
+    require(clash == null) { "$what: unknown field '$clash' has the name of a known field" }
+}
+
 /** A rectangle in PDF points, origin top-left. One decimal is the stored precision. */
 data class Box(
     val x: Double,
@@ -16,7 +29,11 @@ data class Box(
     val height: Double,
 ) {
     init {
-        require(listOf(x, y, width, height).all { it.isFinite() }) { "Box values must be finite" }
+        require(
+            listOf(x, y, width, height).all {
+                it.isFinite() && kotlin.math.abs(it) <= MAX_COORDINATE
+            },
+        ) { "Box values must be finite and within $MAX_COORDINATE" }
     }
 }
 
@@ -28,7 +45,11 @@ data class Word(
     val text: String,
     val box: Box? = null,
     val extra: Map<String, JsonElement> = emptyMap(),
-)
+) {
+    init {
+        requireUnknownKeys(extra, setOf("t", "b"), "Word")
+    }
+}
 
 /**
  * A line of the book. Its text is its [words] joined by one space; it is never normalized.
@@ -44,6 +65,7 @@ data class Line(
 ) {
     init {
         require(id.isNotBlank()) { "Line ID must not be blank" }
+        requireUnknownKeys(extra, setOf("id", "box", "origin", "words"), "Line $id")
         require(origin == null || origin.isNotBlank()) { "Line $id: origin must not be blank" }
     }
 
@@ -75,6 +97,7 @@ data class Region(
 ) {
     init {
         require(id.isNotBlank()) { "Region ID must not be blank" }
+        requireUnknownKeys(extra, setOf("id", "type", "order", "box", "lines"), "Region $id")
     }
 }
 
@@ -91,7 +114,12 @@ data class PageLayer(
 ) {
     init {
         require(pdfPage >= 1) { "pdfPage must be at least 1, was $pdfPage" }
-        require(width > 0 && height > 0) { "Page size must be positive, was $width x $height" }
+        require(
+            CanonicalJson.round1(width) > 0 && CanonicalJson.round1(height) > 0 && width <= MAX_COORDINATE && height <= MAX_COORDINATE,
+        ) {
+            "Page size must be between 0.1 and $MAX_COORDINATE points, was $width x $height"
+        }
+        requireUnknownKeys(extra, setOf("pdfPage", "width", "height", "regions"), "Page $pdfPage")
         requireUnique(regions.map { it.id }, "region ID")
         requireUnique(regions.map { it.order }, "region order")
         requireUnique(regions.flatMap { r -> r.lines.map { it.id } }, "line ID")

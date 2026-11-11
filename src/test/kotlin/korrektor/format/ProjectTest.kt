@@ -202,7 +202,12 @@ class ProjectTest {
             project.saveProjectFile()
             Project.open(dir.resolve("book.korrektur")).saveProjectFile()
             assertContentEquals(pdfBytes, project.sourcePdf.readBytes())
-            assertFalse(Files.isWritable(project.sourcePdf), "source.pdf should be read-only")
+            // As root the read-only flag has no effect, so there is nothing to check.
+            if (System.getProperty("user.name") !=
+                "root"
+            ) {
+                assertFalse(Files.isWritable(project.sourcePdf), "source.pdf should be read-only")
+            }
         }
 
     @Test
@@ -211,7 +216,7 @@ class ProjectTest {
             val project = create(dir, pages = 12)
             for (n in 1..12) project.writePage(n, layer(n, "page$n"))
             val folder = dir.resolve("book.korrektur")
-            for (n in (1..12).filter { it != 7 }) folder.resolve("pages/%04d.json".format(n)).deleteExisting()
+            for (n in (1..12).filter { it != 7 }) folder.resolve("pages/%04d.json".format(java.util.Locale.ROOT, n)).deleteExisting()
             val reread = Project.open(folder).readPage(7)
             assertEquals("page7", reread.regions[0].lines[0].text)
         }

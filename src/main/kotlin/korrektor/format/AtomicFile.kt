@@ -42,7 +42,31 @@ object AtomicFile {
             // The temp file is in the same folder, because an atomic rename only works within one file system.
             Files.move(temp, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
         } catch (e: Throwable) {
-            temp.deleteIfExists()
+            try {
+                temp.deleteIfExists()
+            } catch (cleanup: IOException) {
+                e.addSuppressed(cleanup)
+            }
+            throw e
+        }
+    }
+
+    /** Copies [source] to [target] with the same guarantee as [write]: [target] is either missing or complete. */
+    fun copy(
+        source: Path,
+        target: Path,
+    ) {
+        val temp = target.resolveSibling("${target.fileName}.$TEMP_EXTENSION")
+        try {
+            Files.copy(source, temp, StandardCopyOption.REPLACE_EXISTING)
+            FileChannel.open(temp, StandardOpenOption.WRITE).use { it.force(true) }
+            Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+        } catch (e: Throwable) {
+            try {
+                temp.deleteIfExists()
+            } catch (cleanup: IOException) {
+                e.addSuppressed(cleanup)
+            }
             throw e
         }
     }

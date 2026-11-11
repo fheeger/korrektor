@@ -61,7 +61,7 @@ class HistoryLog(
                     newlines += chunk.count { it == NEWLINE }
                     chunks.addFirst(chunk)
                 }
-                val text = String(chunks.fold(ByteArray(0)) { a, b -> a + b }, Charsets.UTF_8)
+                val text = CanonicalJson.decodeUtf8(chunks.fold(ByteArray(0)) { a, b -> a + b }, file)
                 var lines = text.split('\n').dropLast(1) // the text ends with a newline
                 if (start > 0) lines = lines.drop(1) // the first line may be cut by the block
                 val wanted = lines.takeLast(n)
@@ -77,7 +77,7 @@ class HistoryLog(
         if (!file.exists()) return emptyList()
         val text =
             try {
-                file.toFile().readText(Charsets.UTF_8)
+                CanonicalJson.readUtf8(file)
             } catch (e: IOException) {
                 throw FormatException("Cannot read $file: ${e.message}", e)
             }

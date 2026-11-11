@@ -139,7 +139,13 @@ class SampleProjectTest {
         }
 
     @Test
-    fun readingOnePageIsFast() =
+    fun readingOnePageIsFast() {
+        // A timing check is flaky on shared CI machines, so it only runs on request (process.md: performance tests are not run on every PR).
+        assumeTrue(System.getenv("KORREKTOR_PERF_TESTS") != null, "set KORREKTOR_PERF_TESTS=1 to run")
+        readingOnePageIsFastBody()
+    }
+
+    private fun readingOnePageIsFastBody() =
         withProject { _, _, _, folder ->
             val project = Project.open(folder)
             project.readPage(1) // warm up the JVM

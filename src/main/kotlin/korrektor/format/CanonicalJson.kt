@@ -7,7 +7,12 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import java.nio.ByteBuffer
+import java.nio.charset.CharacterCodingException
+import java.nio.charset.CodingErrorAction
+import java.nio.file.Path
 import java.util.Locale
+import kotlin.io.path.readBytes
 import kotlin.math.roundToLong
 
 /**
@@ -18,6 +23,29 @@ import kotlin.math.roundToLong
 object CanonicalJson {
     /** Compact single-line form of [element]. */
     fun write(element: JsonElement): String = StringBuilder().also { append(it, element) }.toString()
+
+    /** Reads a file as UTF-8. Invalid bytes are an error, not silently replaced (that would change bytes on save). */
+    fun readUtf8(file: Path): String =
+        try {
+            decodeUtf8(file.readBytes(), file)
+        } catch (e: java.io.IOException) {
+            throw FormatException("Cannot read $file: ${e.message}", e)
+        }
+
+    fun decodeUtf8(
+        bytes: ByteArray,
+        file: Path,
+    ): String =
+        try {
+            Charsets.UTF_8
+                .newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .decode(ByteBuffer.wrap(bytes))
+                .toString()
+        } catch (e: CharacterCodingException) {
+            throw FormatException("${file.fileName} is not valid UTF-8", e)
+        }
 
     fun parse(text: String): JsonElement =
         try {
@@ -46,7 +74,18 @@ object CanonicalJson {
     ) {
         when (element) {
             is JsonNull -> out.append("null")
-            is JsonPrimitive -> if (element.isString) appendQuoted(out, element.content) else out.append(element.content)
+            is JsonPrimitive ->
+                if (element.isString) {
+                    appendQuoted(out, element.content)
+                } else {
+                    // NaN and Infinity are not JSON; writing them would make the file unreadable.
+                    if (element.content in
+                        setOf("NaN", "Infinity", "-Infinity")
+                    ) {
+                        throw FormatException("Not a JSON number: ${element.content}")
+                    }
+                    out.append(element.content)
+                }
             is JsonArray -> {
                 out.append('[')
                 element.forEachIndexed { i, e ->

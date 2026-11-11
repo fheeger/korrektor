@@ -6,6 +6,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.Locale
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
@@ -18,6 +19,7 @@ data class PageInfo(
 ) {
     init {
         require(pdfPage >= 1) { "pdfPage must be at least 1, was $pdfPage" }
+        requireUnknownKeys(extra, setOf("pdfPage"), "Page entry $pdfPage")
     }
 }
 
@@ -63,7 +65,7 @@ class Project private constructor(
         suffix: String,
     ): Path {
         if (n !in 1..pages.size) throw FormatException("Page $n does not exist; the project has ${pages.size} pages")
-        return folder.resolve(PAGES_DIR).resolve(String.format("%04d%s", n, suffix))
+        return folder.resolve(PAGES_DIR).resolve(String.format(Locale.ROOT, "%04d%s", n, suffix))
     }
 
     private fun read(
@@ -124,7 +126,7 @@ class Project private constructor(
             folder: Path,
             sourcePdf: Path,
             pages: List<PageInfo>,
-        ): Project = create(folder, sourcePdf, pages) { from, to -> Files.copy(from, to) }
+        ): Project = create(folder, sourcePdf, pages, AtomicFile::copy)
 
         /** [copyPdf] is a seam for tests, to simulate a failure while copying. */
         internal fun create(
@@ -136,13 +138,13 @@ class Project private constructor(
             if (!Files.isRegularFile(sourcePdf)) throw FormatException("The PDF $sourcePdf does not exist")
             if (folder.exists()) throw FormatException("$folder already exists")
             try {
-                folder.createDirectories()
+                Files.createDirectory(folder)
                 try {
                     copyPdf(sourcePdf, folder.resolve(SOURCE_PDF))
                     folder.resolve(PAGES_DIR).createDirectories()
                     val project = Project(folder, pages, emptyMap())
                     project.saveProjectFile()
-                    // Last step: a read-only file would make cleanup after a failure harder.
+                    // Last step: a read-only file would make cleanup after a failure harder. Best effort: not every file system supports it.
                     project.sourcePdf.toFile().setReadOnly()
                     return project
                 } catch (e: Throwable) {
@@ -167,7 +169,7 @@ class Project private constructor(
 
         private fun readText(file: Path): String =
             try {
-                file.readText(Charsets.UTF_8)
+                CanonicalJson.readUtf8(file)
             } catch (e: IOException) {
                 throw FormatException("Cannot read $file: ${e.message}", e)
             }

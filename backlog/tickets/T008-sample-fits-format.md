@@ -27,3 +27,6 @@ T003, T005.
 
 ## Progress
 Done. Build, tests and ktlint are green; with the sample PDF present all 4 tests run (165 pages, real page sizes), without it the PDF-specific test is skipped and the others use a synthetic PDF. Finding: the model does not round coordinates on construction, the codec rounds on read and write; code that builds boxes must use one-decimal values (S03 import must round).
+
+## Change after code review
+The timing check (criterion 3) only runs when the environment variable `KORREKTOR_PERF_TESTS` is set. A timing assertion is flaky on shared CI machines, and `process.md` keeps performance tests out of the per-PR run. The "reads only one file" behaviour is still checked on every run in T005.
