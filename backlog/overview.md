@@ -33,4 +33,4 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T005](tickets/T005-project-folder.md) | Project folder: project.json, PDF copy, create and open | task | S01 | done |
 | [T006](tickets/T006-history-log.md) | Undo history: append-only log | task | S01 | done |
 | [T007](tickets/T007-format-spec.md) | Project format specification | task | S01 | ready for development |
-| [T008](tickets/T008-sample-fits-format.md) | The sample book fits the format | task | S01 | ready for development |
+| [T008](tickets/T008-sample-fits-format.md) | The sample book fits the format | task | S01 | done |
