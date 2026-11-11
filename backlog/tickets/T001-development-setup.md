@@ -1,6 +1,6 @@
 # T001 Development setup
 
-**Type:** task · **Status:** in progress · **Story:** none
+**Type:** task · **Status:** done · **Story:** none
 
 Set up everything needed before the first story (S01) can start.
 
@@ -39,4 +39,4 @@ None.
 
 ## Progress
 - Done: JDK installed, Gradle skeleton, `./gradlew build` green locally, app starts, CI workflow written. Criterion 4 checked by adding a badly formatted file once: `ktlintCheck` failed. Code review fixes applied: workflow permissions, current action versions, `.gitattributes`, executable `gradlew`, "Using korrektor" README section.
-- Next: push, open PR, check CI, set branch protection, code review.
+- Finished: PR merged, branch protection on `main` set (PR required, check `build` required, no force pushes, applies to admins).
