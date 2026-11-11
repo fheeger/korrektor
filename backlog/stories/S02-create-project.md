@@ -1,6 +1,6 @@
 # S02 Create a project with metadata
 
-**Features:** A1 · **Status:** ready for development
+**Features:** A1 · **Status:** in progress
 
 As a reader of historical sources, I want to create a project for a source with its title, author, year and source, and open it again later
 so that I can keep my sources apart and come back to my work.
@@ -19,9 +19,9 @@ so that I can keep my sources apart and come back to my work.
 Out of scope: a list of recently opened projects (later).
 
 ## Tasks
-- [ ] S02.1 Add the metadata fields to the data model and the format spec
-- [ ] S02.2 "New project" dialog: choose a PDF, enter metadata, choose where to store the project
-- [ ] S02.3 Create the project and copy the PDF into it, cleaning up if anything fails
-- [ ] S02.4 Dialog for editing the metadata
-- [ ] S02.5 Open an existing project with a file dialog
-- [ ] S02.6 Tests: create, reopen, metadata round trip, cleanup after failure
+- [ ] S02.1 Add the metadata fields to the data model and the format spec → [T009](../tickets/T009-project-metadata.md)
+- [ ] S02.2 "New project" dialog: choose a PDF, enter metadata, choose where to store the project → [T012](../tickets/T012-new-project-dialog.md)
+- [ ] S02.3 Create the project and copy the PDF into it, cleaning up if anything fails → [T010](../tickets/T010-create-project-service.md)
+- [ ] S02.4 Dialog for editing the metadata → [T013](../tickets/T013-edit-metadata.md)
+- [ ] S02.5 Open an existing project with a file dialog → [T011](../tickets/T011-app-shell-open-project.md)
+- [ ] S02.6 Tests: create, reopen, metadata round trip, cleanup after failure → [T014](../tickets/T014-project-lifecycle-tests.md)
