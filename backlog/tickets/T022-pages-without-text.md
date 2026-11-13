@@ -1,6 +1,6 @@
 # T022 Pages without text or with a broken text layer
 
-**Type:** task · **Status:** in progress · **Story:** S03 · **Task:** S03.7
+**Type:** task · **Status:** done · **Story:** S03 · **Task:** S03.7
 
 A page the import cannot get text from must not stop the import: it becomes an empty page with a note, and the import goes on.
 
@@ -39,4 +39,4 @@ T021, T017.
 - **Not done:** a way to remove a note, or to re-import a page. The note is just text on the page for now.
 
 ## Progress
-Done: `PageLayer.note` with codec and spec (table, text, and a `page-note` example checked by `SpecExamplesTest`); per-page error handling in `PdfImport` with `PageNote` and `ImportResult.notes`; `TestPdfs` can make pages with only a picture and pages with a cut-off content stream. 11 new tests: 3 for the codec (written after `regions`, before unknown fields, a page without a note is written as before; `null` accepted; a non-string refused naming `page.note`), 8 for the import (a page without text, an image-only page and a spaces-only page, notes surviving open and save, a broken content stream, a page that cannot be loaded and takes the previous size, the same at the start (A4), a page whose text cannot be read and keeps its own size, and the sample: notes on exactly pages 3, 139, 161, 163 and 165 in both layers). `./gradlew build` is green.
+Done: PR #27 merged, CI green. `PageLayer.note` with codec and spec (table, text, and a `page-note` example checked by `SpecExamplesTest`); per-page error handling in `PdfImport` with `PageNote` and `ImportResult.notes`; `TestPdfs` can make pages with only a picture and pages with a cut-off content stream. 11 new tests: 3 for the codec (written after `regions`, before unknown fields, a page without a note is written as before; `null` accepted; a non-string refused naming `page.note`), 8 for the import (a page without text, an image-only page and a spaces-only page, notes surviving open and save, a broken content stream, a page that cannot be loaded and takes the previous size, the same at the start (A4), a page whose text cannot be read and keeps its own size, and the sample: notes on exactly pages 3, 139, 161, 163 and 165 in both layers). `./gradlew build` is green.

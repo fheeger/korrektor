@@ -26,7 +26,7 @@ Known limitation: pages with several columns may have their lines mixed up until
 - [x] S03.4 Convert coordinates into the format's coordinate system → [T019](../tickets/T019-coordinates.md)
 - [x] S03.5 Write the original and corrected layers for each page → [T021](../tickets/T021-import-into-project.md)
 - [ ] S03.6 Run the import in the background with progress and cancel → [T023](../tickets/T023-import-in-background.md)
-- [ ] S03.7 Handle pages without text or with a broken text layer → [T022](../tickets/T022-pages-without-text.md)
+- [x] S03.7 Handle pages without text or with a broken text layer → [T022](../tickets/T022-pages-without-text.md)
 - [ ] S03.8 Tests: the sample PDF plus small generated test PDFs (page without text, rotated text, two columns to check the import doesn't fail) → [T024](../tickets/T024-import-tests.md)
 
 Also in this story, at the user's request and without a ticket of its own: the colour scheme of the app changes from violet to yellow/brown. It is done in T023, which changes the screens anyway.
