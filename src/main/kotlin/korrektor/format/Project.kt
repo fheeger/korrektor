@@ -1,8 +1,6 @@
 package korrektor.format
 
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -37,7 +35,8 @@ class Project private constructor(
     val sourcePdf: Path get() = folder.resolve(SOURCE_PDF)
 
     /** Writes `project.json` again. Without changes, the bytes are identical to what was read. */
-    fun saveProjectFile() = AtomicFile.write(folder.resolve(PROJECT_FILE), encodeProjectFile(pages, extra).toByteArray(Charsets.UTF_8))
+    fun saveProjectFile() =
+        AtomicFile.write(folder.resolve(PROJECT_FILE), ProjectFile.encode(pages, extra).toByteArray(Charsets.UTF_8))
 
     /** The corrected layer of page [n]. */
     fun readPage(n: Int): PageLayer = read(pageFile(n, ".json"), n)
@@ -56,7 +55,9 @@ class Project private constructor(
         layer: PageLayer,
     ) {
         val file = pageFile(n, ".ocr.json")
-        if (file.exists()) throw FormatException("The original OCR of page $n is already stored and is never overwritten")
+        if (file.exists()) {
+            throw FormatException("The original OCR of page $n is already stored and is never overwritten")
+        }
         write(file, n, layer)
     }
 
@@ -105,7 +106,9 @@ class Project private constructor(
         layer: PageLayer,
     ) {
         val expected = pages[n - 1].pdfPage
-        if (layer.pdfPage != expected) throw FormatException("Page $n belongs to PDF page $expected, but the layer says ${layer.pdfPage}")
+        if (layer.pdfPage != expected) {
+            throw FormatException("Page $n belongs to PDF page $expected, but the layer says ${layer.pdfPage}")
+        }
     }
 
     companion object {
@@ -135,8 +138,7 @@ class Project private constructor(
             pages: List<PageInfo>,
             copyPdf: (Path, Path) -> Unit,
         ): Project {
-            if (!Files.isRegularFile(sourcePdf)) throw FormatException("The PDF $sourcePdf does not exist")
-            if (folder.exists()) throw FormatException("$folder already exists")
+            checkCanCreate(folder, sourcePdf)
             try {
                 Files.createDirectory(folder)
                 try {
@@ -144,10 +146,14 @@ class Project private constructor(
                     folder.resolve(PAGES_DIR).createDirectories()
                     val project = Project(folder, pages, emptyMap())
                     project.saveProjectFile()
-                    // Last step: a read-only file would make cleanup after a failure harder. Best effort: not every file system supports it.
+                    // Last step: a read-only file would make cleanup after a failure harder.
+                    // Best effort: not every file system supports it.
                     project.sourcePdf.toFile().setReadOnly()
                     return project
-                } catch (e: Throwable) {
+                } catch (
+                    // Nothing may be left behind after any failure; the failure is rethrown.
+                    @Suppress("TooGenericExceptionCaught") e: Throwable,
+                ) {
                     deleteTree(folder)
                     throw e
                 }
@@ -156,15 +162,27 @@ class Project private constructor(
             }
         }
 
+        private fun checkCanCreate(
+            folder: Path,
+            sourcePdf: Path,
+        ) {
+            if (!Files.isRegularFile(sourcePdf)) throw FormatException("The PDF $sourcePdf does not exist")
+            if (folder.exists()) throw FormatException("$folder already exists")
+        }
+
         /** Opens an existing project. Nothing is changed if it can't be opened. */
         fun open(folder: Path): Project {
-            if (!folder.isDirectory()) throw FormatException("$folder is not a project folder")
-            val file = folder.resolve(PROJECT_FILE)
-            if (!file.exists()) throw FormatException("$folder has no $PROJECT_FILE")
-            val (pages, extra) = decodeProjectFile(readText(file))
+            val (pages, extra) = ProjectFile.decode(readText(projectFileOf(folder)))
             if (!folder.resolve(SOURCE_PDF).exists()) throw FormatException("$folder has no $SOURCE_PDF")
             AtomicFile.cleanupTemp(folder)
             return Project(folder, pages, extra)
+        }
+
+        private fun projectFileOf(folder: Path): Path {
+            if (!folder.isDirectory()) throw FormatException("$folder is not a project folder")
+            return folder.resolve(PROJECT_FILE).also {
+                if (!it.exists()) throw FormatException("$folder has no $PROJECT_FILE")
+            }
         }
 
         private fun readText(file: Path): String =
@@ -179,56 +197,6 @@ class Project private constructor(
                 it.setWritable(true)
                 it.delete()
             }
-        }
-
-        private fun encodeProjectFile(
-            pages: List<PageInfo>,
-            extra: Map<String, JsonElement>,
-        ): String {
-            val members = mutableListOf("  \"format\": ${CanonicalJson.quote(FORMAT)}", "  \"version\": $VERSION")
-            members +=
-                if (pages.isEmpty()) {
-                    "  \"pages\": []"
-                } else {
-                    "  \"pages\": [\n" + pages.joinToString(",\n") { "    " + encodePage(it) } + "\n  ]"
-                }
-            extra.entries.sortedBy { it.key }.forEach { members += "  ${CanonicalJson.quote(it.key)}: ${CanonicalJson.write(it.value)}" }
-            return "{\n" + members.joinToString(",\n") + "\n}\n"
-        }
-
-        private fun encodePage(page: PageInfo): String {
-            val members = mutableListOf("\"pdfPage\": ${page.pdfPage}")
-            page.extra.entries
-                .sortedBy { it.key }
-                .forEach { members += "${CanonicalJson.quote(it.key)}: ${CanonicalJson.write(it.value)}" }
-            return "{" + members.joinToString(", ") + "}"
-        }
-
-        private fun decodeProjectFile(text: String): Pair<List<PageInfo>, Map<String, JsonElement>> {
-            val root = CanonicalJson.parse(text) as? JsonObject ?: throw FormatException("$PROJECT_FILE: expected an object")
-            val format = (root["format"] as? JsonPrimitive)?.takeIf { it.isString }?.content
-            if (format != FORMAT) throw FormatException("$PROJECT_FILE: this is not a korrektur project (format is ${format ?: "missing"})")
-            val version = (root["version"] as? JsonPrimitive)?.takeIf { !it.isString }?.content?.toIntOrNull()
-            if (version == null || version < 1) throw FormatException("$PROJECT_FILE: \"version\" must be a positive integer")
-            if (version > VERSION) {
-                throw FormatException("This project has format version $version; this app supports up to $VERSION. Please update the app.")
-            }
-            val pages =
-                (
-                    root["pages"] as? kotlinx.serialization.json.JsonArray
-                        ?: throw FormatException("$PROJECT_FILE: \"pages\" must be an array")
-                ).mapIndexed { i, p -> decodePage(p, i) }
-            return pages to root.filterKeys { it !in setOf("format", "version", "pages") }
-        }
-
-        private fun decodePage(
-            element: JsonElement,
-            index: Int,
-        ): PageInfo {
-            val o = element as? JsonObject ?: throw FormatException("$PROJECT_FILE: pages[$index] must be an object")
-            val pdfPage = (o["pdfPage"] as? JsonPrimitive)?.takeIf { !it.isString }?.content?.toIntOrNull()
-            if (pdfPage == null || pdfPage < 1) throw FormatException("$PROJECT_FILE: pages[$index].pdfPage must be a positive integer")
-            return PageInfo(pdfPage, o.filterKeys { it != "pdfPage" })
         }
     }
 }

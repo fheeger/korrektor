@@ -21,6 +21,8 @@ import kotlin.math.roundToLong
  * use [formatNumber]), and strings with only the escapes JSON requires. Text is never normalized (V1).
  */
 object CanonicalJson {
+    private const val DECIMAL_SHIFT = 10.0
+
     /** Compact single-line form of [element]. */
     fun write(element: JsonElement): String = StringBuilder().also { append(it, element) }.toString()
 
@@ -63,7 +65,7 @@ object CanonicalJson {
     }
 
     /** Rounds to the one decimal the format stores. */
-    fun round1(value: Double): Double = (value * 10).roundToLong() / 10.0
+    fun round1(value: Double): Double = (value * DECIMAL_SHIFT).roundToLong() / DECIMAL_SHIFT
 
     /** A JSON string literal. Only `"`, `\` and control characters are escaped. */
     fun quote(text: String): String = StringBuilder().also { appendQuoted(it, text) }.toString()

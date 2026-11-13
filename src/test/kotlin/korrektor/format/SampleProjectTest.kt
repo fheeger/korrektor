@@ -44,7 +44,10 @@ class SampleProjectTest {
     private fun pageSizes(): List<Pair<Double, Double>> =
         if (samplePdf.exists()) {
             Loader.loadPDF(samplePdf.toFile()).use { doc ->
-                doc.pages.map { CanonicalJson.round1(it.mediaBox.width.toDouble()) to CanonicalJson.round1(it.mediaBox.height.toDouble()) }
+                doc.pages.map {
+                    val box = it.mediaBox
+                    CanonicalJson.round1(box.width.toDouble()) to CanonicalJson.round1(box.height.toDouble())
+                }
             }
         } else {
             List(165) { 360.0 to 576.0 }
@@ -63,12 +66,8 @@ class SampleProjectTest {
                     }
                 Line("l$i", Box(40.0, 40.0 + i * 12.0, CanonicalJson.round1(size.first - 80.0), 10.2), null, words)
             }
-        return PageLayer(
-            pdfPage,
-            size.first,
-            size.second,
-            listOf(Region("r1", RegionType.TEXT, 1, Box(40.0, 40.0, CanonicalJson.round1(size.first - 80.0), 400.0), lines)),
-        )
+        val textBox = Box(40.0, 40.0, CanonicalJson.round1(size.first - 80.0), 400.0)
+        return PageLayer(pdfPage, size.first, size.second, listOf(Region("r1", RegionType.TEXT, 1, textBox, lines)))
     }
 
     /** The corrected layer starts as a copy that refers to the original lines; some lines are typed anew. */
@@ -86,7 +85,10 @@ class SampleProjectTest {
                     else -> copy
                 }
             } + Line("cnew", words = listOf(Word("neu"), Word("eingefügt")))
-        return original.copy(regions = listOf(region.copy(lines = lines)), extra = mapOf("reviewed" to JsonPrimitive(true)))
+        return original.copy(
+            regions = listOf(region.copy(lines = lines)),
+            extra = mapOf("reviewed" to JsonPrimitive(true)),
+        )
     }
 
     private fun snapshot(folder: Path): Map<String, List<Byte>> =
@@ -140,7 +142,8 @@ class SampleProjectTest {
 
     @Test
     fun readingOnePageIsFast() {
-        // A timing check is flaky on shared CI machines, so it only runs on request (process.md: performance tests are not run on every PR).
+        // A timing check is flaky on shared CI machines, so it only runs on request
+        // (process.md: performance tests are not run on every PR).
         assumeTrue(System.getenv("KORREKTOR_PERF_TESTS") != null, "set KORREKTOR_PERF_TESTS=1 to run")
         readingOnePageIsFastBody()
     }

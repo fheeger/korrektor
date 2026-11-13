@@ -1,0 +1,3 @@
+# Only overrides of the Detekt defaults (buildUponDefaultConfig). Keep this file small.
+Compose:
+  active: true

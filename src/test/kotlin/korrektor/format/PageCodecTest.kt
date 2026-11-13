@@ -62,7 +62,11 @@ class PageCodecTest {
                                         Word("ſo", Box(1.0, 2.0, 3.0, 4.0), mapOf("conf" to JsonPrimitive(0.93))),
                                         Word("ꝛc."),
                                     ),
-                                extra = mapOf("tag" to JsonObject(mapOf("a" to CanonicalJson.parse("[1, 2]"), "b" to JsonNull))),
+                                extra =
+                                    mapOf(
+                                        "tag" to
+                                            JsonObject(mapOf("a" to CanonicalJson.parse("[1, 2]"), "b" to JsonNull)),
+                                    ),
                             ),
                         ),
                     extra = mapOf("style" to JsonPrimitive("bold")),
@@ -114,7 +118,9 @@ class PageCodecTest {
             page.copy(
                 regions =
                     listOf(
-                        region.copy(lines = listOf(region.lines[0], region.lines[1].copy(words = listOf(w("neu"), w("fixed"))))),
+                        region.copy(
+                            lines = listOf(region.lines[0], region.lines[1].copy(words = listOf(w("neu"), w("fixed")))),
+                        ),
                         page.regions[1],
                     ),
             )
@@ -127,14 +133,16 @@ class PageCodecTest {
     @Test
     fun aLongLineIsOneLineInTheFile() {
         val words = (1..20).map { w("word$it", it.toDouble()) }
-        val page = PageLayer(1, 100.0, 100.0, listOf(Region("r1", RegionType.TEXT, 1, lines = listOf(Line("l1", words = words)))))
+        val region = Region("r1", RegionType.TEXT, 1, lines = listOf(Line("l1", words = words)))
+        val page = PageLayer(1, 100.0, 100.0, listOf(region))
         val lines = PageCodec.encode(page).lines()
         assertEquals(1, lines.count { it.contains("\"l1\"") && it.contains("word20") })
     }
 
     @Test
     fun coordinatesAreStoredWithOneDecimal() {
-        val page = PageLayer(1, 100.04, 200.0, listOf(Region("r1", RegionType.TEXT, 1, Box(12.04, -0.04, 1.0, 2.0), emptyList())))
+        val region = Region("r1", RegionType.TEXT, 1, Box(12.04, -0.04, 1.0, 2.0), emptyList())
+        val page = PageLayer(1, 100.04, 200.0, listOf(region))
         val text = PageCodec.encode(page)
         assertTrue("\"width\": 100.0," in text)
         assertTrue("\"box\": [12.0, 0.0, 1.0, 2.0]" in text)
@@ -152,7 +160,8 @@ class PageCodecTest {
     @Test
     fun nullOptionalFieldsAreAccepted() {
         val text = """{"pdfPage": 1, "width": 1.0, "height": 1.0, "regions": [
-            {"id": "r1", "type": "text", "order": 1, "box": null, "lines": [{"id": "l1", "box": null, "origin": null, "words": []}]}]}"""
+            {"id": "r1", "type": "text", "order": 1, "box": null, "lines": [
+            {"id": "l1", "box": null, "origin": null, "words": []}]}]}"""
         val line = PageCodec.decode(text).regions[0].lines[0]
         assertNull(line.box)
         assertNull(line.origin)
@@ -169,21 +178,22 @@ class PageCodecTest {
     @Test
     fun invalidFilesAreRejectedWithTheWrongPart() {
         val head = """"pdfPage": 1, "width": 1.0, "height": 1.0"""
+        val r1 = """{"id": "r1", "type": "text", "order": 1"""
         assertInvalid("""{"width": 1.0, "height": 1.0, "regions": []}""", "pdfPage")
         assertInvalid("""{"pdfPage": "1", "width": 1.0, "height": 1.0, "regions": []}""", "pdfPage")
         assertInvalid("""{$head, "regions": {}}""", "regions")
         assertInvalid(
-            """{$head, "regions": [{"id": "r1", "type": "text", "order": 1, "lines": [{"id": "l1", "words": [["a", 1]]}]}]}""",
+            """{$head, "regions": [$r1, "lines": [{"id": "l1", "words": [["a", 1]]}]}]}""",
             "regions[0].lines[0].words[0]",
         )
-        assertInvalid("""{$head, "regions": [{"id": "r1", "type": "text", "order": 1, "box": [1, 2, 3], "lines": []}]}""", "regions[0].box")
+        assertInvalid("""{$head, "regions": [$r1, "box": [1, 2, 3], "lines": []}]}""", "regions[0].box")
         assertInvalid(
-            """{$head, "regions": [{"id": "r1", "type": "text", "order": 1, "lines": [{"id": "l1", "words": [[5]]}]}]}""",
+            """{$head, "regions": [$r1, "lines": [{"id": "l1", "words": [[5]]}]}]}""",
             "words[0][0]",
         )
         assertInvalid("""{"pdfPage": 1, "width": 0, "height": 1.0, "regions": []}""", "size")
         assertInvalid(
-            """{$head, "regions": [{"id": "r1", "type": "text", "order": 1, "lines": [{"id": "l1", "words": []}, {"id": "l1", "words": []}]}]}""",
+            """{$head, "regions": [$r1, "lines": [{"id": "l1", "words": []}, {"id": "l1", "words": []}]}]}""",
             "l1",
         )
         assertInvalid("""[1]""", "object")

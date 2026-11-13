@@ -35,6 +35,11 @@ None. T009 is in progress, so this ticket is worked on after it is merged.
 - **Block on all violations, no baseline.** The code base is small, so it is cleaned up now.
 - **Default complexity thresholds**, tuned only after the first real reports.
 - **Coverage is report-only.** "No coverage target" in the process stays. Kover is there to show Claude uncovered new code during review.
+- **Detekt 1.23.8**, the latest stable release. Detekt 2.0 is still alpha. It analyses Kotlin 2.4 code without problems.
+- **Compose rules 0.4.28**, the last release built for Detekt 1.x. Newer ones need Detekt 2.0 and are silently ignored by 1.23.8 (found by a throwaway `@Composable` with a lowercase name that no rule reported).
+- **`.editorconfig` with `max_line_length = 120`.** Detekt allows 120, ktlint 140, and `ktlintFormat` joined wrapped lines back to over 120. Both tools now use 120.
+- **Findings were fixed in the code, not suppressed**, except two deliberate `catch (Throwable)` blocks (cleanup after any failure, then rethrow), each with a comment. Bigger structural fixes: `PageCodec` split into encoder, decoder and JSON helpers; the `project.json` text moved out of `Project` into `ProjectFile`; precondition checks extracted into helpers. Behaviour is unchanged, all tests pass as before.
 - **No hosted service and no SARIF upload.** Claude reads the reports locally from plain files, so no dashboard is needed. This stays even though the repository is public.
 
 ## Progress
+Done: Detekt (default rules, Compose rules, no baseline) and Kover added; all 53 findings fixed; CI runs `build koverXmlReport` and uploads `build/reports`; `process.md`, README and `docs/architecture.md` updated. Checked locally: `./gradlew clean build` green (62 tests, 1 skipped by design); a throwaway file with a complex function and a badly named composable made the build fail (criteria 3 and 4). Line coverage is about 97%. Next: code review, then PR.

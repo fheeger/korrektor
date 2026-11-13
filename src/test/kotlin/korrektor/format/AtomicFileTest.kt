@@ -54,7 +54,7 @@ class AtomicFileTest {
             assertFailsWith<IllegalStateException> {
                 AtomicFile.write(target, "0123456789".toByteArray()) { channel, data ->
                     channel.write(ByteBuffer.wrap(data, 0, data.size / 2))
-                    throw IllegalStateException("disk full")
+                    error("disk full")
                 }
             }
             assertEquals("old", target.readText())

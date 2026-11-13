@@ -43,7 +43,14 @@ class ProjectTest {
         pdfPage,
         100.0,
         200.0,
-        listOf(Region("r1", RegionType.TEXT, 1, lines = listOf(Line("l1", words = listOf(Word(word, Box(1.0, 2.0, 3.0, 4.0))))))),
+        listOf(
+            Region(
+                "r1",
+                RegionType.TEXT,
+                1,
+                lines = listOf(Line("l1", words = listOf(Word(word, Box(1.0, 2.0, 3.0, 4.0))))),
+            ),
+        ),
     )
 
     private fun snapshot(folder: Path): Map<String, List<Byte>> =
@@ -63,7 +70,8 @@ class ProjectTest {
             val project = create(dir)
             val folder = dir.resolve("book.korrektur")
             assertEquals(
-                "{\n  \"format\": \"korrektur-project\",\n  \"version\": 1,\n  \"pages\": [\n    {\"pdfPage\": 1},\n    {\"pdfPage\": 2}\n  ]\n}\n",
+                "{\n  \"format\": \"korrektur-project\",\n  \"version\": 1,\n  \"pages\": [\n" +
+                    "    {\"pdfPage\": 1},\n    {\"pdfPage\": 2}\n  ]\n}\n",
                 folder.resolve("project.json").readText(),
             )
             assertContentEquals(pdfBytes, project.sourcePdf.readBytes())
@@ -127,7 +135,9 @@ class ProjectTest {
         folder: Path,
         part: String,
     ) {
-        folder.resolve("pages/0001.json.tmp").also { if (!it.exists() && folder.resolve("pages").exists()) it.writeText("half") }
+        folder.resolve("pages/0001.json.tmp").also {
+            if (!it.exists() && folder.resolve("pages").exists()) it.writeText("half")
+        }
         val before = if (folder.exists()) snapshot(folder) else emptyMap()
         val e = assertFailsWith<FormatException> { Project.open(folder) }
         assertTrue(part in e.message!!, "Expected '$part' in: ${e.message}")
@@ -216,7 +226,9 @@ class ProjectTest {
             val project = create(dir, pages = 12)
             for (n in 1..12) project.writePage(n, layer(n, "page$n"))
             val folder = dir.resolve("book.korrektur")
-            for (n in (1..12).filter { it != 7 }) folder.resolve("pages/%04d.json".format(java.util.Locale.ROOT, n)).deleteExisting()
+            for (n in (1..12).filter { it != 7 }) {
+                folder.resolve("pages/%04d.json".format(java.util.Locale.ROOT, n)).deleteExisting()
+            }
             val reread = Project.open(folder).readPage(7)
             assertEquals("page7", reread.regions[0].lines[0].text)
         }

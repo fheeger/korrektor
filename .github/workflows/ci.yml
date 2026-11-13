@@ -23,6 +23,12 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@v6
-      # `build` runs compile, all tests and ktlint (format and lint checks).
+      # `build` runs compile, all tests, ktlint (format and lint checks) and Detekt (complexity and code smells).
       # Tests that need the sample PDF must skip themselves when it's missing.
-      - run: ./gradlew build
+      - run: ./gradlew build koverXmlReport
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: reports
+          path: build/reports
+          if-no-files-found: ignore
