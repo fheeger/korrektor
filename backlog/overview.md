@@ -35,7 +35,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T007](tickets/T007-format-spec.md) | Project format specification | task | S01 | done |
 | [T008](tickets/T008-sample-fits-format.md) | The sample book fits the format | task | S01 | done |
 | [T009](tickets/T009-project-metadata.md) | Project metadata in the format | task | S02 | done |
-| [T010](tickets/T010-create-project-service.md) | Create a project from a PDF (logic) | task | S02 | in progress |
+| [T010](tickets/T010-create-project-service.md) | Create a project from a PDF (logic) | task | S02 | done |
 | [T011](tickets/T011-app-shell-open-project.md) | App shell: start screen, open a project, window title | task | S02 | ready for development |
 | [T012](tickets/T012-new-project-dialog.md) | New project dialog | task | S02 | ready for development |
 | [T013](tickets/T013-edit-metadata.md) | Edit the metadata of an open project | task | S02 | ready for development |

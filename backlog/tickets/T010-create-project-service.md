@@ -1,6 +1,6 @@
 # T010 Create a project from a PDF (logic)
 
-**Type:** task · **Status:** in progress · **Story:** S02 · **Task:** S02.3
+**Type:** task · **Status:** done · **Story:** S02 · **Task:** S02.3
 
 The logic behind "New project", without any UI: check the PDF, name the folder, create the project with its copy of the PDF, and clean up on failure.
 
@@ -42,4 +42,4 @@ T009.
 - **A name taken by anything** (a project, or a plain file) is refused with the same message, and left untouched.
 
 ## Progress
-Code done; `./gradlew build` green (20 new tests in `NewProjectTest`, 89 in total, 1 skipped by design). Detekt is clean. `docs/architecture.md` and the spec sentence on the empty page list are updated. Next: PR into `story/S02-create-project`; when CI is green, squash-merge, set this ticket to done, then start T011.
+Done: PR #14 merged, CI green. Code done; `./gradlew build` green (20 new tests in `NewProjectTest`, 89 in total, 1 skipped by design). Detekt is clean. `docs/architecture.md` and the spec sentence on the empty page list are updated. Next: PR into `story/S02-create-project`; when CI is green, squash-merge, set this ticket to done, then start T011.
