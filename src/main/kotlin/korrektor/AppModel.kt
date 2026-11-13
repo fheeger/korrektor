@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import korrektor.format.FormatException
+import korrektor.format.Metadata
 import korrektor.format.Project
 import java.nio.file.Path
 import kotlin.io.path.name
@@ -14,8 +15,19 @@ class AppModel {
     var project: Project? by mutableStateOf(null)
         private set
 
+    /**
+     * The metadata of the open project. [Project.metadata] is plain data, so the screens read it from here,
+     * which the UI can observe.
+     */
+    var metadata: Metadata? by mutableStateOf(null)
+        private set
+
     /** Whether the "New project" dialog is showing. */
     var newProjectOpen: Boolean by mutableStateOf(false)
+        private set
+
+    /** Whether the "Edit metadata" dialog is showing. */
+    var editMetadataOpen: Boolean by mutableStateOf(false)
         private set
 
     /** A message for the user, shown until it is dismissed. */
@@ -25,8 +37,7 @@ class AppModel {
     /** Opens the project in [folder]. If that fails, [error] says why and the current project stays open. */
     fun openProject(folder: Path) {
         try {
-            project = Project.open(folder)
-            error = null
+            open(Project.open(folder))
         } catch (e: FormatException) {
             error = e.message
         }
@@ -44,11 +55,33 @@ class AppModel {
         newProjectOpen = false
     }
 
+    fun openEditMetadata() {
+        editMetadataOpen = true
+    }
+
+    fun closeEditMetadata() {
+        editMetadataOpen = false
+    }
+
     /** Makes [created] the open project, and closes the "New project" dialog. */
     fun show(created: Project) {
-        project = created
-        error = null
+        open(created)
         newProjectOpen = false
+    }
+
+    /**
+     * Changes the metadata of the open project and writes it to `project.json`.
+     * If writing fails, the exception is thrown and the old metadata stays, in the file and in the app.
+     */
+    fun updateMetadata(new: Metadata) {
+        project?.updateMetadata(new)
+        metadata = new
+    }
+
+    private fun open(opened: Project) {
+        project = opened
+        metadata = opened.metadata
+        error = null
     }
 }
 
@@ -56,8 +89,13 @@ class AppModel {
  * The window title: `<title> – korrektor` for a project, with the folder name instead of the title for a
  * project without metadata, and just `korrektor` on the start screen.
  */
-fun windowTitle(project: Project?): String = if (project == null) APP_NAME else "${project.displayTitle} – $APP_NAME"
+fun windowTitle(
+    project: Project?,
+    metadata: Metadata? = project?.metadata,
+): String = if (project == null) APP_NAME else "${displayTitle(project, metadata)} – $APP_NAME"
 
 /** The title from the metadata, or the folder name without `.korrektur` for a project without metadata. */
-val Project.displayTitle: String
-    get() = metadata?.title ?: folder.name.removeSuffix(".korrektur")
+fun displayTitle(
+    project: Project,
+    metadata: Metadata? = project.metadata,
+): String = metadata?.title ?: project.folder.name.removeSuffix(".korrektur")

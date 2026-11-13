@@ -1,6 +1,6 @@
 # T013 Edit the metadata of an open project
 
-**Type:** task · **Status:** ready for development · **Story:** S02 · **Task:** S02.4
+**Type:** task · **Status:** in progress · **Story:** S02 · **Task:** S02.4
 
 A dialog for changing title, author, year and source of the open project.
 
@@ -29,5 +29,13 @@ T009, T011. Shares the field composable with T012, so it comes after it.
 ## Decisions
 - The folder name stays as it is: renaming a folder the user may have moved or linked to is surprising, and the project does not depend on its folder name.
 
+- **`AppModel` mirrors the metadata as Compose state.** `Project.metadata` is a plain property that the format package (no UI) changes, so the screens and the window title would not update after an edit. `AppModel.metadata` is the observable copy, set when a project opens and by `AppModel.updateMetadata`. `windowTitle` and `displayTitle` take it as an optional second argument.
+- **The field composable is shared through an interface** (`MetadataForm` with `MetadataFields`) instead of a long parameter list, so both dialogs use the same four fields. To fit it, `NewProjectModel` got `updateAuthor`, `updateYear` and `updateSource` instead of public variables.
+- **Unknown metadata fields are kept when saving** (`Metadata.copy`), in line with the format's rule that unknown fields survive.
+- **Save needs a change:** unchanged values leave "Save" disabled. Values are saved as typed, without trimming (V1).
+- **A write failure is an `IOException` from `AtomicFile`,** shown as "The metadata could not be saved: …". `Project.updateMetadata` (T009) already restores the old value; the dialog stays open, and a retry works. The tests make the write fail for real by putting a folder where the temporary file goes.
+- **"Edit metadata…" sits in the button row of the project screen** next to "New project…" and "Open another project…". The three actions are passed as one `ProjectActions` object.
+- **Saving runs on the UI thread:** it writes one small file. Creating a project, which copies a PDF, is the one that runs in the background.
+
 ## Progress
-Not started.
+Code done; `./gradlew build` green (9 new tests in `EditMetadataModelTest`, 4 new Compose UI tests in `AppUiTest`; Detekt and ktlint clean). Checked for real: `./gradlew run` opened a window titled `korrektor` with no errors in the log. Not checked (for the story report, "how to try it"): how the dialog looks, and editing a project made from the sample PDF. Docs updated: README, `docs/architecture.md`. Next: PR into `story/S02-create-project`; when CI is green, squash-merge, set this ticket to done, then start T014.

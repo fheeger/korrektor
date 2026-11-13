@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,7 +38,7 @@ fun NewProjectDialog(
             Column(Modifier.padding(24.dp).width(520.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("New project", style = MaterialTheme.typography.headlineSmall)
                 PdfRow(model, pdfPicker)
-                MetadataFields(model)
+                MetadataFields(model, enabled = model.pdf != null && !model.busy)
                 LocationRow(model, folderPicker)
                 model.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 ButtonRow(model, onCancel = app::closeNewProject)
@@ -56,46 +55,6 @@ private fun PdfRow(
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Button(onClick = { pdfPicker.pick()?.let(model::selectPdf) }, enabled = !model.busy) { Text("Choose PDF…") }
         Text(model.pdf?.fileName?.toString() ?: "No PDF chosen")
-    }
-}
-
-@Composable
-private fun MetadataFields(model: NewProjectModel) {
-    val enabled = model.pdf != null && !model.busy
-    val fieldModifier = Modifier.fillMaxWidth()
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        OutlinedTextField(
-            value = model.title,
-            onValueChange = model::updateTitle,
-            modifier = fieldModifier,
-            enabled = enabled,
-            label = { Text("Title (required)") },
-            singleLine = true,
-        )
-        OutlinedTextField(
-            value = model.author,
-            onValueChange = { model.author = it },
-            modifier = fieldModifier,
-            enabled = enabled,
-            label = { Text("Author") },
-            singleLine = true,
-        )
-        OutlinedTextField(
-            value = model.year,
-            onValueChange = { model.year = it },
-            modifier = fieldModifier,
-            enabled = enabled,
-            label = { Text("Year") },
-            singleLine = true,
-        )
-        OutlinedTextField(
-            value = model.source,
-            onValueChange = { model.source = it },
-            modifier = fieldModifier,
-            enabled = enabled,
-            label = { Text("Source (e.g. a link)") },
-            singleLine = true,
-        )
     }
 }
 

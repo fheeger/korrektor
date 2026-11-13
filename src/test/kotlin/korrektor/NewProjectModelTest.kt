@@ -160,10 +160,16 @@ class NewProjectModelTest {
             val model = newModel(app)
             model.selectPdf(pdf(dir))
             model.updateTitle("Abhandlung")
-            model.author = "Ewald"
+            model.updateAuthor(
+                "Ewald",
+            )
             // Free text: nothing about these values is checked or changed.
-            model.year = "ca. 1790"
-            model.source = "https://books.google.de/books?id=MhRLAAAAcAAJ"
+            model.updateYear(
+                "ca. 1790",
+            )
+            model.updateSource(
+                "https://books.google.de/books?id=MhRLAAAAcAAJ",
+            )
 
             model.createAndWait()
 
@@ -190,7 +196,9 @@ class NewProjectModelTest {
             val app = AppModel()
             val model = newModel(app)
             model.selectPdf(pdf(dir))
-            model.year = "1785?"
+            model.updateYear(
+                "1785?",
+            )
             model.createAndWait()
             assertEquals("1785?", app.project?.metadata?.year)
         }
