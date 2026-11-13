@@ -11,19 +11,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import korrektor.format.Metadata
 import korrektor.format.Project
 
 /** The open project. For now it shows the project's metadata; the pages come with later stories. */
 @Composable
 fun ProjectScreen(
     project: Project,
-    onOpenProject: () -> Unit,
-    onNewProject: () -> Unit,
+    metadata: Metadata?,
+    actions: ProjectActions,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxSize().padding(32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        val metadata = project.metadata
-        Text(project.displayTitle, style = MaterialTheme.typography.headlineMedium)
+        Text(displayTitle(project, metadata), style = MaterialTheme.typography.headlineMedium)
         if (metadata != null) {
             listOf("Author" to metadata.author, "Year" to metadata.year, "Source" to metadata.source)
                 .filter { it.second.isNotEmpty() }
@@ -31,8 +31,9 @@ fun ProjectScreen(
         }
         Text(project.folder.toString(), style = MaterialTheme.typography.bodySmall)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(onClick = onNewProject) { Text("New project…") }
-            Button(onClick = onOpenProject) { Text("Open another project…") }
+            Button(onClick = actions.editMetadata) { Text("Edit metadata…") }
+            Button(onClick = actions.newProject) { Text("New project…") }
+            Button(onClick = actions.openProject) { Text("Open another project…") }
         }
     }
 }

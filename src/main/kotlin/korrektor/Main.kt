@@ -10,7 +10,7 @@ const val APP_NAME = "korrektor"
 fun main() =
     application {
         val model = remember { AppModel() }
-        Window(onCloseRequest = ::exitApplication, title = windowTitle(model.project)) {
+        Window(onCloseRequest = ::exitApplication, title = windowTitle(model.project, model.metadata)) {
             App(model, SwingFolderPicker, AwtPdfPicker)
         }
     }

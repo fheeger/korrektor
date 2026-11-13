@@ -24,10 +24,12 @@ fun App(
                 if (project == null) {
                     StartScreen(onOpenProject = openProject, onNewProject = model::openNewProject)
                 } else {
-                    ProjectScreen(project = project, onOpenProject = openProject, onNewProject = model::openNewProject)
+                    val actions = ProjectActions(model::openNewProject, openProject, model::openEditMetadata)
+                    ProjectScreen(project = project, metadata = model.metadata, actions = actions)
                 }
             }
             if (model.newProjectOpen) NewProjectDialog(model, pdfPicker, folderPicker)
+            if (model.editMetadataOpen) EditMetadataDialog(model)
         }
     }
 }

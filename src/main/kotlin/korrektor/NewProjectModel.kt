@@ -21,16 +21,21 @@ class NewProjectModel(
     private val app: AppModel,
     private val scope: CoroutineScope,
     private val io: CoroutineDispatcher = Dispatchers.IO,
-) {
+) : MetadataForm {
     var pdf: Path? by mutableStateOf(null)
         private set
 
-    var title: String by mutableStateOf("")
+    override var title: String by mutableStateOf("")
         private set
 
-    var author: String by mutableStateOf("")
-    var year: String by mutableStateOf("")
-    var source: String by mutableStateOf("")
+    override var author: String by mutableStateOf("")
+        private set
+
+    override var year: String by mutableStateOf("")
+        private set
+
+    override var source: String by mutableStateOf("")
+        private set
 
     /** The folder that will hold the new project folder. */
     var location: Path? by mutableStateOf(null)
@@ -61,9 +66,24 @@ class NewProjectModel(
         if (!locationChosen) location = path.toAbsolutePath().parent
     }
 
-    fun updateTitle(text: String) {
+    override fun updateTitle(text: String) {
         title = text
         titleTyped = true
+        error = null
+    }
+
+    override fun updateAuthor(text: String) {
+        author = text
+        error = null
+    }
+
+    override fun updateYear(text: String) {
+        year = text
+        error = null
+    }
+
+    override fun updateSource(text: String) {
+        source = text
         error = null
     }
 
