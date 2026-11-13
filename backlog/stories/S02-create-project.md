@@ -1,6 +1,6 @@
 # S02 Create a project with metadata
 
-**Features:** A1 · **Status:** in review
+**Features:** A1 · **Status:** done
 
 As a reader of historical sources, I want to create a project for a source with its title, author, year and source, and open it again later
 so that I can keep my sources apart and come back to my work.
