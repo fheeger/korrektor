@@ -37,7 +37,26 @@ fun StartScreen(
     }
 }
 
-/** A message the user can dismiss. */
+/** Something the user should know, not an error: the yellow of the theme. The user can dismiss it. */
+@Composable
+fun NoticeBanner(
+    message: String,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.secondaryContainer) {
+        Row(
+            Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(message, color = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.weight(1f))
+            TextButton(onClick = onDismiss) { Text("Dismiss") }
+        }
+    }
+}
+
+/** An error message the user can dismiss. */
 @Composable
 fun ErrorBanner(
     message: String,

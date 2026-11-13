@@ -1,6 +1,6 @@
 # T023 Import in the background with progress and cancel
 
-**Type:** task · **Status:** ready for development · **Story:** S03 · **Task:** S03.6
+**Type:** task · **Status:** in progress · **Story:** S03 · **Task:** S03.6
 
 Make "New project" import the PDF's text right after the project is created: in the background, with a progress display, with a Cancel button that leaves nothing behind. This ticket also changes the colour scheme of the app to yellow/brown (the user's request; it has no ticket of its own).
 
@@ -33,9 +33,16 @@ Make "New project" import the PDF's text right after the project is created: in 
 T021, T022.
 
 ## Decisions
-- **Cancel deletes the whole project, not just the import**: the project exists only for this PDF and was created a moment ago; a half-imported project would be worse than none (story criterion).
+- **Cancel deletes the whole project, not just the import**: the project exists only for this PDF and was created a moment ago; a half-imported project would be worse than none (story criterion). `NewProject.discard` does it, and **refuses anything that does not look like a project folder** (a name ending in `.korrektur` and a `project.json`), so that a bug elsewhere cannot make it delete another folder.
+- **The cancel is a flag, checked between two pages**, not a coroutine cancel of the whole job: the import is plain blocking code, the flag is `@Volatile`, and a cancel takes effect after at most one page (a page takes milliseconds). A cancel that comes while the PDF is still being copied is noticed at the first page. A cancel from outside (the coroutine scope going away) is also honoured and the project deleted; it is rethrown.
+- **The two steps sit behind a `ProjectFactory`** that the `AppModel` holds, instead of a seam on the model, so the dialog tests can put a slow, failing or cancellable import in place without touching the dialog code. The earlier `creator` parameter of the model is gone.
+- **Progress is written from the import's thread.** Compose state may be written from any thread; the dialog shows "Importing page n of N" and a determinate progress bar, and "Creating the project…" with an indeterminate one before the import starts.
 - **The window stays blocked while importing** (as in S02). Cancel is the way out. Closing the window could later start a cancel automatically.
-- **Colours:** chosen by Claude within "yellow/brown"; the user will judge them and may ask for changes (a loose ticket).
+- **The notice is a second banner** (`NoticeBanner`, in the yellow of the theme) next to the error banner. Its text comes from `ImportResult.summary()`: at most twelve page numbers, then "and N more".
+- **The project screen shows the number of pages** ("Pages: 165"): the first sign in the app that the import happened.
+- **Colours:** chosen by Claude within "yellow/brown": primary brown `#6B4423`, mustard `#7A5C00` and yellow `#FFE17C` accents, cream ground `#FFF8E7`, red errors. Every pair of text and ground reaches a contrast of 4.5 : 1 (a test computes 19 pairs, including the ones in dialogs), no colour of the scheme is violet, and Material's tonal elevation (dialogs) follows the primary colour. The user will judge the look and may ask for changes (a loose ticket).
 
 ## Progress
-Not started.
+Done: `KorrektorTheme`; `ProjectFactory`; `ProjectCreation.createProject` (create, import, clean up on cancel and on every failure); `NewProject.discard` and a shared `deleteTree`; `NewProjectModel` with `importedPages`, `totalPages`, `importing` and `cancel()`; the dialog with a progress bar and a Cancel that cancels while busy; `AppModel.notice`, `NoticeBanner`, `ImportResult.summary()`; "Pages: n" on the project screen; README and architecture. New tests: 5 for the theme (19 contrast pairs, brown and yellow hues, a light warm ground, red errors, nothing violet), 6 for the summary text, 2 for `discard` (also with the read-only PDF, and refusing folders that are not projects), 10 for the model (progress, summary and dialog closing, cancel with a fake and with the real importer, failures, the window guard, a real import) and 4 in the dialog (progress and Cancel, done, failure, dismissing the notice). Checked by changing the code: an import that ignores the cancel request fails two tests, a creation that forgets to delete the project fails five. `./gradlew build` is green.
+
+Not checked by me (for the story report): how the colours and the dialog look, and a cancel during a long import of the real sample in the real window.

@@ -29,6 +29,7 @@ fun ProjectScreen(
                 .filter { it.second.isNotEmpty() }
                 .forEach { (label, value) -> Text("$label: $value") }
         }
+        Text("Pages: ${project.pages.size}")
         Text(project.folder.toString(), style = MaterialTheme.typography.bodySmall)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(onClick = actions.editMetadata) { Text("Edit metadata…") }

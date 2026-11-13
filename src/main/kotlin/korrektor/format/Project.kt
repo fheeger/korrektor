@@ -228,12 +228,5 @@ class Project private constructor(
             } catch (e: IOException) {
                 throw FormatException("Cannot read $file: ${e.reason()}", e)
             }
-
-        private fun deleteTree(folder: Path) {
-            folder.toFile().walkBottomUp().forEach {
-                it.setWritable(true)
-                it.delete()
-            }
-        }
     }
 }
