@@ -1,6 +1,6 @@
 # S01 Project format
 
-**Features:** N5, N4 · **Status:** in review
+**Features:** N5, N4 · **Status:** done
 
 As a reader of historical sources, I want a stable, text-based project format that stores pages, layout regions, lines and words, and keeps the original OCR separate from my corrections
 so that my work is safe, easy to diff and share, and the original can always be compared.

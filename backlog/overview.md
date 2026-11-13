@@ -11,7 +11,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 ## MVP stories
 | ID | Story | Features | Status |
 |---|---|---|---|
-| [S01](stories/S01-project-format.md) | Project format | N5, N4 | in review |
+| [S01](stories/S01-project-format.md) | Project format | N5, N4 | done |
 | [S02](stories/S02-create-project.md) | Create a project with metadata | A1 | ready for development |
 | [S03](stories/S03-import-pdf-with-ocr.md) | Import a PDF with OCR | A2 | ready for development |
 | [S04](stories/S04-page-viewer.md) | Page viewer | C2, N1 | ready for development |
