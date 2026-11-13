@@ -29,10 +29,14 @@ data class PageInfo(
  */
 class Project private constructor(
     val folder: Path,
-    val pages: List<PageInfo>,
+    pages: List<PageInfo>,
     metadata: Metadata?,
     private val extra: Map<String, JsonElement>,
 ) {
+    /** The pages of the book, in order. Empty until the text of the PDF is imported (S03). */
+    var pages: List<PageInfo> = pages
+        private set
+
     /** The metadata, or null for a project that has none (made before S02). */
     var metadata: Metadata? = metadata
         private set
@@ -49,15 +53,17 @@ class Project private constructor(
     fun updateMetadata(new: Metadata) {
         val old = metadata
         metadata = new
-        try {
-            saveProjectFile()
-        } catch (
-            // The old value must come back after any failure; the failure is rethrown.
-            @Suppress("TooGenericExceptionCaught") e: Throwable,
-        ) {
-            metadata = old
-            throw e
-        }
+        saveOrRevert { metadata = old }
+    }
+
+    /**
+     * Replaces the list of pages and writes `project.json`. If writing fails, the old list stays. The import uses
+     * it to say which pages the book has before the page files are written.
+     */
+    fun setPages(new: List<PageInfo>) {
+        val old = pages
+        pages = new
+        saveOrRevert { pages = old }
     }
 
     /** The corrected layer of page [n]. */
@@ -103,7 +109,7 @@ class Project private constructor(
             } catch (e: FormatException) {
                 throw FormatException("${file.fileName}: ${e.message}", e)
             }
-        checkPdfPage(n, layer)
+        checkPdfPage(pages, n, layer)
         return layer
     }
 
@@ -112,21 +118,35 @@ class Project private constructor(
         n: Int,
         layer: PageLayer,
     ) {
-        checkPdfPage(n, layer)
+        checkPdfPage(pages, n, layer)
         AtomicFile.write(file, PageCodec.encode(layer).toByteArray(Charsets.UTF_8))
     }
 
-    private fun checkPdfPage(
-        n: Int,
-        layer: PageLayer,
-    ) {
-        val expected = pages[n - 1].pdfPage
-        if (layer.pdfPage != expected) {
-            throw FormatException("Page $n belongs to PDF page $expected, but the layer says ${layer.pdfPage}")
-        }
-    }
-
     companion object {
+        private fun checkPdfPage(
+            pages: List<PageInfo>,
+            n: Int,
+            layer: PageLayer,
+        ) {
+            val expected = pages[n - 1].pdfPage
+            if (layer.pdfPage != expected) {
+                throw FormatException("Page $n belongs to PDF page $expected, but the layer says ${layer.pdfPage}")
+            }
+        }
+
+        /** Writes `project.json`. If that fails, runs [revert] to put the old value back, and rethrows. */
+        private inline fun Project.saveOrRevert(revert: () -> Unit) {
+            try {
+                saveProjectFile()
+            } catch (
+                // The old value must come back after any failure; the failure is rethrown.
+                @Suppress("TooGenericExceptionCaught") e: Throwable,
+            ) {
+                revert()
+                throw e
+            }
+        }
+
         const val FORMAT = "korrektur-project"
 
         /** The newest format version this app reads and writes. */
