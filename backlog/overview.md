@@ -13,7 +13,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 |---|---|---|---|
 | [S01](stories/S01-project-format.md) | Project format | N5, N4 | done |
 | [S02](stories/S02-create-project.md) | Create a project with metadata | A1 | done |
-| [S03](stories/S03-import-pdf-with-ocr.md) | Import a PDF with OCR | A2 | ready for development |
+| [S03](stories/S03-import-pdf-with-ocr.md) | Import a PDF with OCR | A2 | in progress |
 | [S04](stories/S04-page-viewer.md) | Page viewer | C2, N1 | ready for development |
 | [S05](stories/S05-side-by-side-editor.md) | Scan and text side by side | C1 | ready for development |
 | [S06](stories/S06-keyboard-navigation.md) | Keyboard navigation | C2 | ready for development |
@@ -41,3 +41,12 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T013](tickets/T013-edit-metadata.md) | Edit the metadata of an open project | task | S02 | done |
 | [T014](tickets/T014-project-lifecycle-tests.md) | Project lifecycle tests | task | S02 | done |
 | [T015](tickets/T015-code-health-checks.md) | Code health checks (Detekt, Kover) | task | – | done |
+| [T016](tickets/T016-pdfium-binding.md) | PDFium and its Kotlin binding | task | S03 | ready for development |
+| [T017](tickets/T017-text-layer-analysis.md) | Analysis of the sample PDFs' text layers | task | S03 | ready for development |
+| [T018](tickets/T018-extract-words.md) | Extract words with text and boxes from a page | task | S03 | ready for development |
+| [T019](tickets/T019-coordinates.md) | Coordinates of the format | task | S03 | ready for development |
+| [T020](tickets/T020-lines-and-region.md) | Lines in reading order and one body region | task | S03 | ready for development |
+| [T021](tickets/T021-import-into-project.md) | Import a PDF into a project | task | S03 | ready for development |
+| [T022](tickets/T022-pages-without-text.md) | Pages without text or with a broken text layer | task | S03 | ready for development |
+| [T023](tickets/T023-import-in-background.md) | Import in the background with progress and cancel | task | S03 | ready for development |
+| [T024](tickets/T024-import-tests.md) | Import tests: sample PDF and generated PDFs | task | S03 | ready for development |

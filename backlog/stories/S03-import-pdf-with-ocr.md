@@ -1,6 +1,6 @@
 # S03 Import a PDF with OCR
 
-**Features:** A2 · **Status:** ready for development
+**Features:** A2 · **Status:** in progress
 
 As a reader of historical sources, I want to import a PDF that already has OCR, with its page images and the text with positions
 so that I can start correcting without running OCR myself.
@@ -20,11 +20,13 @@ A PDF with OCR contains the scanned image plus an invisible text layer with char
 Known limitation: pages with several columns may have their lines mixed up until layout detection and layout fixing (B3, B4) exist.
 
 ## Tasks
-- [ ] S03.1 Analyze the sample PDF: how the text layer is built (characters or words, order, coordinates, encoding)
-- [ ] S03.2 Extract words with text and boxes from a page
-- [ ] S03.3 Group words into lines and put lines into reading order; create one body region per page
-- [ ] S03.4 Convert coordinates into the format's coordinate system
-- [ ] S03.5 Write the original and corrected layers for each page
-- [ ] S03.6 Run the import in the background with progress and cancel
-- [ ] S03.7 Handle pages without text or with a broken text layer
-- [ ] S03.8 Tests: the sample PDF plus small generated test PDFs (page without text, rotated text, two columns to check the import doesn't fail)
+- [ ] S03.1 Analyze the sample PDF: how the text layer is built (characters or words, order, coordinates, encoding) → [T016](../tickets/T016-pdfium-binding.md), [T017](../tickets/T017-text-layer-analysis.md)
+- [ ] S03.2 Extract words with text and boxes from a page → [T018](../tickets/T018-extract-words.md)
+- [ ] S03.3 Group words into lines and put lines into reading order; create one body region per page → [T020](../tickets/T020-lines-and-region.md)
+- [ ] S03.4 Convert coordinates into the format's coordinate system → [T019](../tickets/T019-coordinates.md)
+- [ ] S03.5 Write the original and corrected layers for each page → [T021](../tickets/T021-import-into-project.md)
+- [ ] S03.6 Run the import in the background with progress and cancel → [T023](../tickets/T023-import-in-background.md)
+- [ ] S03.7 Handle pages without text or with a broken text layer → [T022](../tickets/T022-pages-without-text.md)
+- [ ] S03.8 Tests: the sample PDF plus small generated test PDFs (page without text, rotated text, two columns to check the import doesn't fail) → [T024](../tickets/T024-import-tests.md)
+
+Also in this story, at the user's request and without a ticket of its own: the colour scheme of the app changes from violet to yellow/brown. It is done in T023, which changes the screens anyway.
