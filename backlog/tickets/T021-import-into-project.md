@@ -1,6 +1,6 @@
 # T021 Import a PDF into a project
 
-**Type:** task · **Status:** in progress · **Story:** S03 · **Task:** S03.5
+**Type:** task · **Status:** done · **Story:** S03 · **Task:** S03.5
 
 Put the pieces together: read every page of a project's PDF, build its page layer, and write the original and the corrected layer, with progress and a way to stop. Without UI.
 
@@ -44,4 +44,4 @@ T018, T019, T020.
 - Pages without text become empty pages (`regions: []`); the note for them is T022.
 
 ## Progress
-Done: `PdfImport.run`, `ImportResult`, `Project.setPages`; the spec sentence and `docs/architecture.md`. 12 new tests: 3 for `setPages` (writes the list and keeps metadata and unknown fields; page files can be written for the new pages and not beyond; a failed write keeps the old list) and 9 for the import (every page in both layers with the right sizes and lines, the corrected layer equals the original with `origin` = own id, canonical files and unchanged bytes on opening and saving, progress once per page, cancelling after 2 of 5 pages leaves exactly 2 pages, cancelling at once leaves none, a second import is refused, a text file as PDF fails with its message and changes nothing, and the sample: 165 pages, all readable, pages 3/139/161/163/165 empty, page 6 starts with `Vorrede. 5`, in 0.8 s). `./gradlew build` is green.
+Done: PR #26 merged, CI green. `PdfImport.run`, `ImportResult`, `Project.setPages`; the spec sentence and `docs/architecture.md`. 12 new tests: 3 for `setPages` (writes the list and keeps metadata and unknown fields; page files can be written for the new pages and not beyond; a failed write keeps the old list) and 9 for the import (every page in both layers with the right sizes and lines, the corrected layer equals the original with `origin` = own id, canonical files and unchanged bytes on opening and saving, progress once per page, cancelling after 2 of 5 pages leaves exactly 2 pages, cancelling at once leaves none, a second import is refused, a text file as PDF fails with its message and changes nothing, and the sample: 165 pages, all readable, pages 3/139/161/163/165 empty, page 6 starts with `Vorrede. 5`, in 0.8 s). `./gradlew build` is green.
