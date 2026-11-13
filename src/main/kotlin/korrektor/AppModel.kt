@@ -14,6 +14,10 @@ class AppModel {
     var project: Project? by mutableStateOf(null)
         private set
 
+    /** Whether the "New project" dialog is showing. */
+    var newProjectOpen: Boolean by mutableStateOf(false)
+        private set
+
     /** A message for the user, shown until it is dismissed. */
     var error: String? by mutableStateOf(null)
         private set
@@ -30,6 +34,21 @@ class AppModel {
 
     fun dismissError() {
         error = null
+    }
+
+    fun openNewProject() {
+        newProjectOpen = true
+    }
+
+    fun closeNewProject() {
+        newProjectOpen = false
+    }
+
+    /** Makes [created] the open project, and closes the "New project" dialog. */
+    fun show(created: Project) {
+        project = created
+        error = null
+        newProjectOpen = false
     }
 }
 

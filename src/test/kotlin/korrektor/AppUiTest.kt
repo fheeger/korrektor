@@ -1,15 +1,24 @@
 package korrektor
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.v2.runComposeUiTest
 import korrektor.format.Metadata
 import korrektor.format.Project
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.io.path.exists
+import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.writeBytes
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /** The core flow of the app shell, with a fake folder chooser: start screen, open a project, errors. */
 @OptIn(ExperimentalTestApi::class)
@@ -35,7 +44,7 @@ class AppUiTest {
     @Test
     fun theStartScreenShowsTheAppNameAndBothButtons() =
         runComposeUiTest {
-            setContent { App(AppModel(), { null }) }
+            setContent { App(AppModel(), { null }, { null }) }
             onNodeWithText("korrektor").assertExists()
             onNodeWithText("New project…").assertExists()
             onNodeWithText("Open project…").assertExists()
@@ -47,7 +56,7 @@ class AppUiTest {
             val folder = project(dir)
             runComposeUiTest {
                 val model = AppModel()
-                setContent { App(model, { folder }) }
+                setContent { App(model, { folder }, { null }) }
 
                 onNodeWithText("Open project…").performClick()
 
@@ -62,7 +71,7 @@ class AppUiTest {
     fun aFolderThatIsNotAProjectShowsADismissibleError() =
         withDir { dir ->
             runComposeUiTest {
-                setContent { App(AppModel(), { dir }) }
+                setContent { App(AppModel(), { dir }, { null }) }
 
                 onNodeWithText("Open project…").performClick()
                 onNodeWithText("has no project.json", substring = true).assertExists()
@@ -81,7 +90,7 @@ class AppUiTest {
             val bad = Files.createDirectory(dir.resolve("empty"))
             runComposeUiTest {
                 val folders = ArrayDeque(listOf(folder, bad))
-                setContent { App(AppModel(), { folders.removeFirst() }) }
+                setContent { App(AppModel(), { folders.removeFirst() }, { null }) }
 
                 onNodeWithText("Open project…").performClick()
                 onNodeWithText("Open another project…").performClick()
@@ -94,11 +103,109 @@ class AppUiTest {
     @Test
     fun cancellingTheDialogDoesNothing() =
         runComposeUiTest {
-            setContent { App(AppModel(), { null }) }
+            setContent { App(AppModel(), { null }, { null }) }
 
             onNodeWithText("Open project…").performClick()
 
             onNodeWithText("New project…").assertExists()
             onNodeWithText("Dismiss").assertDoesNotExist()
+        }
+
+    // --- the "New project" dialog -------------------------------------------------------------------------
+
+    private fun pdf(
+        dir: Path,
+        name: String,
+    ): Path = dir.resolve(name).also { it.writeBytes("%PDF-1.4\n".toByteArray()) }
+
+    @Test
+    fun theDialogStartsWithChoosingAPdf() =
+        runComposeUiTest {
+            setContent { App(AppModel(), { null }, { null }) }
+
+            onNodeWithText("New project…").performClick()
+
+            onNodeWithText("Choose PDF…").assertExists()
+            onNodeWithText("No PDF chosen").assertExists()
+            onNodeWithText("Create").assertIsNotEnabled()
+            onNodeWithText("Change…").assertIsNotEnabled()
+        }
+
+    @Test
+    fun cancellingTheDialogClosesIt() =
+        runComposeUiTest {
+            setContent { App(AppModel(), { null }, { null }) }
+            onNodeWithText("New project…").performClick()
+
+            onNodeWithText("Cancel").performClick()
+
+            onNodeWithText("Choose PDF…").assertDoesNotExist()
+            onNodeWithText("Open project…").assertExists()
+        }
+
+    @Test
+    fun choosingAPdfSuggestsATitleAndCreateOpensTheProject() =
+        withDir { dir ->
+            val source = pdf(dir, "Some_Book.pdf")
+            runComposeUiTest {
+                val model = AppModel()
+                setContent { App(model, { null }, { source }) }
+                onNodeWithText("New project…").performClick()
+
+                onNodeWithText("Choose PDF…").performClick()
+                onNodeWithText("Some_Book.pdf").assertExists()
+                onNodeWithText("Some Book").assertExists()
+                onNodeWithText("Create").assertIsEnabled()
+
+                onNodeWithText("Some Book").performTextReplacement("Abhandlung")
+                onNodeWithText("Year").performTextReplacement("ca. 1790")
+                onNodeWithText("Create").performClick()
+                waitUntil(timeoutMillis = 10_000) { model.project != null }
+                waitForIdle()
+
+                onNodeWithText("Abhandlung").assertExists()
+                onNodeWithText("Year: ca. 1790").assertExists()
+                onNodeWithText("Choose PDF…").assertDoesNotExist()
+                assertEquals("Abhandlung – korrektor", windowTitle(model.project))
+                assertTrue(dir.resolve("Abhandlung.korrektur/source.pdf").exists())
+            }
+        }
+
+    @Test
+    fun createIsDisabledWhileTheTitleIsBlank() =
+        withDir { dir ->
+            val source = pdf(dir, "Some_Book.pdf")
+            runComposeUiTest {
+                setContent { App(AppModel(), { null }, { source }) }
+                onNodeWithText("New project…").performClick()
+                onNodeWithText("Choose PDF…").performClick()
+
+                onNodeWithText("Some Book").performTextReplacement("")
+
+                onNodeWithText("Create").assertIsNotEnabled()
+            }
+        }
+
+    @Test
+    fun anExistingProjectFolderShowsAnErrorAndTheDialogStaysOpen() =
+        withDir { dir ->
+            val source = pdf(dir, "Some_Book.pdf")
+            Files.createDirectory(dir.resolve("Some Book.korrektur"))
+            runComposeUiTest {
+                val model = AppModel()
+                setContent { App(model, { null }, { source }) }
+                onNodeWithText("New project…").performClick()
+                onNodeWithText("Choose PDF…").performClick()
+
+                onNodeWithText("Create").performClick()
+                waitUntil(timeoutMillis = 10_000) {
+                    onAllNodesWithText("already exists", substring = true).fetchSemanticsNodes().isNotEmpty()
+                }
+
+                onNodeWithText("already exists", substring = true).assertExists()
+                onNodeWithText("Choose PDF…").assertExists()
+                assertNull(model.project)
+                assertTrue(dir.resolve("Some Book.korrektur").listDirectoryEntries().isEmpty())
+            }
         }
 }

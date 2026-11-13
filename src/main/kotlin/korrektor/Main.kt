@@ -11,6 +11,6 @@ fun main() =
     application {
         val model = remember { AppModel() }
         Window(onCloseRequest = ::exitApplication, title = windowTitle(model.project)) {
-            App(model, SwingFolderPicker)
+            App(model, SwingFolderPicker, AwtPdfPicker)
         }
     }

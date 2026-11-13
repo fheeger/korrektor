@@ -2,6 +2,7 @@ package korrektor
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -17,6 +18,7 @@ import korrektor.format.Project
 fun ProjectScreen(
     project: Project,
     onOpenProject: () -> Unit,
+    onNewProject: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxSize().padding(32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -28,6 +30,9 @@ fun ProjectScreen(
                 .forEach { (label, value) -> Text("$label: $value") }
         }
         Text(project.folder.toString(), style = MaterialTheme.typography.bodySmall)
-        Button(onClick = onOpenProject) { Text("Open another project…") }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Button(onClick = onNewProject) { Text("New project…") }
+            Button(onClick = onOpenProject) { Text("Open another project…") }
+        }
     }
 }

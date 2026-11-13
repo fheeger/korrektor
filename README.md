@@ -13,6 +13,7 @@ This is a hobby project in early development.
 ## Using korrektor
 Start the app from the project folder with `./gradlew run`. Features arrive with the stories in the [backlog](backlog/overview.md).
 
+- **Create a project:** click "New project…", choose a PDF, and check the title (it is suggested from the file name). Author, year and source are optional free text, for example `ca. 1790`. The project folder is created next to the PDF unless you change the location. Creating copies the PDF into the project, and the new project opens.
 - **Open a project:** click "Open project…" and choose the project folder (the folder that ends in `.korrektur`). The window title then shows the project's title. If the folder is not a project, an error is shown and nothing changes; dismiss it with "Dismiss".
 
 ## Development
