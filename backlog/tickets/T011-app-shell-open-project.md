@@ -1,6 +1,6 @@
 # T011 App shell: start screen, open a project, window title
 
-**Type:** task · **Status:** in progress · **Story:** S02 · **Task:** S02.5
+**Type:** task · **Status:** done · **Story:** S02 · **Task:** S02.5
 
 The first real screen of the app: it shows a start page, opens an existing project with a folder dialog, and shows the project title in the window title. It also sets the UI toolkit choice for the app.
 
@@ -43,4 +43,4 @@ T009 (title from metadata).
 - **The error banner sits above both screens** (in `App`), so a failed "Open another project…" also shows its error while the old project stays open.
 
 ## Progress
-Code done; `./gradlew build` green (14 new tests: 9 in `AppModelTest`, 5 Compose UI tests in `AppUiTest`; Detekt and ktlint clean). Checked for real: `./gradlew run` opened a window titled `korrektor` with no errors in the log. Not checked (for the story report, "how to try it"): the Swing folder dialog itself, and how the screens look. Docs updated: README, `docs/architecture.md`. Next: PR into `story/S02-create-project`; when CI is green, squash-merge, set this ticket to done, then start T012.
+Done: PR #15 merged, CI green. Code done; `./gradlew build` green (14 new tests: 9 in `AppModelTest`, 5 Compose UI tests in `AppUiTest`; Detekt and ktlint clean). Checked for real: `./gradlew run` opened a window titled `korrektor` with no errors in the log. Not checked (for the story report, "how to try it"): the Swing folder dialog itself, and how the screens look. Docs updated: README, `docs/architecture.md`. Next: PR into `story/S02-create-project`; when CI is green, squash-merge, set this ticket to done, then start T012.
