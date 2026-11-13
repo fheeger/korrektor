@@ -1,6 +1,6 @@
 # T018 Extract words with text and boxes from a page
 
-**Type:** task · **Status:** ready for development · **Story:** S03 · **Task:** S03.2
+**Type:** task · **Status:** in progress · **Story:** S03 · **Task:** S03.2
 
 Turn the characters of a page's text layer into words: the text of each word, exactly as in the PDF, and its box.
 
@@ -32,7 +32,12 @@ Turn the characters of a page's text layer into words: the text of each word, ex
 T016, T017.
 
 ## Decisions
-None yet.
+- **`WordExtractor.split(chars)` is a pure function** on a list of `PdfChar`; `words(textPage)` only reads the characters and calls it. This lets each rule be tested with hand-made characters, with exact positions and gaps, without a PDF.
+- **"Real whitespace"** is `Character.isWhitespace` on a character that PDFium did not generate (space, tab, line feed, …). No-break spaces (U+00A0, U+2007, U+202F) are not whitespace for it and stay inside their word: they are characters of the text, and the format only requires that the words of a line are joined by a plain space.
+- **"The page has real spaces"** means a real U+0020 on the page.
+- **Surrogate halves** need no special code: `StringBuilder.appendCodePoint` takes each half as it comes, and the two halves form the pair. A test with PDFium's halves and one with a whole code point check both.
+- **The gap rule looks at the horizontal gap only.** Vertical or rotated text is not handled specially; it would be split by the "no real spaces" rule or kept together. Nothing in the samples needs more; a rotated page is a T019/T024 case.
+- **The rules were checked by changing them:** with the hyphen branch removed, three tests fail (the unit test, the generated-PDF test and the sample test); with the gap factor changed from 0.6 to 0.7 the large-gap test fails.
 
 ## Progress
-Not started.
+Done: `WordExtractor` (rules 1–5 of the analysis), 21 tests in `WordExtractorTest`: 12 on hand-made characters (each rule, the box union, boxes of generated characters ignored), 6 on generated PDFs (known words and places, words as separate pieces, invisible text, special characters through a ToUnicode map, a hyphen at the end of a line, an empty page), 3 on the sample (page 6 starts with `Vorrede.`, `5`, `Man`, … and its word count is within 5 of PDFBox's; over the whole book no word is empty or contains whitespace, a control character or U+0002; the pages without text give no words; page 18 has `einKriegs-` followed by `freund,`). The generated-PDF test of the hyphen marker works because a text object ending in `Erin-` followed by one starting the next line makes PDFium produce the marker. `./gradlew build` is green (202 tests, 1 skipped by design).

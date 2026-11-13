@@ -43,7 +43,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T015](tickets/T015-code-health-checks.md) | Code health checks (Detekt, Kover) | task | – | done |
 | [T016](tickets/T016-pdfium-binding.md) | PDFium and its Kotlin binding | task | S03 | done |
 | [T017](tickets/T017-text-layer-analysis.md) | Analysis of the sample PDFs' text layers | task | S03 | done |
-| [T018](tickets/T018-extract-words.md) | Extract words with text and boxes from a page | task | S03 | ready for development |
+| [T018](tickets/T018-extract-words.md) | Extract words with text and boxes from a page | task | S03 | in progress |
 | [T019](tickets/T019-coordinates.md) | Coordinates of the format | task | S03 | ready for development |
 | [T020](tickets/T020-lines-and-region.md) | Lines in reading order and one body region | task | S03 | ready for development |
 | [T021](tickets/T021-import-into-project.md) | Import a PDF into a project | task | S03 | ready for development |
