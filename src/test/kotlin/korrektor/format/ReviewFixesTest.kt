@@ -34,7 +34,9 @@ class ReviewFixesTest {
     @Test
     fun unknownFieldsMayNotReuseKnownNames() {
         assertFailsWith<IllegalArgumentException> { Word("a", extra = mapOf("t" to JsonPrimitive(1))) }
-        assertFailsWith<IllegalArgumentException> { Line("l1", words = emptyList(), extra = mapOf("id" to JsonPrimitive(1))) }
+        assertFailsWith<IllegalArgumentException> {
+            Line("l1", words = emptyList(), extra = mapOf("id" to JsonPrimitive(1)))
+        }
         assertFailsWith<IllegalArgumentException> {
             Region(
                 "r1",
@@ -47,7 +49,9 @@ class ReviewFixesTest {
                     ),
             )
         }
-        assertFailsWith<IllegalArgumentException> { PageLayer(1, 1.0, 1.0, emptyList(), mapOf("regions" to JsonPrimitive(1))) }
+        assertFailsWith<IllegalArgumentException> {
+            PageLayer(1, 1.0, 1.0, emptyList(), mapOf("regions" to JsonPrimitive(1)))
+        }
         assertFailsWith<IllegalArgumentException> { PageInfo(1, mapOf("pdfPage" to JsonPrimitive(2))) }
         Word("a", extra = one) // other names are fine
     }

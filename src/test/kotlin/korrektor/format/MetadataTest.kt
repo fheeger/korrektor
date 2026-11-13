@@ -27,7 +27,8 @@ class MetadataTest {
 
     private fun pdf(dir: Path) = dir.resolve("b.pdf").also { it.writeBytes(ByteArray(100) { i -> i.toByte() }) }
 
-    private val typed = Metadata(" Über den ſchönen Krieg ", "Joh. v. Ewald", "ca. 1790", "https://books.google.de/books?id=x&hl=de")
+    private val typed =
+        Metadata(" Über den ſchönen Krieg ", "Joh. v. Ewald", "ca. 1790", "https://books.google.de/books?id=x&hl=de")
 
     @Test
     fun metadataSurvivesCreateOpenAndUpdateExactlyAsTyped() =

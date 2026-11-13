@@ -11,7 +11,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 ## MVP stories
 | ID | Story | Features | Status |
 |---|---|---|---|
-| [S01](stories/S01-project-format.md) | Project format | N5, N4 | in review |
+| [S01](stories/S01-project-format.md) | Project format | N5, N4 | done |
 | [S02](stories/S02-create-project.md) | Create a project with metadata | A1 | in progress |
 | [S03](stories/S03-import-pdf-with-ocr.md) | Import a PDF with OCR | A2 | ready for development |
 | [S04](stories/S04-page-viewer.md) | Page viewer | C2, N1 | ready for development |
@@ -40,3 +40,4 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T012](tickets/T012-new-project-dialog.md) | New project dialog | task | S02 | ready for development |
 | [T013](tickets/T013-edit-metadata.md) | Edit the metadata of an open project | task | S02 | ready for development |
 | [T014](tickets/T014-project-lifecycle-tests.md) | Project lifecycle tests | task | S02 | ready for development |
+| [T015](tickets/T015-code-health-checks.md) | Code health checks (Detekt, Kover) | task | – | done |

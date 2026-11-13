@@ -13,7 +13,8 @@ class ModelTest {
         boxed: Boolean = true,
     ) = Word(text, if (boxed) Box(10.0, 20.0, 30.0, 12.0) else null)
 
-    private fun page(vararg regions: Region) = PageLayer(pdfPage = 1, width = 595.3, height = 841.9, regions = regions.toList())
+    private fun page(vararg regions: Region) =
+        PageLayer(pdfPage = 1, width = 595.3, height = 841.9, regions = regions.toList())
 
     private fun region(
         id: String,

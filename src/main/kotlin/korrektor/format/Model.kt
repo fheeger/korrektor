@@ -114,9 +114,8 @@ data class PageLayer(
 ) {
     init {
         require(pdfPage >= 1) { "pdfPage must be at least 1, was $pdfPage" }
-        require(
-            CanonicalJson.round1(width) > 0 && CanonicalJson.round1(height) > 0 && width <= MAX_COORDINATE && height <= MAX_COORDINATE,
-        ) {
+        val positive = CanonicalJson.round1(width) > 0 && CanonicalJson.round1(height) > 0
+        require(positive && width <= MAX_COORDINATE && height <= MAX_COORDINATE) {
             "Page size must be between 0.1 and $MAX_COORDINATE points, was $width x $height"
         }
         requireUnknownKeys(extra, setOf("pdfPage", "width", "height", "regions"), "Page $pdfPage")
