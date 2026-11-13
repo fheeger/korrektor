@@ -1,6 +1,6 @@
 # T019 Coordinates of the format
 
-**Type:** task · **Status:** in progress · **Story:** S03 · **Task:** S03.4
+**Type:** task · **Status:** done · **Story:** S03 · **Task:** S03.4
 
 Convert word boxes from PDF coordinates (origin bottom-left) into the coordinates of the project format (origin top-left, one decimal), including rotated pages and page boxes that don't start at 0, 0. This also settles the question S01 left open: which box is "the page size".
 
@@ -35,6 +35,6 @@ T016, T018.
 - **The oracle is a rendering.** The transform is checked by arithmetic worked out by hand (one test per rotation) and, independently, against PDFium's picture of the page: every word box must contain ink, and nearly all ink must lie in the boxes. The check is shown to be able to fail: boxes mirrored top to bottom or left to right do not pass.
 
 ## Progress
-Done: `PageGeometry` (visible page size, `toFormat`), the spec's Coordinates section, `docs/architecture.md`, a `TestPdfs` extension (media box offset, crop box). 16 tests in `PageGeometryTest`: hand-computed values for 0°, 90°, 180° and 270°, one decimal, no clamping, invalid input; the rendering oracle on a plain page, with an offset media box, with a smaller crop box, rotated by 90°, 180° and 270°, and rotated with offset and crop box together (each with the mirrored-boxes self-test); on the sample: every page's size equals PDFBox's crop box, the first word of page 6 is where the content stream put it, and at least 90 % of the word boxes of page 6 contain printed ink.
+Done: PR #24 merged, CI green. `PageGeometry` (visible page size, `toFormat`), the spec's Coordinates section, `docs/architecture.md`, a `TestPdfs` extension (media box offset, crop box). 16 tests in `PageGeometryTest`: hand-computed values for 0°, 90°, 180° and 270°, one decimal, no clamping, invalid input; the rendering oracle on a plain page, with an offset media box, with a smaller crop box, rotated by 90°, 180° and 270°, and rotated with offset and crop box together (each with the mirrored-boxes self-test); on the sample: every page's size equals PDFBox's crop box, the first word of page 6 is where the content stream put it, and at least 90 % of the word boxes of page 6 contain printed ink.
 
 I also drew the converted boxes over a rendering of sample page 6 and looked at it: the boxes sit on the printed Fraktur words and in reading order, including the line-end words with hyphens. The one OCR error visible there is `seinenOf`, a single box over two printed words (the analysis lists it). `./gradlew build` is green.
