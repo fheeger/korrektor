@@ -52,7 +52,8 @@ Every JSON file is written canonically, so that opening and saving a project wit
 
 - Unit: PDF points (1/72 inch). Origin: top-left corner of the page, x to the right, y downwards.
 - A **box** is `[x, y, width, height]`.
-- `width` and `height` of a page are the size of the PDF page in points.
+- **The page** is the page as it is shown: the part of the PDF page that a viewer displays (the crop box within the media box, after the page's rotation). `width` and `height` are its size in points, so a page rotated by 90° or 270° has them swapped. The origin is the top-left corner of that visible page as it is shown, not the PDF's own origin (bottom-left, y upwards), and not the corner of the media box if the crop box is smaller.
+- Boxes are not clamped to the page: text that lies partly outside keeps its coordinates, so boxes can have negative values or reach past `width` and `height`.
 
 ## `project.json`
 

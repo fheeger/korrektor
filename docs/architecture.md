@@ -21,6 +21,7 @@ An overview of the code structure. Every ticket that changes the structure updat
   - Documents, pages and text pages close their children; a closed object fails with a clear error instead of crashing the JVM.
 - `korrektor.importer`: reading the text of a PDF into the project's page layers (S03). The rules are in [pdf-text-layer.md](pdf-text-layer.md).
   - `WordExtractor.kt`: turns the characters of a page's text layer into words (`RawWord`: text and box in PDF coordinates). `split` works on a plain list of characters, so the rules are tested without a PDF.
+  - `PageGeometry.kt`: the visible page (size after rotation) and the conversion of a box from PDF coordinates (origin bottom-left) to the format's (origin top-left, one decimal), for all four rotations and page areas that do not start at 0, 0.
 - `korrektor.format`: the project format (S01), with no UI and no PDF code. The specification is [project-format.md](project-format.md).
   - `Model.kt`: the data model of a page layer: `PageLayer` → `Region` → `Line` → `Word`, with `Box` and `RegionType`. Original OCR and corrected text use the same types. Unknown fields are kept in `extra`. It also holds `Metadata` (title, author, year, source as typed).
   - `AtomicFile.kt`: crash-safe replacement of a file (temp file, flush, atomic rename) and cleanup of leftover temp files. Every file the project writes goes through it, except the append-only history.
