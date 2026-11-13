@@ -3,3 +3,5 @@ root = true
 [*.{kt,kts}]
 # Same limit as Detekt's MaxLineLength, so the formatter and the static analysis agree.
 max_line_length = 120
+# Composable functions are PascalCase.
+ktlint_function_naming_ignore_when_annotated_with = Composable
