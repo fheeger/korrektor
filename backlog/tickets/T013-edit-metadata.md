@@ -1,6 +1,6 @@
 # T013 Edit the metadata of an open project
 
-**Type:** task · **Status:** in progress · **Story:** S02 · **Task:** S02.4
+**Type:** task · **Status:** done · **Story:** S02 · **Task:** S02.4
 
 A dialog for changing title, author, year and source of the open project.
 
@@ -38,4 +38,4 @@ T009, T011. Shares the field composable with T012, so it comes after it.
 - **Saving runs on the UI thread:** it writes one small file. Creating a project, which copies a PDF, is the one that runs in the background.
 
 ## Progress
-Code done; `./gradlew build` green (9 new tests in `EditMetadataModelTest`, 4 new Compose UI tests in `AppUiTest`; Detekt and ktlint clean). Checked for real: `./gradlew run` opened a window titled `korrektor` with no errors in the log. Not checked (for the story report, "how to try it"): how the dialog looks, and editing a project made from the sample PDF. Docs updated: README, `docs/architecture.md`. Next: PR into `story/S02-create-project`; when CI is green, squash-merge, set this ticket to done, then start T014.
+Done: PR #17 merged, CI green. Code done; `./gradlew build` green (9 new tests in `EditMetadataModelTest`, 4 new Compose UI tests in `AppUiTest`; Detekt and ktlint clean). Checked for real: `./gradlew run` opened a window titled `korrektor` with no errors in the log. Not checked (for the story report, "how to try it"): how the dialog looks, and editing a project made from the sample PDF. Docs updated: README, `docs/architecture.md`. Next: PR into `story/S02-create-project`; when CI is green, squash-merge, set this ticket to done, then start T014.
