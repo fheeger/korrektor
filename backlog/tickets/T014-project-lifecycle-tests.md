@@ -1,6 +1,6 @@
 # T014 Project lifecycle tests
 
-**Type:** task · **Status:** in progress · **Story:** S02 · **Task:** S02.6
+**Type:** task · **Status:** done · **Story:** S02 · **Task:** S02.6
 
 Tests that cover several tickets of S02 together: create, reopen, edit metadata, and cleanup after failure, with real files.
 
@@ -30,7 +30,7 @@ T010, T013 (so the whole flow exists).
 - **The sample PDF test uses `assumeTrue`,** like the other sample tests, so it shows as skipped when the file is missing (as in CI, where `samples/` is not present).
 
 ## Progress
-Code done; `./gradlew build` green (11 new tests in `ProjectLifecycleTest`, including the sample PDF case, which ran locally). Criterion 3 (skipped without the file) is checked on the CI run of the PR.
+Done: PR #18 merged, CI green; the sample PDF test showed as skipped on CI, as intended. Code done; `./gradlew build` green (11 new tests in `ProjectLifecycleTest`, including the sample PDF case, which ran locally). Criterion 3 (skipped without the file) is checked on the CI run of the PR.
 
 Which test covers which logic or file criterion of S02 (for the story report):
 

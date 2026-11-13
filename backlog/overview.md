@@ -39,5 +39,5 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T011](tickets/T011-app-shell-open-project.md) | App shell: start screen, open a project, window title | task | S02 | done |
 | [T012](tickets/T012-new-project-dialog.md) | New project dialog | task | S02 | done |
 | [T013](tickets/T013-edit-metadata.md) | Edit the metadata of an open project | task | S02 | done |
-| [T014](tickets/T014-project-lifecycle-tests.md) | Project lifecycle tests | task | S02 | in progress |
+| [T014](tickets/T014-project-lifecycle-tests.md) | Project lifecycle tests | task | S02 | done |
 | [T015](tickets/T015-code-health-checks.md) | Code health checks (Detekt, Kover) | task | – | done |
