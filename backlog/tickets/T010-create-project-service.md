@@ -1,6 +1,6 @@
 # T010 Create a project from a PDF (logic)
 
-**Type:** task · **Status:** ready for development · **Story:** S02 · **Task:** S02.3
+**Type:** task · **Status:** in progress · **Story:** S02 · **Task:** S02.3
 
 The logic behind "New project", without any UI: check the PDF, name the folder, create the project with its copy of the PDF, and clean up on failure.
 
@@ -34,5 +34,12 @@ T009.
 - The folder name comes from the title, so projects are easy to tell apart in a file manager; it is not renamed when the title is edited later (T013).
 - The folder is created in a location the user chooses; nothing is created implicitly (no parent folders).
 
+- **Device names count with an extension.** `con.txt` becomes `_con.txt.korrektur`: Windows treats the part before the first dot as the device name. `COM10` and `Console` are fine.
+- **`.pdf` is removed case-insensitively** when suggesting a title (`Book.PDF`, `Book.Pdf`). Other dots stay (`a.b.pdf` gives `a.b`).
+- **The 100 character cut never splits a character** made of two chars (e.g. an emoji), and removes a space or dot that the cut exposes.
+- **The title is stored as typed; only the folder name is made safe** (`What? A: book/ ` is stored unchanged, the folder is `What_ A_ book_.korrektur`).
+- **Test seams on an internal overload of `NewProject.create`:** one reads the PDF header, one copies the PDF. They simulate an unreadable file (not possible portably otherwise) and a failure halfway through copying, with the real `Project.create` cleanup.
+- **A name taken by anything** (a project, or a plain file) is refused with the same message, and left untouched.
+
 ## Progress
-Not started.
+Code done; `./gradlew build` green (20 new tests in `NewProjectTest`, 89 in total, 1 skipped by design). Detekt is clean. `docs/architecture.md` and the spec sentence on the empty page list are updated. Next: PR into `story/S02-create-project`; when CI is green, squash-merge, set this ticket to done, then start T011.

@@ -90,7 +90,7 @@ All values are free text, stored exactly as typed (no trimming, no normalization
 
 `metadata` is written on one line. Unknown fields inside it are kept and written after the known ones, in alphabetical order. It is a new optional field, so the format version is unchanged.
 
-Further fields (such as the page status) are added by later stories as new fields. Unknown fields are kept, at the top level and in page entries. An empty book is written as `"pages": []`.
+Further fields (such as the page status) are added by later stories as new fields. Unknown fields are kept, at the top level and in page entries. An empty book is written as `"pages": []`. A new project starts that way: it holds the PDF and the metadata, and the import (S03) fills the page list.
 
 ## Page files
 
