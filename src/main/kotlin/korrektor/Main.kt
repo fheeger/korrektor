@@ -1,6 +1,6 @@
 package korrektor
 
-import androidx.compose.foundation.text.BasicText
+import androidx.compose.runtime.remember
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 
@@ -9,7 +9,8 @@ const val APP_NAME = "korrektor"
 
 fun main() =
     application {
-        Window(onCloseRequest = ::exitApplication, title = APP_NAME) {
-            BasicText(APP_NAME)
+        val model = remember { AppModel() }
+        Window(onCloseRequest = ::exitApplication, title = windowTitle(model.project)) {
+            App(model, SwingFolderPicker)
         }
     }

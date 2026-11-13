@@ -11,7 +11,9 @@ This is a hobby project in early development.
 - Backlog: [backlog/overview.md](backlog/overview.md)
 
 ## Using korrektor
-Start the app from the project folder with `./gradlew run`. There is nothing to use yet; features arrive with the stories in the [backlog](backlog/overview.md).
+Start the app from the project folder with `./gradlew run`. Features arrive with the stories in the [backlog](backlog/overview.md).
+
+- **Open a project:** click "Open project…" and choose the project folder (the folder that ends in `.korrektur`). The window title then shows the project's title. If the folder is not a project, an error is shown and nothing changes; dismiss it with "Dismiss".
 
 ## Development
 Requires JDK 21. From the project folder:

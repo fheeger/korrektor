@@ -14,8 +14,11 @@ repositories {
 
 dependencies {
     implementation(compose.desktop.currentOs)
+    // Compose Multiplatform has no stable Material 3 newer than 1.9.0; it works with Compose 1.12 (see T011).
+    implementation("org.jetbrains.compose.material3:material3:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.13.0")
     testImplementation(kotlin("test"))
+    testImplementation("org.jetbrains.compose.ui:ui-test:1.12.2")
     detektPlugins("io.nlopez.compose.rules:detekt:0.4.28")
     // Only to read page sizes of the sample PDF in tests (T008). PDF rendering uses PDFium (D02).
     testImplementation("org.apache.pdfbox:pdfbox:3.0.8")

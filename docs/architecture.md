@@ -3,7 +3,10 @@
 An overview of the code structure. Every ticket that changes the structure updates this file.
 
 ## Packages
-- `korrektor`: the app entry point (`Main.kt`) and app logic that has no UI.
+- `korrektor`: the app: the entry point (`Main.kt`), the state, the screens and app logic. The UI is Compose with Material 3 (T011).
+  - `AppModel.kt`: the state of the app as plain Kotlin with Compose state: the open `Project?` and the error to show. `windowTitle` and `displayTitle` give the title from the metadata, or the folder name for a project without metadata.
+  - `App.kt`: the whole window: error banner, and the start screen or the open project. `StartScreen.kt` (start page and `ErrorBanner`) and `ProjectScreen.kt` (the open project) are stateless.
+  - `FolderPicker.kt`: the interface for choosing a folder, and `SwingFolderPicker` (a `JFileChooser` in folder mode, because the AWT dialog cannot choose folders on Windows). Tests replace it.
   - `NewProject.kt`: the logic behind "New project": suggests a title from the PDF's file name, makes a safe folder name (`<title>.korrektur`), checks the PDF (a file with `%PDF-` near its start; pages are read at import, S03) and the target, and creates the project through `Project.create`.
 - `korrektor.format`: the project format (S01), with no UI and no PDF code. The specification is [project-format.md](project-format.md).
   - `Model.kt`: the data model of a page layer: `PageLayer` → `Region` → `Line` → `Word`, with `Box` and `RegionType`. Original OCR and corrected text use the same types. Unknown fields are kept in `extra`.
