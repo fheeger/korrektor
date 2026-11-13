@@ -109,6 +109,10 @@ class MetadataTest {
             assertOpenFails(folder, withMeta("{\"title\": \" \"}"), "metadata.title")
             assertOpenFails(folder, withMeta("{\"title\": 5}"), "metadata.title")
             assertOpenFails(folder, withMeta("{\"title\": \"t\", \"year\": 1785}"), "metadata.year")
+            // null would be read as empty and dropped on save, which would change the file's bytes.
+            assertOpenFails(folder, withMeta("{\"title\": null}"), "metadata.title")
+            assertOpenFails(folder, withMeta("{\"title\": \"t\", \"author\": null}"), "metadata.author")
+            assertOpenFails(folder, withMeta("{\"title\": \"t\", \"source\": null}"), "metadata.source")
         }
 
     @Test

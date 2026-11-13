@@ -73,6 +73,23 @@ class AtomicFileTest {
         }
 
     @Test
+    fun aReadOnlySourceCanBeCopied() =
+        withDir { dir ->
+            // Archived PDFs are often read-only, and so is the source.pdf of every project korrektor makes.
+            val source = dir.resolve("source.pdf").also { it.writeText("%PDF-1.4 read-only") }
+            source.toFile().setReadOnly()
+            val target = dir.resolve("copy.pdf")
+            try {
+                AtomicFile.copy(source, target)
+
+                assertEquals("%PDF-1.4 read-only", target.readText())
+                assertEquals(listOf("copy.pdf", "source.pdf"), names(dir))
+            } finally {
+                source.toFile().setWritable(true)
+            }
+        }
+
+    @Test
     fun cleanupRemovesOnlyTempFiles() =
         withDir { dir ->
             val sub = dir.resolve("pages").createDirectories()

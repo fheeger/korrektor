@@ -13,6 +13,8 @@ import kotlin.io.path.exists
 import kotlin.io.path.fileSize
 import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.isDirectory
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.name
 import kotlin.io.path.readBytes
 import kotlin.io.path.readText
 import kotlin.io.path.writeBytes
@@ -126,7 +128,7 @@ class ProjectLifecycleTest {
         withDir { dir ->
             val parent = parentIn(dir)
             val created = AppModel()
-            created.show(NewProject.create(parent, pdfIn(dir), Metadata("First title", "Someone")))
+            created.openCreated(NewProject.create(parent, pdfIn(dir), Metadata("First title", "Someone")))
 
             // A new session opens the project and edits it.
             val session = AppModel()
@@ -147,6 +149,36 @@ class ProjectLifecycleTest {
                 Files.list(parent).use { s ->
                     s.map { it.fileName.toString() }.toList()
                 },
+            )
+        }
+
+    @Test
+    fun aReadOnlyPdfCanBecomeAProject() =
+        withDir { dir ->
+            // Archived PDFs are often read-only.
+            val source = pdfIn(dir)
+            source.toFile().setReadOnly()
+            try {
+                val project = NewProject.create(parentIn(dir), source, allFields)
+                assertContentEquals(pdfBytes, project.sourcePdf.readBytes())
+            } finally {
+                source.toFile().setWritable(true)
+            }
+        }
+
+    @Test
+    fun theSourcePdfOfAnotherProjectCanBeUsedForANewOne() =
+        withDir { dir ->
+            // korrektor makes the source.pdf of every project read-only.
+            val parent = parentIn(dir)
+            val first = NewProject.create(parent, pdfIn(dir), Metadata("First"))
+
+            val second = NewProject.create(parent, first.sourcePdf, Metadata("Second"))
+
+            assertContentEquals(pdfBytes, second.sourcePdf.readBytes())
+            assertEquals(
+                listOf("First.korrektur", "Second.korrektur"),
+                parent.listDirectoryEntries().map { it.name }.sorted(),
             )
         }
 
@@ -285,7 +317,7 @@ class ProjectLifecycleTest {
             assertEquals(2, project.pages.size)
             project.saveProjectFile()
             assertEquals(s01Text, folder.resolve("project.json").readText(), "saving without changes keeps the bytes")
-            assertEquals("Old book – korrektor", windowTitle(project))
+            assertEquals("Old book – korrektor", windowTitle(project, project.metadata))
 
             project.updateMetadata(Metadata("A title at last", year = "1790?"))
 

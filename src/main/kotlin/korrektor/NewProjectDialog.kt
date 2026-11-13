@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -85,7 +86,7 @@ private fun ButtonRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (model.busy) CircularProgressIndicator(Modifier.width(24.dp))
+        if (model.busy) CircularProgressIndicator(Modifier.size(24.dp))
         TextButton(onClick = onCancel, enabled = !model.busy) { Text("Cancel") }
         Button(onClick = { model.create() }, enabled = model.canCreate) { Text("Create") }
     }

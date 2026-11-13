@@ -151,6 +151,11 @@ data class Metadata(
 ) {
     init {
         require(title.isNotBlank()) { "The title must not be blank" }
-        requireUnknownKeys(extra, setOf("title", "author", "year", "source"), "Metadata")
+        requireUnknownKeys(extra, KNOWN_KEYS, "Metadata")
+    }
+
+    companion object {
+        /** The fields this version knows. Any other field is kept as it is, in [extra]. */
+        internal val KNOWN_KEYS = setOf("title", "author", "year", "source")
     }
 }

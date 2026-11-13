@@ -38,6 +38,7 @@ None.
 - Metadata is a new optional field, so the format version stays 1 (spec rules from S01).
 - Values are stored as typed, without trimming: year and source are free text, and V1 says text is never altered. Only the title is validated.
 - Empty optional values are omitted rather than written as `""`, like other optional fields.
+- **`null` is not accepted** for author, year or source (nor for the title): it would be read as empty and dropped on the next save, which changes the file. A string must be present or the field absent. (Tightened in the story review; the ticket text already said so.)
 
 ## Progress
 Done. Build, tests and ktlint are green. `Project.create` takes an optional `metadata`; `Project.updateMetadata` restores the old value if writing fails. The spec example for `project` now includes metadata and is checked by `SpecExamplesTest`.

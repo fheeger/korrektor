@@ -4,6 +4,7 @@ import korrektor.format.FormatException
 import korrektor.format.Metadata
 import korrektor.format.Project
 import java.io.IOException
+import java.nio.file.AccessDeniedException
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.exists
@@ -119,6 +120,29 @@ class NewProjectTest {
         assertEquals("Untitled.korrektur", NewProject.folderName(""))
         assertEquals("Untitled.korrektur", NewProject.folderName("..."))
         assertEquals("Untitled.korrektur", NewProject.folderName("  "))
+    }
+
+    @Test
+    fun leadingDotsAndSpacesAreRemoved() {
+        assertEquals("Book.korrektur", NewProject.folderName(" Book"))
+        assertEquals("hidden.korrektur", NewProject.folderName(".hidden"))
+        assertEquals("a b.korrektur", NewProject.folderName("  . a b . "))
+    }
+
+    @Test
+    fun moreWindowsDeviceNamesGetAPrefix() {
+        assertEquals("_COM¹.korrektur", NewProject.folderName("COM¹"))
+        assertEquals("_lpt³.korrektur", NewProject.folderName("lpt³"))
+        assertEquals("_CONIN$.korrektur", NewProject.folderName("CONIN$"))
+        assertEquals("_conout$.korrektur", NewProject.folderName("conout$"))
+    }
+
+    @Test
+    fun longNamesAreAlsoCutToTheByteLimit() {
+        // 100 of these characters are 300 bytes in UTF-8; file systems on Linux allow 255 per name.
+        val name = NewProject.folderName("漢".repeat(100))
+        assertEquals("漢".repeat(66) + ".korrektur", name)
+        assertTrue(name.removeSuffix(".korrektur").toByteArray().size <= 200)
     }
 
     // --- create -------------------------------------------------------------------------------------------
@@ -269,6 +293,20 @@ class NewProjectTest {
             val message = refusal { NewProject.create(parent, pdf(dir), Metadata("Taken")) }
             assertTrue("already exists" in message, message)
             assertEquals("a file, not a project", parent.resolve("Taken.korrektur").toFile().readText())
+        }
+
+    @Test
+    fun aSystemErrorThatOnlyNamesAPathIsExplained() =
+        withDir { dir ->
+            val parent = target(dir)
+            val source = pdf(dir)
+            val message =
+                refusal {
+                    NewProject.create(parent, source, Metadata("Denied"), { pdfBytes }) { _, to ->
+                        throw AccessDeniedException(to.toString())
+                    }
+                }
+            assertNothingCreated(parent, message, "access denied")
         }
 
     @Test

@@ -36,7 +36,7 @@ class EditMetadataModelTest {
     ): Pair<AppModel, EditMetadataModel> {
         val pdf = dir.resolve("book.pdf").also { it.writeBytes("%PDF-1.4".toByteArray()) }
         val app = AppModel()
-        app.show(Project.create(dir.resolve("Folder name.korrektur"), pdf, emptyList(), metadata))
+        app.openCreated(Project.create(dir.resolve("Folder name.korrektur"), pdf, emptyList(), metadata))
         app.openEditMetadata()
         return app to EditMetadataModel(app, app.metadata)
     }

@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import korrektor.format.Metadata
+import korrektor.format.reason
 import java.io.IOException
 
 /**
@@ -73,7 +74,7 @@ class EditMetadataModel(
             app.updateMetadata(updated)
             app.closeEditMetadata()
         } catch (e: IOException) {
-            error = "The metadata could not be saved: ${e.message}"
+            error = "The metadata could not be saved: ${e.reason()}"
         }
     }
 }

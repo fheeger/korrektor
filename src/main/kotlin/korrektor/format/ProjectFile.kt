@@ -2,7 +2,6 @@ package korrektor.format
 
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -66,7 +65,7 @@ internal object ProjectFile {
             metadataText(o, "author") ?: "",
             metadataText(o, "year") ?: "",
             metadataText(o, "source") ?: "",
-            o.filterKeys { it !in setOf("title", "author", "year", "source") },
+            o.filterKeys { it !in Metadata.KNOWN_KEYS },
         )
     }
 
@@ -76,7 +75,7 @@ internal object ProjectFile {
     ): String? {
         val v = o[key]
         return when {
-            v == null || v is JsonNull -> null
+            v == null -> null
             v is JsonPrimitive && v.isString -> v.content
             else -> throw FormatException("$FILE: metadata.$key must be a string")
         }

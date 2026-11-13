@@ -5,13 +5,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import korrektor.format.FormatException
 import korrektor.format.Metadata
+import korrektor.format.Project
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.nio.file.Path
+import kotlin.coroutines.coroutineContext
 
 /**
  * The state of the "New project" dialog (A1). On success the new project becomes the open one in [app].
@@ -21,6 +24,7 @@ class NewProjectModel(
     private val app: AppModel,
     private val scope: CoroutineScope,
     private val io: CoroutineDispatcher = Dispatchers.IO,
+    private val creator: (Path, Path, Metadata) -> Project = NewProject::create,
 ) : MetadataForm {
     var pdf: Path? by mutableStateOf(null)
         private set
@@ -41,8 +45,8 @@ class NewProjectModel(
     var location: Path? by mutableStateOf(null)
         private set
 
-    var busy: Boolean by mutableStateOf(false)
-        private set
+    /** True while the project is being created. The app also uses it to keep the window open meanwhile. */
+    val busy: Boolean get() = app.creating
 
     var error: String? by mutableStateOf(null)
         private set
@@ -98,16 +102,22 @@ class NewProjectModel(
         val pdf = pdf
         val location = location
         if (!canCreate || pdf == null || location == null) return null
-        busy = true
+        app.creating = true
         error = null
         val metadata = Metadata(title, author, year, source)
         return scope.launch {
             try {
-                app.show(withContext(io) { NewProject.create(location, pdf, metadata) })
+                app.openCreated(withContext(io) { creator(location, pdf, metadata) })
             } catch (e: FormatException) {
                 error = e.message
+            } catch (
+                // Whatever else goes wrong must end up as a message, not as a crash of the window.
+                @Suppress("TooGenericExceptionCaught") e: Exception,
+            ) {
+                coroutineContext.ensureActive() // being cancelled is not an error
+                error = "Creating the project failed unexpectedly: ${e.message ?: e::class.simpleName}"
             } finally {
-                busy = false
+                app.creating = false
             }
         }
     }

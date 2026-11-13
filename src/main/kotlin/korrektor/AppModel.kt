@@ -26,6 +26,13 @@ class AppModel {
     var newProjectOpen: Boolean by mutableStateOf(false)
         private set
 
+    /** True while a new project is being created. The window must not be closed then, or it would stay half-made. */
+    var creating: Boolean by mutableStateOf(false)
+        internal set
+
+    /** Whether the window may be closed now. */
+    val canClose: Boolean get() = !creating
+
     /** Whether the "Edit metadata" dialog is showing. */
     var editMetadataOpen: Boolean by mutableStateOf(false)
         private set
@@ -64,7 +71,7 @@ class AppModel {
     }
 
     /** Makes [created] the open project, and closes the "New project" dialog. */
-    fun show(created: Project) {
+    fun openCreated(created: Project) {
         open(created)
         newProjectOpen = false
     }
@@ -74,7 +81,8 @@ class AppModel {
      * If writing fails, the exception is thrown and the old metadata stays, in the file and in the app.
      */
     fun updateMetadata(new: Metadata) {
-        project?.updateMetadata(new)
+        val open = project ?: return
+        open.updateMetadata(new)
         metadata = new
     }
 
@@ -91,11 +99,11 @@ class AppModel {
  */
 fun windowTitle(
     project: Project?,
-    metadata: Metadata? = project?.metadata,
+    metadata: Metadata?,
 ): String = if (project == null) APP_NAME else "${displayTitle(project, metadata)} – $APP_NAME"
 
 /** The title from the metadata, or the folder name without `.korrektur` for a project without metadata. */
 fun displayTitle(
     project: Project,
-    metadata: Metadata? = project.metadata,
+    metadata: Metadata?,
 ): String = metadata?.title ?: project.folder.name.removeSuffix(".korrektur")

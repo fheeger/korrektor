@@ -34,6 +34,8 @@ T009.
 - The folder name comes from the title, so projects are easy to tell apart in a file manager; it is not renamed when the title is edited later (T013).
 - The folder is created in a location the user chooses; nothing is created implicitly (no parent folders).
 
+- **Folder names, tightened in the story review:** leading dots and spaces are removed too (a leading dot hides a folder on macOS and Linux); the name is also cut to 200 bytes of UTF-8 (255 is the limit per name on Linux, and 100 CJK characters are 300 bytes); `CONIN$`, `CONOUT$` and the superscript device names (`COM¹`, `LPT³`, …) are reserved too.
+- **Error messages give a reason.** The message of a file system exception is often only the path (`AccessDeniedException: C:/…`), so messages built from I/O errors use `IOException.reason()` ("access denied", "it already exists", …). The same applies to the other messages of the format code that report an I/O error.
 - **Device names count with an extension.** `con.txt` becomes `_con.txt.korrektur`: Windows treats the part before the first dot as the device name. `COM10` and `Console` are fine.
 - **`.pdf` is removed case-insensitively** when suggesting a title (`Book.PDF`, `Book.Pdf`). Other dots stay (`a.b.pdf` gives `a.b`).
 - **The 100 character cut never splits a character** made of two chars (e.g. an emoji), and removes a space or dot that the cut exposes.
@@ -42,4 +44,4 @@ T009.
 - **A name taken by anything** (a project, or a plain file) is refused with the same message, and left untouched.
 
 ## Progress
-Done: PR #14 merged, CI green. Code done; `./gradlew build` green (20 new tests in `NewProjectTest`, 89 in total, 1 skipped by design). Detekt is clean. `docs/architecture.md` and the spec sentence on the empty page list are updated. Next: PR into `story/S02-create-project`; when CI is green, squash-merge, set this ticket to done, then start T011.
+Done: PR #14 merged, CI green. Code done; `./gradlew build` green (20 new tests in `NewProjectTest`, 89 in total, 1 skipped by design). Detekt is clean. `docs/architecture.md` and the spec sentence on the empty page list are updated.

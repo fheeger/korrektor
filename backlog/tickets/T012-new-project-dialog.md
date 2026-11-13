@@ -24,7 +24,7 @@ The dialog that creates a project: choose a PDF, fill in the metadata, choose wh
 5. Creating makes the project folder with the copy of the PDF and the metadata; the project is then open and the window title shows its title.
 6. If creating fails (project folder exists, location not writable, PDF vanished), the dialog stays open with a clear message, and nothing half-created is left behind.
 7. The dialog cannot be closed or started twice while creating (buttons disabled while busy).
-8. A title typed before choosing the PDF is not overwritten by the suggestion.
+8. A title the user typed is not overwritten by a suggestion: the model keeps a typed title when a PDF is chosen, and also when a second PDF is chosen. (In the dialog the fields are disabled until a PDF is chosen, so "typed before the PDF" cannot happen there; the model guarantees it anyway.)
 
 ## Approach
 - Unit tests for `NewProjectModel` (suggestion rules, `canCreate`, success, failure, busy state) with real files in a temp directory and fake pickers.
@@ -45,7 +45,9 @@ T010, T011.
 - **Creating needs a location too:** `canCreate` also requires a location, which is always set once a PDF is chosen.
 - **"New project…" is also on the project screen** (next to "Open another project…"), so a second project can be created without restarting. The ticket only named the start screen.
 - **Time-limited waits in the UI tests:** creation runs on a real background thread, so the tests wait for the result (up to 10 s) instead of assuming it is instant.
+- **The window cannot be closed while a project is being created** (`AppModel.canClose`; the close button does nothing until the copy is done). Otherwise the program could end in the middle of the copy and leave a half-made folder that blocks the next attempt ("already exists"). A crash or a killed process can still leave one; the user then deletes that folder by hand. (Found in the story review.)
+- **Unexpected exceptions become a message** ("Creating the project failed unexpectedly: …") instead of crashing the window; being cancelled is not an error. A seam (`creator`) lets the tests trigger this.
 - **The dialog model uses coroutines directly** (`kotlinx-coroutines`, already on the classpath through Compose): a scope from the dialog and a dispatcher for the copy. Tests use a dispatcher they control to look at the busy state.
 
 ## Progress
-Done: PR #16 merged, CI green. Code done; `./gradlew build` green (14 new tests in `NewProjectModelTest`, 5 new Compose UI tests for the dialog in `AppUiTest`; Detekt and ktlint clean). Checked for real: `./gradlew run` opened a window titled `korrektor` with no errors in the log. Not checked (for the story report, "how to try it"): the real PDF file dialog and the Swing folder dialog, how the dialog looks and fits, and creating a project from the 165-page sample PDF. Docs updated: README, `docs/architecture.md`. Next: PR into `story/S02-create-project`; when CI is green, squash-merge, set this ticket to done, then start T013.
+Done: PR #16 merged, CI green. Code done; `./gradlew build` green (14 new tests in `NewProjectModelTest`, 5 new Compose UI tests for the dialog in `AppUiTest`; Detekt and ktlint clean). Checked for real: `./gradlew run` opened a window titled `korrektor` with no errors in the log. Not checked (for the story report, "how to try it"): the real PDF file dialog and the Swing folder dialog, how the dialog looks and fits, and creating a project from the 165-page sample PDF. Docs updated: README, `docs/architecture.md`.

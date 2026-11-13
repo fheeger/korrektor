@@ -17,6 +17,8 @@ dependencies {
     // Compose Multiplatform has no stable Material 3 newer than 1.9.0; it works with Compose 1.12 (see T011).
     implementation("org.jetbrains.compose.material3:material3:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.13.0")
+    // The same version Compose brings along; declared because the dialog models use coroutines directly.
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
     testImplementation(kotlin("test"))
     testImplementation("org.jetbrains.compose.ui:ui-test:1.12.2")
     detektPlugins("io.nlopez.compose.rules:detekt:0.4.28")

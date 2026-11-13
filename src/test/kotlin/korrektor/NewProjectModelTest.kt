@@ -180,7 +180,7 @@ class NewProjectModelTest {
                 project.metadata,
             )
             assertEquals(pdfBytes.toList(), project.sourcePdf.readBytes().toList())
-            assertEquals("Abhandlung – korrektor", windowTitle(app.project))
+            assertEquals("Abhandlung – korrektor", windowTitle(app.project, app.metadata))
             assertEquals(
                 Metadata("Abhandlung", "Ewald", "ca. 1790", "https://books.google.de/books?id=MhRLAAAAcAAJ"),
                 Project.open(project.folder).metadata,
@@ -302,6 +302,59 @@ class NewProjectModelTest {
             assertFalse(model.busy)
             assertNotNull(app.project)
             assertEquals(1, dir.listDirectoryEntries("*.korrektur").size)
+        }
+
+    @Test
+    fun theWindowCannotBeClosedWhileCreating() =
+        withDir { dir ->
+            val manual = ManualDispatcher()
+            val app = AppModel()
+            val model = newModel(app, manual)
+            model.selectPdf(pdf(dir))
+            assertTrue(app.canClose)
+
+            model.create()
+            assertFalse(app.canClose)
+
+            manual.runAll()
+            assertTrue(app.canClose)
+        }
+
+    @Test
+    fun anUnexpectedFailureBecomesAMessageAndTheModelIsNotStuck() =
+        withDir { dir ->
+            val app = AppModel()
+            val model =
+                NewProjectModel(app, CoroutineScope(Dispatchers.Unconfined), Dispatchers.Unconfined) { _, _, _ ->
+                    throw IllegalStateException("something unexpected")
+                }
+            model.selectPdf(pdf(dir))
+
+            model.createAndWait()
+
+            assertTrue("something unexpected" in model.error!!, model.error)
+            assertFalse(model.busy)
+            assertTrue(app.canClose)
+            assertNull(app.project)
+            assertTrue(model.canCreate, "the user can try again")
+        }
+
+    @Test
+    fun cancellingWhileCreatingIsNotAnError() =
+        withDir { dir ->
+            val manual = ManualDispatcher()
+            val app = AppModel()
+            val model = newModel(app, manual)
+            model.selectPdf(pdf(dir))
+
+            val job = model.create()
+            job?.cancel()
+            manual.runAll()
+            runBlocking { job?.join() }
+
+            assertNull(model.error)
+            assertFalse(model.busy)
+            assertTrue(app.canClose)
         }
 
     @Test

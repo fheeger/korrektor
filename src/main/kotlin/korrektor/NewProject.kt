@@ -4,6 +4,7 @@ import korrektor.format.AtomicFile
 import korrektor.format.FormatException
 import korrektor.format.Metadata
 import korrektor.format.Project
+import korrektor.format.reason
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -19,6 +20,9 @@ object NewProject {
     private const val PROJECT_SUFFIX = ".korrektur"
     private const val UNTITLED = "Untitled"
     private const val MAX_NAME_LENGTH = 100
+
+    // Linux file systems allow 255 bytes per name; 200 leaves room for ".korrektur" with many bytes per character.
+    private const val MAX_NAME_BYTES = 200
     private const val PDF_MARKER = "%PDF-"
 
     /** A PDF may have a few bytes of junk before its marker; viewers accept the marker within the first 1024 bytes. */
@@ -26,9 +30,11 @@ object NewProject {
 
     // Forbidden in Windows file names, and the strictest of the platforms we support.
     private val UNSAFE_CHARACTERS = Regex("[<>:\"/\\\\|?*\\p{Cntrl}]")
-    private const val MAX_DEVICE_NUMBER = 9
     private val DEVICE_NAMES =
-        setOf("CON", "PRN", "AUX", "NUL") + (1..MAX_DEVICE_NUMBER).flatMap { listOf("COM$it", "LPT$it") }
+        setOf("CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$") +
+            (listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "¹", "²", "³")).flatMap {
+                listOf("COM$it", "LPT$it")
+            }
 
     /** The title suggested for [pdf]: its file name without `.pdf`, underscores as spaces. */
     fun suggestTitle(pdf: Path): String =
@@ -43,14 +49,24 @@ object NewProject {
         val safe =
             title
                 .replace(UNSAFE_CHARACTERS, "_")
-                .trimEnd('.', ' ')
+                // A leading dot hides a folder on macOS and Linux; trailing dots and spaces are not allowed on Windows.
+                .trim { it == '.' || it == ' ' }
                 .take(MAX_NAME_LENGTH)
-                .dropLastWhile { it.isHighSurrogate() } // do not cut a character in half
+                .let { limitBytes(it) }
                 .trimEnd('.', ' ')
                 .ifEmpty { UNTITLED }
         // Windows treats a device name as one even with an extension, so only the part before the first dot counts.
         val reserved = safe.substringBefore('.').trimEnd(' ').uppercase() in DEVICE_NAMES
         return (if (reserved) "_$safe" else safe) + PROJECT_SUFFIX
+    }
+
+    /** Cuts [name] to [MAX_NAME_BYTES] bytes of UTF-8, never in the middle of a character. */
+    private fun limitBytes(name: String): String {
+        var result = name.dropLastWhile { it.isHighSurrogate() }
+        while (result.toByteArray(Charsets.UTF_8).size > MAX_NAME_BYTES) {
+            result = result.dropLast(1).dropLastWhile { it.isHighSurrogate() }
+        }
+        return result
     }
 
     /**
@@ -87,7 +103,7 @@ object NewProject {
             try {
                 readPdfHeader(pdf)
             } catch (e: IOException) {
-                throw FormatException("$pdf cannot be read: ${e.message}", e)
+                throw FormatException("$pdf cannot be read: ${e.reason()}", e)
             }
         if (!String(header, Charsets.ISO_8859_1).contains(PDF_MARKER)) throw FormatException("$pdf is not a PDF file")
     }

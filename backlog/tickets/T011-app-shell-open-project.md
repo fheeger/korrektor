@@ -43,4 +43,4 @@ T009 (title from metadata).
 - **The error banner sits above both screens** (in `App`), so a failed "Open another project…" also shows its error while the old project stays open.
 
 ## Progress
-Done: PR #15 merged, CI green. Code done; `./gradlew build` green (14 new tests: 9 in `AppModelTest`, 5 Compose UI tests in `AppUiTest`; Detekt and ktlint clean). Checked for real: `./gradlew run` opened a window titled `korrektor` with no errors in the log. Not checked (for the story report, "how to try it"): the Swing folder dialog itself, and how the screens look. Docs updated: README, `docs/architecture.md`. Next: PR into `story/S02-create-project`; when CI is green, squash-merge, set this ticket to done, then start T012.
+Done: PR #15 merged, CI green. Code done; `./gradlew build` green (14 new tests: 9 in `AppModelTest`, 5 Compose UI tests in `AppUiTest`; Detekt and ktlint clean). Checked for real: `./gradlew run` opened a window titled `korrektor` with no errors in the log. Not checked (for the story report, "how to try it"): the Swing folder dialog itself, and how the screens look. Docs updated: README, `docs/architecture.md`.

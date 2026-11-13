@@ -169,7 +169,7 @@ class AppUiTest {
                 onNodeWithText("Abhandlung").assertExists()
                 onNodeWithText("Year: ca. 1790").assertExists()
                 onNodeWithText("Choose PDF…").assertDoesNotExist()
-                assertEquals("Abhandlung – korrektor", windowTitle(model.project))
+                assertEquals("Abhandlung – korrektor", windowTitle(model.project, model.metadata))
                 assertTrue(dir.resolve("Abhandlung.korrektur/source.pdf").exists())
             }
         }

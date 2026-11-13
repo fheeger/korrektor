@@ -175,7 +175,7 @@ class Project private constructor(
                     throw e
                 }
             } catch (e: IOException) {
-                throw FormatException("Cannot create the project at $folder: ${e.message}", e)
+                throw FormatException("Cannot create the project at $folder: ${e.reason()}", e)
             }
         }
 
@@ -206,7 +206,7 @@ class Project private constructor(
             try {
                 CanonicalJson.readUtf8(file)
             } catch (e: IOException) {
-                throw FormatException("Cannot read $file: ${e.message}", e)
+                throw FormatException("Cannot read $file: ${e.reason()}", e)
             }
 
         private fun deleteTree(folder: Path) {

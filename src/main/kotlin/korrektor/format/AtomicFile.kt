@@ -1,6 +1,7 @@
 package korrektor.format
 
 import java.io.IOException
+import java.io.UncheckedIOException
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 import java.nio.file.Files
@@ -54,6 +55,8 @@ object AtomicFile {
         val temp = target.resolveSibling("${target.fileName}.$TEMP_EXTENSION")
         deletingTempOnFailure(temp) {
             Files.copy(source, temp, StandardCopyOption.REPLACE_EXISTING)
+            // On Windows the copy of a read-only file is read-only, and flushing it below needs write access.
+            temp.toFile().setWritable(true)
             FileChannel.open(temp, StandardOpenOption.WRITE).use { it.force(true) }
             Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
         }
@@ -88,7 +91,10 @@ object AtomicFile {
                 }
             }
         } catch (e: IOException) {
-            throw FormatException("Cannot clean up temporary files in $dir", e)
+            throw FormatException("Cannot clean up temporary files in $dir: ${e.reason()}", e)
+        } catch (e: UncheckedIOException) {
+            // Files.walk reports a problem while it walks (an unreadable subfolder) this way.
+            throw FormatException("Cannot clean up temporary files in $dir: ${e.cause?.reason() ?: e.message}", e)
         }
         return deleted
     }

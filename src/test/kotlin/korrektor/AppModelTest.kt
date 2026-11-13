@@ -123,7 +123,7 @@ class AppModelTest {
 
     @Test
     fun theWindowTitleIsTheAppNameOnTheStartScreen() {
-        assertEquals("korrektor", windowTitle(null))
+        assertEquals("korrektor", windowTitle(null, null))
     }
 
     @Test
@@ -131,7 +131,7 @@ class AppModelTest {
         withDir { dir ->
             val model = AppModel()
             model.openProject(createProject(dir, "Folder.korrektur", Metadata("Abhandlung über den Krieg")))
-            assertEquals("Abhandlung über den Krieg – korrektor", windowTitle(model.project))
+            assertEquals("Abhandlung über den Krieg – korrektor", windowTitle(model.project, model.metadata))
         }
 
     @Test
@@ -140,6 +140,6 @@ class AppModelTest {
             val model = AppModel()
             model.openProject(createProject(dir, "Old book.korrektur", null))
             assertNull(model.project?.metadata)
-            assertEquals("Old book – korrektor", windowTitle(model.project))
+            assertEquals("Old book – korrektor", windowTitle(model.project, model.metadata))
         }
 }
