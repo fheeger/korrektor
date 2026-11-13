@@ -30,7 +30,7 @@ Their boxes are empty (zero width, at the end of the previous character) and the
 
 - **In Abhandlung every generated space is a word boundary.** The gap between the characters around it is, relative to the font size, 0.30 at the median (25 % of them 0.20 or less, 75 % 0.41 or less), while characters inside a word have a gap of 0.00 (95 % are 0.00 or less, the largest is 0.56). The notice page is the same: PDFium generates spaces from the kerning gaps, so `Über dieses Buch` comes out with spaces although the PDF has none.
 - **In Clausewitz the generated spaces are not reliable.** There are only 859 of them next to 29,140 real spaces. The gap after a real space has a median of 0.45; after a generated space the median is 0.25 but the largest 5 % are above 1.4 and some lie inside letter-spaced headings (`S tr a te g ie`).
-- **The CR LF pairs are not reliable line boundaries.** At a hyphen at the end of a line PDFium may put a plain space instead (`Truppen-` space `dienst`, see 6), and it may join lines without anything (see 6).
+- **The CR LF pairs are not reliable line boundaries.** PDFium breaks a line at only some line ends: on page 6 there are about 10 breaks for 30 printed lines, and the other line ends get a plain generated space (`Soldat, daß` space `er seine …`). At a hyphen at the end of a line it may put a plain space (`Truppen-` space `dienst`) or join the lines without anything (see 6). Lines have to come from the positions of the words.
 
 ## 3. Order
 
@@ -40,6 +40,8 @@ PDFium gives the characters in the order of the text objects of the page, which 
 - PDFium and PDFBox (reading the same content) agree on the sequence of characters on 144 of the 165 pages; on 20 more pages they have the same characters in a different order.
 
 So the import cannot trust the order: it sorts words by their position (T020).
+
+**Stray words.** The OCR also produced words at the left edge of many pages that are not printed text but scan shadows and specks (`an`, `den`, `Rew`, …), often at heights between two lines. They stay in the text (V1). The line builder gives such a word its own line unless it overlaps a text line by at least half of the smaller height (checked on pages 24 and 36 by drawing the lines over the rendered pages).
 
 ## 4. Coordinates
 
