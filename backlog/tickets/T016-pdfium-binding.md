@@ -1,6 +1,6 @@
 # T016 PDFium and its Kotlin binding
 
-**Type:** task · **Status:** in progress · **Story:** S03 · **Task:** S03.1
+**Type:** task · **Status:** done · **Story:** S03 · **Task:** S03.1
 
 Bring PDFium into the build and give the app a small, safe Kotlin interface to it: open a PDF, read page sizes and the characters of a page's text layer with their boxes, and render a page. The rest of S03 builds on this.
 
@@ -48,4 +48,4 @@ None.
 - **`render` is small:** white background, no annotations, black text as the PDF draws it. It is the oracle for the coordinate tests (T019) and the base for the viewer (S04).
 
 ## Progress
-Done: build task (download, checksum, unpack; wrong checksum fails with a clear message, shown once), JNA direct-mapped binding, wrapper classes, `TestPdfs` helper, 16 new tests, D04, third-party notices, architecture, README. `./gradlew build` is green (175 tests, 1 skipped by design). The sample test ran locally (165 pages; page 6 is 305.52 × 489.6). The sample PDF's path contains `ü`; PDFium opens it (UTF-8 path).
+Done: PR #21 merged, CI green. Build task (download, checksum, unpack; wrong checksum fails with a clear message, shown once), JNA direct-mapped binding, wrapper classes, `TestPdfs` helper, 16 new tests, D04, third-party notices, architecture, README. `./gradlew build` is green (175 tests, 1 skipped by design). The sample test ran locally (165 pages; page 6 is 305.52 × 489.6). The sample PDF's path contains `ü`; PDFium opens it (UTF-8 path).
