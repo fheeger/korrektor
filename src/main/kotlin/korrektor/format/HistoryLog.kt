@@ -28,7 +28,8 @@ class HistoryLog(
         val line = (CanonicalJson.write(entry) + "\n").toByteArray(Charsets.UTF_8)
         try {
             file.parent?.createDirectories()
-            FileChannel.open(file, StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE).use { channel ->
+            val options = setOf(StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE)
+            FileChannel.open(file, options).use { channel ->
                 val end = completeEnd(channel)
                 if (end < channel.size()) channel.truncate(end)
                 channel.position(end)
@@ -81,8 +82,8 @@ class HistoryLog(
             } catch (e: IOException) {
                 throw FormatException("Cannot read $file: ${e.message}", e)
             }
-        if (text.isEmpty()) return emptyList()
-        val lines = text.split('\n').dropLast(1) // a last line without newline is torn, or the text is complete and the rest is empty
+        // A last line without newline is torn; with a complete text the rest after the final newline is empty.
+        val lines = text.split('\n').dropLast(1)
         return lines.mapIndexed { i, l -> parse(l, "${i + 1}") }
     }
 
