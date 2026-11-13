@@ -1,6 +1,6 @@
 # T012 "New project" dialog
 
-**Type:** task · **Status:** in progress · **Story:** S02 · **Task:** S02.2
+**Type:** task · **Status:** done · **Story:** S02 · **Task:** S02.2
 
 The dialog that creates a project: choose a PDF, fill in the metadata, choose where to store it, create.
 
@@ -48,4 +48,4 @@ T010, T011.
 - **The dialog model uses coroutines directly** (`kotlinx-coroutines`, already on the classpath through Compose): a scope from the dialog and a dispatcher for the copy. Tests use a dispatcher they control to look at the busy state.
 
 ## Progress
-Code done; `./gradlew build` green (14 new tests in `NewProjectModelTest`, 5 new Compose UI tests for the dialog in `AppUiTest`; Detekt and ktlint clean). Checked for real: `./gradlew run` opened a window titled `korrektor` with no errors in the log. Not checked (for the story report, "how to try it"): the real PDF file dialog and the Swing folder dialog, how the dialog looks and fits, and creating a project from the 165-page sample PDF. Docs updated: README, `docs/architecture.md`. Next: PR into `story/S02-create-project`; when CI is green, squash-merge, set this ticket to done, then start T013.
+Done: PR #16 merged, CI green. Code done; `./gradlew build` green (14 new tests in `NewProjectModelTest`, 5 new Compose UI tests for the dialog in `AppUiTest`; Detekt and ktlint clean). Checked for real: `./gradlew run` opened a window titled `korrektor` with no errors in the log. Not checked (for the story report, "how to try it"): the real PDF file dialog and the Swing folder dialog, how the dialog looks and fits, and creating a project from the 165-page sample PDF. Docs updated: README, `docs/architecture.md`. Next: PR into `story/S02-create-project`; when CI is green, squash-merge, set this ticket to done, then start T013.
