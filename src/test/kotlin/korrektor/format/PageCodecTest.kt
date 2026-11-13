@@ -203,4 +203,44 @@ class PageCodecTest {
         assertInvalid("""[1]""", "object")
         assertInvalid("""{"pdfPage": """, "Invalid JSON")
     }
+
+    // --- the page note ------------------------------------------------------------------------------------
+
+    @Test
+    fun aPageNoteIsWrittenAfterTheRegionsAndReadBack() {
+        val page = PageLayer(3, 307.4, 488.2, emptyList(), note = "No text on this page.")
+        val expected =
+            """
+            {
+              "pdfPage": 3,
+              "width": 307.4,
+              "height": 488.2,
+              "regions": [],
+              "note": "No text on this page."
+            }
+            """.trimIndent() + "\n"
+
+        assertEquals(expected, PageCodec.encode(page))
+        assertEquals(page, PageCodec.decode(expected))
+    }
+
+    @Test
+    fun aNoteComesBeforeUnknownFieldsAndAPageWithoutOneIsWrittenAsBefore() {
+        val withBoth = PageLayer(1, 10.0, 10.0, emptyList(), mapOf("zzz" to JsonPrimitive(1)), "A note")
+        val text = PageCodec.encode(withBoth)
+        assertTrue(text.indexOf("\"note\"") < text.indexOf("\"zzz\""), text)
+        assertEquals(withBoth, PageCodec.decode(text))
+
+        val without = PageLayer(1, 10.0, 10.0, emptyList())
+        assertTrue("note" !in PageCodec.encode(without))
+        assertNull(PageCodec.decode(PageCodec.encode(without)).note)
+    }
+
+    @Test
+    fun aNullNoteIsAcceptedAndAnythingButAStringIsRefusedNamingTheField() {
+        val head = """"pdfPage": 1, "width": 1.0, "height": 1.0, "regions": []"""
+        assertNull(PageCodec.decode("{$head, \"note\": null}").note)
+        assertInvalid("{$head, \"note\": 5}", "page.note")
+        assertInvalid("{$head, \"note\": [\"a\"]}", "page.note")
+    }
 }

@@ -139,6 +139,21 @@ Corrected layer of the same page: `rnng` is corrected to `rung`, and a line was 
 | `pdfPage` | integer ≥ 1 | the page of `source.pdf`; must equal the `pdfPage` of the page's entry in `project.json` |
 | `width`, `height` | number > 0 | page size in points |
 | `regions` | array | the regions; written one region per block. An empty page is `"regions": []` |
+| `note` | string, optional | a short message about the page for the user, written after `regions` and kept in both layers; the import sets it on a page it could not get text from (see below) |
+
+A page the import found no text on, or could not read, is an empty page with a note:
+
+```json page-note
+{
+  "pdfPage": 3,
+  "width": 307.4,
+  "height": 488.2,
+  "regions": [],
+  "note": "No text on this page."
+}
+```
+
+The notes the import writes are *"No text on this page."* and *"The text of this page could not be read: …"* (with the reason, and, if the page itself could not be loaded, a remark that the size of the previous page is used). Readers keep a note they do not understand like any other field; a page without a note is written as before.
 
 ### Region
 

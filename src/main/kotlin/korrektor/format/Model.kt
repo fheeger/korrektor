@@ -111,6 +111,8 @@ data class PageLayer(
     val height: Double,
     val regions: List<Region>,
     val extra: Map<String, JsonElement> = emptyMap(),
+    /** A short message about the page for the user, for example that the import found no text on it. */
+    val note: String? = null,
 ) {
     init {
         require(pdfPage >= 1) { "pdfPage must be at least 1, was $pdfPage" }
@@ -118,7 +120,7 @@ data class PageLayer(
         require(positive && width <= MAX_COORDINATE && height <= MAX_COORDINATE) {
             "Page size must be between 0.1 and $MAX_COORDINATE points, was $width x $height"
         }
-        requireUnknownKeys(extra, setOf("pdfPage", "width", "height", "regions"), "Page $pdfPage")
+        requireUnknownKeys(extra, setOf("pdfPage", "width", "height", "regions", "note"), "Page $pdfPage")
         requireUnique(regions.map { it.id }, "region ID")
         requireUnique(regions.map { it.order }, "region order")
         requireUnique(regions.flatMap { r -> r.lines.map { it.id } }, "line ID")
