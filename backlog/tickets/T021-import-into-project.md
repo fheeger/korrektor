@@ -1,6 +1,6 @@
 # T021 Import a PDF into a project
 
-**Type:** task · **Status:** ready for development · **Story:** S03 · **Task:** S03.5
+**Type:** task · **Status:** in progress · **Story:** S03 · **Task:** S03.5
 
 Put the pieces together: read every page of a project's PDF, build its page layer, and write the original and the corrected layer, with progress and a way to stop. Without UI.
 
@@ -35,7 +35,13 @@ Put the pieces together: read every page of a project's PDF, build its page laye
 T018, T019, T020.
 
 ## Decisions
-None yet.
+- **The page list is set first** (`Project.setPages`), with one entry per PDF page, because the page files are addressed by page number and `Project` checks that a page exists before it writes it. A project that is cancelled or fails half way therefore has a page list and only some page files; the caller deletes such a project (T023). A crashed import leaves the same: reading a missing page gives "Page n has no file", which is what it is.
+- **A second import is refused** (`FormatException`) when the project already has pages: the original layer is written once and never replaced, and an import must not silently overwrite what the user has corrected since.
+- **The PDF errors are not wrapped:** `PdfException` (its message is for the user) passes through; the caller (T023) handles it next to `FormatException` and `IOException`. The project is not changed when the PDF cannot be opened, because that happens before `setPages`.
+- **Cancelling is a `CancellationException`** (the one coroutines also use), asked before every page, so a cancel takes effect after at most one page.
+- **`Project.setPages` shares its "write, or put the old value back" logic with `updateMetadata`** in a small private helper, which also keeps `Project` under Detekt's limit of functions per class.
+- **Pages are written one after the other, each through the crash-safe write,** so the whole sample (330 files) takes under a second; 1000 pages are measured in T024.
+- Pages without text become empty pages (`regions: []`); the note for them is T022.
 
 ## Progress
-Not started.
+Done: `PdfImport.run`, `ImportResult`, `Project.setPages`; the spec sentence and `docs/architecture.md`. 12 new tests: 3 for `setPages` (writes the list and keeps metadata and unknown fields; page files can be written for the new pages and not beyond; a failed write keeps the old list) and 9 for the import (every page in both layers with the right sizes and lines, the corrected layer equals the original with `origin` = own id, canonical files and unchanged bytes on opening and saving, progress once per page, cancelling after 2 of 5 pages leaves exactly 2 pages, cancelling at once leaves none, a second import is refused, a text file as PDF fails with its message and changes nothing, and the sample: 165 pages, all readable, pages 3/139/161/163/165 empty, page 6 starts with `Vorrede. 5`, in 0.8 s). `./gradlew build` is green.
