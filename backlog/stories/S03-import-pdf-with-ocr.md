@@ -20,7 +20,7 @@ A PDF with OCR contains the scanned image plus an invisible text layer with char
 Known limitation: pages with several columns may have their lines mixed up until layout detection and layout fixing (B3, B4) exist.
 
 ## Tasks
-- [ ] S03.1 Analyze the sample PDF: how the text layer is built (characters or words, order, coordinates, encoding) → [T016](../tickets/T016-pdfium-binding.md), [T017](../tickets/T017-text-layer-analysis.md)
+- [x] S03.1 Analyze the sample PDF: how the text layer is built (characters or words, order, coordinates, encoding) → [T016](../tickets/T016-pdfium-binding.md), [T017](../tickets/T017-text-layer-analysis.md)
 - [ ] S03.2 Extract words with text and boxes from a page → [T018](../tickets/T018-extract-words.md)
 - [ ] S03.3 Group words into lines and put lines into reading order; create one body region per page → [T020](../tickets/T020-lines-and-region.md)
 - [ ] S03.4 Convert coordinates into the format's coordinate system → [T019](../tickets/T019-coordinates.md)

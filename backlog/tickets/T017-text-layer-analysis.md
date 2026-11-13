@@ -1,6 +1,6 @@
 # T017 Analysis of the sample PDFs' text layers
 
-**Type:** task · **Status:** in progress · **Story:** S03 · **Task:** S03.1
+**Type:** task · **Status:** done · **Story:** S03 · **Task:** S03.1
 
 Find out, with the real files, how their text layer is built and what PDFium makes of it, and write it down. The next tickets implement the rules this ticket settles.
 
@@ -40,7 +40,7 @@ T016.
 - **Speed is not asserted in a test** (timing on shared CI machines is flaky); it is stated in the document with the machine.
 
 ## Progress
-Done: `docs/pdf-text-layer.md` answers the ten questions and ends with the rules for the import; `SampleTextLayerTest` (6 tests, skipped without the samples) pins the facts: structure of both layers (pages without text, no real spaces in Abhandlung, only spaces and CR LF generated, no control characters, 65 `-`, 33 `=`, 94 `ſ`, ten hyphen markers each followed by a lower line), the first characters and box of page 6, the notice page, that PDFium separates `einem Scharmüzel`, and agreement with PDFBox on 164 of 165 pages.
+Done: PR #22 merged, CI green. `docs/pdf-text-layer.md` answers the ten questions and ends with the rules for the import; `SampleTextLayerTest` (6 tests, skipped without the samples) pins the facts: structure of both layers (pages without text, no real spaces in Abhandlung, only spaces and CR LF generated, no control characters, 65 `-`, 33 `=`, 94 `ſ`, ten hyphen markers each followed by a lower line), the first characters and box of page 6, the notice page, that PDFium separates `einem Scharmüzel`, and agreement with PDFBox on 164 of 165 pages.
 
 Two things the earlier PDFBox-only look got wrong, found by this ticket: PDFBox had made `einemScharmüzel` look like an OCR error (the layer has the two words apart), and I had expected that PDFium would not change hyphens (it replaces ten of them by a marker).
 
