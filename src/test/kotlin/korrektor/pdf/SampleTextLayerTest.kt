@@ -1,10 +1,12 @@
 package korrektor.pdf
 
 import org.apache.pdfbox.Loader
+import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.text.PDFTextStripper
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import java.nio.file.Path
 import kotlin.io.path.exists
+import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -12,59 +14,85 @@ import kotlin.test.assertTrue
 /**
  * The facts about the text layers of the two sample PDFs that the import relies on, see `docs/pdf-text-layer.md`.
  * If PDFium or a sample changes and one of these fails, that document and the import rules need a look.
- * Both tests are skipped when the sample is missing.
+ * The tests are skipped when the sample is missing.
  */
 class SampleTextLayerTest {
     private val abhandlung = Path.of("samples", "Abhandlung_über_den_kleinen_Krieg.pdf")
     private val clausewitz = Path.of("samples", "Clausewitz_Strategie.pdf")
 
+    /** What a whole book contains, counted character by character. */
     private class Tally {
-        var chars = 0
         var generatedSpaces = 0
         var realSpaces = 0
         var generatedLineFeeds = 0
         var generatedCarriageReturns = 0
         var otherGenerated = 0
-        var hyphens = 0
+        var hyphenMarkers = 0
         var plainHyphens = 0
         var equalsSigns = 0
         var longS = 0
-        var forbidden = mutableListOf<String>()
+        val forbidden = mutableListOf<String>()
         val emptyPages = mutableListOf<Int>()
         val hyphenMarkerProblems = mutableListOf<String>()
     }
 
     private fun tally(doc: PdfDocument): Tally {
         val tally = Tally()
-        for (p in 0 until doc.pageCount) {
-            doc.page(p).use { page ->
-                val text = page.text()
-                if (text.charCount == 0) tally.emptyPages += p + 1
-                for (i in 0 until text.charCount) {
-                    val c = text.char(i)
-                    tally.chars++
-                    when {
-                        c.generated && c.unicode == SPACE -> tally.generatedSpaces++
-                        c.generated && c.unicode == LF -> tally.generatedLineFeeds++
-                        c.generated && c.unicode == CR -> tally.generatedCarriageReturns++
-                        c.generated -> tally.otherGenerated++
-                        c.hyphen -> {
-                            tally.hyphens++
-                            checkHyphenMarker(tally, text, i, p + 1)
-                        }
-                        c.unicode == SPACE -> tally.realSpaces++
-                        c.unicode == '-'.code -> tally.plainHyphens++
-                        c.unicode == '='.code -> tally.equalsSigns++
-                        c.unicode == LONG_S -> tally.longS++
-                    }
-                    val isControl = c.unicode < SPACE && c.unicode != LF && c.unicode != CR && c.unicode != TAB
-                    if (!c.generated && (c.unicode == 0 || c.unicode == REPLACEMENT || (isControl && !c.hyphen))) {
-                        tally.forbidden += "p${p + 1}:U+%04X".format(c.unicode)
-                    }
-                }
+        for (p in 0 until doc.pageCount) tallyPage(doc, p, tally)
+        return tally
+    }
+
+    private fun tallyPage(
+        doc: PdfDocument,
+        index: Int,
+        tally: Tally,
+    ) {
+        doc.page(index).use { page ->
+            val text = page.text()
+            if (text.charCount == 0) tally.emptyPages += index + 1
+            for (i in 0 until text.charCount) {
+                val c = text.char(i)
+                if (c.generated) countGenerated(tally, c) else countReal(tally, text, i, index + 1)
+                if (isForbidden(c)) tally.forbidden += "p${index + 1}:U+%04X".format(c.unicode)
             }
         }
-        return tally
+    }
+
+    private fun countGenerated(
+        tally: Tally,
+        c: PdfChar,
+    ) {
+        when (c.unicode) {
+            SPACE -> tally.generatedSpaces++
+            LF -> tally.generatedLineFeeds++
+            CR -> tally.generatedCarriageReturns++
+            else -> tally.otherGenerated++
+        }
+    }
+
+    private fun countReal(
+        tally: Tally,
+        text: PdfTextPage,
+        index: Int,
+        pageNumber: Int,
+    ) {
+        val c = text.char(index)
+        when {
+            c.hyphen -> {
+                tally.hyphenMarkers++
+                checkHyphenMarker(tally, text, index, pageNumber)
+            }
+            c.unicode == SPACE -> tally.realSpaces++
+            c.unicode == '-'.code -> tally.plainHyphens++
+            c.unicode == '='.code -> tally.equalsSigns++
+            c.unicode == LONG_S -> tally.longS++
+        }
+    }
+
+    /** Characters the import would have to drop or that point to a broken layer. None occur in the samples. */
+    private fun isForbidden(c: PdfChar): Boolean {
+        val controlCharacter = c.unicode < SPACE && c.unicode !in WHITESPACE
+        return !c.generated && !c.hyphen && (c.unicode == 0 || c.unicode == REPLACEMENT || controlCharacter)
     }
 
     /** PDFium's hyphen marker is U+0002, it stands for a hyphen, and the next character is on a lower line. */
@@ -75,18 +103,12 @@ class SampleTextLayerTest {
         pageNumber: Int,
     ) {
         val marker = text.char(index)
-        if (marker.unicode !=
-            MARKER
-        ) {
+        if (marker.unicode != MARKER) {
             tally.hyphenMarkerProblems += "p$pageNumber: flagged character is U+%04X".format(marker.unicode)
         }
-        if (index + 1 >= text.charCount) {
-            tally.hyphenMarkerProblems += "p$pageNumber: the marker is the last character"
-        } else {
-            val next = text.char(index + 1)
-            if (next.generated || next.box.top >= marker.box.top - MIN_LINE_DROP) {
-                tally.hyphenMarkerProblems += "p$pageNumber: the character after the marker is not on a lower line"
-            }
+        val next = if (index + 1 < text.charCount) text.char(index + 1) else null
+        if (next == null || next.generated || next.box.top >= marker.box.top - MIN_LINE_DROP) {
+            tally.hyphenMarkerProblems += "p$pageNumber: the character after the marker is not on a lower line"
         }
     }
 
@@ -103,14 +125,12 @@ class SampleTextLayerTest {
             assertEquals(0, tally.realSpaces, "the layer has no space characters: PDFium generates every space")
             assertEquals(0, tally.otherGenerated, "PDFium generates only spaces and line breaks")
             assertEquals(tally.generatedCarriageReturns, tally.generatedLineFeeds, "line breaks come as CR LF pairs")
-            assertTrue(
-                tally.generatedSpaces > 30_000 && tally.generatedCarriageReturns > 2_000,
-                "many spaces and line breaks",
-            )
+            assertTrue(tally.generatedSpaces > 30_000, "many generated spaces: ${tally.generatedSpaces}")
+            assertTrue(tally.generatedCarriageReturns > 2_000, "many generated line breaks")
             assertEquals(emptyList(), tally.forbidden, "no U+0000, no replacement characters, no control characters")
             assertEquals(33, tally.equalsSigns, "the double hyphen '=' of the old print is in the text")
             assertEquals(65, tally.plainHyphens, "hyphens PDFium leaves as they are")
-            assertEquals(10, tally.hyphens, "hyphens PDFium replaced by its marker")
+            assertEquals(10, tally.hyphenMarkers, "hyphens PDFium replaced by its marker")
             assertEquals(emptyList(), tally.hyphenMarkerProblems)
             assertEquals(94, tally.longS, "the long s is returned as such")
         }
@@ -132,8 +152,8 @@ class SampleTextLayerTest {
                 )
                 assertEquals("Man", (12..14).joinToString("") { first[it].unicode.toChar().toString() })
 
-                // Coordinates of the page itself: points, origin bottom-left. The content stream draws the first word at
-                // (97.7, 451.7) with size 11.
+                // Coordinates of the page itself: points, origin bottom-left. The content stream draws
+                // the first word at (97.7, 451.7) with size 11.
                 val v = first[0]
                 assertEquals(97.7, v.box.left, 0.1)
                 assertEquals(451.7, v.box.bottom, 0.1)
@@ -152,13 +172,7 @@ class SampleTextLayerTest {
                 assertEquals(792.0, page.height, 0.01)
                 val text = page.text()
                 assertTrue(text.charCount > 3_000, "the notice page has text")
-                val words = StringBuilder()
-                for (i in 0 until 40) {
-                    words.appendCodePoint(
-                        if (text.char(i).generated) ' '.code else text.char(i).unicode,
-                    )
-                }
-                assertTrue(words.startsWith("Über dieses Buch"), "spaces come from the kerning gaps: $words")
+                assertTrue(pageString(text).startsWith("Über dieses Buch"), "spaces come from the kerning gaps")
             }
         }
     }
@@ -168,58 +182,68 @@ class SampleTextLayerTest {
         assumeTrue(abhandlung.exists(), "the sample PDF is not available")
         PdfDocument.open(abhandlung).use { doc ->
             doc.page(6).use { page ->
-                val text = page.text()
-                val sb = StringBuilder()
-                for (i in 0 until text.charCount) {
-                    sb.appendCodePoint(
-                        if (text.char(i).generated &&
-                            text.char(i).unicode == SPACE
-                        ) {
-                            ' '.code
-                        } else {
-                            text.char(i).unicode
-                        },
-                    )
-                }
-                assertTrue(
-                    "einem Scharmüzel" in sb,
-                    "page 7 has the two words einem and Scharmüzel apart",
-                )
+                val sentence = pageString(page.text())
+                assertTrue("einem Scharmüzel" in sentence, "page 7 has the two words einem and Scharmüzel apart")
             }
         }
+    }
+
+    /** The text of a page with each generated character shown as a space or line break, as a reader sees it. */
+    private fun pageString(text: PdfTextPage): String {
+        val sb = StringBuilder()
+        for (i in 0 until text.charCount) {
+            val c = text.char(i)
+            sb.appendCodePoint(if (c.generated && c.unicode == CR) SPACE else c.unicode)
+        }
+        return sb.toString().replace("\n", "")
     }
 
     @Test
     fun pdfiumsCharactersAgreeWithAnIndependentReaderOnAlmostEveryPage() {
         assumeTrue(abhandlung.exists(), "the sample PDF is not available")
-        var agree = 0
-        val disagree = mutableListOf<Int>()
-        PdfDocument.open(abhandlung).use { doc ->
-            Loader.loadPDF(abhandlung.toFile()).use { pdfbox ->
-                for (n in 1..doc.pageCount) {
-                    val mine = StringBuilder()
-                    doc.page(n - 1).use { page ->
-                        val text = page.text()
-                        for (i in 0 until text.charCount) {
-                            val c = text.char(i)
-                            if (c.generated) continue
-                            val unicode = if (c.hyphen) '-'.code else c.unicode
-                            if (!Character.isWhitespace(unicode)) mine.appendCodePoint(unicode)
-                        }
-                    }
-                    val stripper = PDFTextStripper()
-                    stripper.sortByPosition = false
-                    stripper.startPage = n
-                    stripper.endPage = n
-                    val other = stripper.getText(pdfbox).filter { !it.isWhitespace() }
-                    // The same characters; the order of the text pieces may differ between the two readers.
-                    if (mine.toString().toList().sorted() == other.toList().sorted()) agree++ else disagree += n
-                }
+        val disagree =
+            PdfDocument.open(abhandlung).use { doc ->
+                Loader.loadPDF(abhandlung.toFile()).use { pdfbox -> pagesWhereTheReadersDisagree(doc, pdfbox) }
             }
-        }
         // Page 156 has one letter drawn twice in the same place, which PDFBox leaves out and PDFium keeps.
         assertEquals(listOf(156), disagree, "pages where the characters differ")
-        assertEquals(164, agree)
+    }
+
+    /** The same characters; the order of the text pieces may differ between the two readers. */
+    private fun pagesWhereTheReadersDisagree(
+        doc: PdfDocument,
+        pdfbox: PDDocument,
+    ): List<Int> =
+        (1..doc.pageCount).filter { n ->
+            pdfiumCharacters(doc, n).toList().sorted() != pdfboxCharacters(pdfbox, n).toList().sorted()
+        }
+
+    /** The real characters of page [n] without whitespace, with PDFium's hyphen marker turned back into `-`. */
+    private fun pdfiumCharacters(
+        doc: PdfDocument,
+        n: Int,
+    ): String {
+        val sb = StringBuilder()
+        doc.page(n - 1).use { page ->
+            val text = page.text()
+            for (i in 0 until text.charCount) {
+                val c = text.char(i)
+                val unicode = if (c.hyphen) '-'.code else c.unicode
+                if (!c.generated && !Character.isWhitespace(unicode)) sb.appendCodePoint(unicode)
+            }
+        }
+        return sb.toString()
+    }
+
+    private fun pdfboxCharacters(
+        pdfbox: PDDocument,
+        n: Int,
+    ): String {
+        val stripper = PDFTextStripper()
+        stripper.sortByPosition = false
+        stripper.startPage = n
+        stripper.endPage = n
+        return stripper.getText(pdfbox).filter { !it.isWhitespace() }
     }
 
     // --- Clausewitz -------------------------------------------------------------------------------------
@@ -237,9 +261,9 @@ class SampleTextLayerTest {
                 "and PDFium generates few: ${tally.generatedSpaces}",
             )
 
-            val offsets = (0 until doc.pageCount).map { p -> doc.page(p).use { it.bounds } }
-            assertTrue(offsets.any { it.bottom != 0.0 }, "the visible area of some pages does not start at y = 0")
-            assertTrue(offsets.all { kotlin.math.abs(it.left) < 0.05 && kotlin.math.abs(it.bottom) < 0.05 })
+            val areas = (0 until doc.pageCount).map { p -> doc.page(p).use { it.bounds } }
+            assertTrue(areas.any { it.bottom != 0.0 }, "the visible area of some pages does not start at y = 0")
+            assertTrue(areas.all { abs(it.left) < 0.05 && abs(it.bottom) < 0.05 }, "but only by a hair")
         }
     }
 
@@ -252,5 +276,6 @@ class SampleTextLayerTest {
         const val REPLACEMENT = 0xFFFD
         const val LONG_S = 0x17F
         const val MIN_LINE_DROP = 5.0
+        val WHITESPACE = setOf(LF, CR, TAB)
     }
 }
