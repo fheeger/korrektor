@@ -21,7 +21,7 @@ Known limitation: pages with several columns may have their lines mixed up until
 
 ## Tasks
 - [x] S03.1 Analyze the sample PDF: how the text layer is built (characters or words, order, coordinates, encoding) → [T016](../tickets/T016-pdfium-binding.md), [T017](../tickets/T017-text-layer-analysis.md)
-- [ ] S03.2 Extract words with text and boxes from a page → [T018](../tickets/T018-extract-words.md)
+- [x] S03.2 Extract words with text and boxes from a page → [T018](../tickets/T018-extract-words.md)
 - [ ] S03.3 Group words into lines and put lines into reading order; create one body region per page → [T020](../tickets/T020-lines-and-region.md)
 - [ ] S03.4 Convert coordinates into the format's coordinate system → [T019](../tickets/T019-coordinates.md)
 - [ ] S03.5 Write the original and corrected layers for each page → [T021](../tickets/T021-import-into-project.md)

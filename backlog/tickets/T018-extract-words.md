@@ -1,6 +1,6 @@
 # T018 Extract words with text and boxes from a page
 
-**Type:** task · **Status:** in progress · **Story:** S03 · **Task:** S03.2
+**Type:** task · **Status:** done · **Story:** S03 · **Task:** S03.2
 
 Turn the characters of a page's text layer into words: the text of each word, exactly as in the PDF, and its box.
 
@@ -40,4 +40,4 @@ T016, T017.
 - **The rules were checked by changing them:** with the hyphen branch removed, three tests fail (the unit test, the generated-PDF test and the sample test); with the gap factor changed from 0.6 to 0.7 the large-gap test fails.
 
 ## Progress
-Done: `WordExtractor` (rules 1–5 of the analysis), 21 tests in `WordExtractorTest`: 12 on hand-made characters (each rule, the box union, boxes of generated characters ignored), 6 on generated PDFs (known words and places, words as separate pieces, invisible text, special characters through a ToUnicode map, a hyphen at the end of a line, an empty page), 3 on the sample (page 6 starts with `Vorrede.`, `5`, `Man`, … and its word count is within 5 of PDFBox's; over the whole book no word is empty or contains whitespace, a control character or U+0002; the pages without text give no words; page 18 has `einKriegs-` followed by `freund,`). The generated-PDF test of the hyphen marker works because a text object ending in `Erin-` followed by one starting the next line makes PDFium produce the marker. `./gradlew build` is green (202 tests, 1 skipped by design).
+Done: PR #23 merged, CI green. `WordExtractor` (rules 1–5 of the analysis), 21 tests in `WordExtractorTest`: 12 on hand-made characters (each rule, the box union, boxes of generated characters ignored), 6 on generated PDFs (known words and places, words as separate pieces, invisible text, special characters through a ToUnicode map, a hyphen at the end of a line, an empty page), 3 on the sample (page 6 starts with `Vorrede.`, `5`, `Man`, … and its word count is within 5 of PDFBox's; over the whole book no word is empty or contains whitespace, a control character or U+0002; the pages without text give no words; page 18 has `einKriegs-` followed by `freund,`). The generated-PDF test of the hyphen marker works because a text object ending in `Erin-` followed by one starting the next line makes PDFium produce the marker. `./gradlew build` is green (202 tests, 1 skipped by design).
