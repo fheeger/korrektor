@@ -324,4 +324,33 @@ class NewProjectTest {
             assertNothingCreated(parent, message, "disk full")
             assertContentEquals(pdfBytes, source.readBytes())
         }
+
+    // --- discard ------------------------------------------------------------------------------------------
+
+    @Test
+    fun discardDeletesAProjectCompletelyEvenWithItsReadOnlyPdf() =
+        withDir { dir ->
+            val project = NewProject.create(target(dir), pdf(dir), Metadata("Gone"))
+            assertFalse(Files.isWritable(project.sourcePdf), "the copy of the PDF is read-only")
+
+            NewProject.discard(project)
+
+            assertFalse(project.folder.exists())
+            assertEquals(emptyList(), project.folder.parent.listDirectoryEntries())
+        }
+
+    @Test
+    fun discardRefusesAFolderThatDoesNotLookLikeAProject() =
+        withDir { dir ->
+            // Without its project.json it is not a project any more.
+            val damaged = NewProject.create(target(dir), pdf(dir), Metadata("Damaged"))
+            Files.delete(damaged.folder.resolve("project.json"))
+            assertFailsWith<IllegalArgumentException> { NewProject.discard(damaged) }
+            assertTrue(damaged.folder.exists(), "nothing was deleted")
+
+            // A project folder without the suffix is not one this app made.
+            val plain = Project.create(dir.resolve("projects/plain"), pdf(dir, "other.pdf"), emptyList())
+            assertFailsWith<IllegalArgumentException> { NewProject.discard(plain) }
+            assertTrue(plain.folder.exists())
+        }
 }

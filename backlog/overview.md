@@ -48,5 +48,5 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T020](tickets/T020-lines-and-region.md) | Lines in reading order and one body region | task | S03 | done |
 | [T021](tickets/T021-import-into-project.md) | Import a PDF into a project | task | S03 | done |
 | [T022](tickets/T022-pages-without-text.md) | Pages without text or with a broken text layer | task | S03 | done |
-| [T023](tickets/T023-import-in-background.md) | Import in the background with progress and cancel | task | S03 | ready for development |
+| [T023](tickets/T023-import-in-background.md) | Import in the background with progress and cancel | task | S03 | in progress |
 | [T024](tickets/T024-import-tests.md) | Import tests: sample PDF and generated PDFs | task | S03 | ready for development |

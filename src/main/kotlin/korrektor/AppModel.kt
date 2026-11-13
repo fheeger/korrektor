@@ -9,8 +9,13 @@ import korrektor.format.Project
 import java.nio.file.Path
 import kotlin.io.path.name
 
-/** The state of the app: which project is open, and the error to show, if any. */
-class AppModel {
+/**
+ * The state of the app: which project is open, and the error or notice to show, if any.
+ * [projectFactory] makes new projects; tests put another one in its place.
+ */
+class AppModel(
+    val projectFactory: ProjectFactory = DefaultProjectFactory,
+) {
     /** The open project, or null on the start screen. */
     var project: Project? by mutableStateOf(null)
         private set
@@ -41,6 +46,10 @@ class AppModel {
     var error: String? by mutableStateOf(null)
         private set
 
+    /** Something the user should know that is not an error, for example which pages had no text. */
+    var notice: String? by mutableStateOf(null)
+        private set
+
     /** Opens the project in [folder]. If that fails, [error] says why and the current project stays open. */
     fun openProject(folder: Path) {
         try {
@@ -52,6 +61,10 @@ class AppModel {
 
     fun dismissError() {
         error = null
+    }
+
+    fun dismissNotice() {
+        notice = null
     }
 
     fun openNewProject() {
@@ -70,9 +83,13 @@ class AppModel {
         editMetadataOpen = false
     }
 
-    /** Makes [created] the open project, and closes the "New project" dialog. */
-    fun openCreated(created: Project) {
+    /** Makes [created] the open project, shows [notice] if there is one, and closes the "New project" dialog. */
+    fun openCreated(
+        created: Project,
+        notice: String? = null,
+    ) {
         open(created)
+        this.notice = notice
         newProjectOpen = false
     }
 
@@ -90,6 +107,7 @@ class AppModel {
         project = opened
         metadata = opened.metadata
         error = null
+        notice = null
     }
 }
 
