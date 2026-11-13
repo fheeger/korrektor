@@ -19,6 +19,8 @@ An overview of the code structure. Every ticket that changes the structure updat
   - `PdfPage.kt`: a page: size after rotation, rotation, the visible area (`bounds`), `text()`, and `render(width)` to an image. Also `PdfRect`.
   - `PdfTextPage.kt`: the characters of a page's text layer with their boxes, as PDFium reports them (`PdfChar`).
   - Documents, pages and text pages close their children; a closed object fails with a clear error instead of crashing the JVM.
+- `korrektor.importer`: reading the text of a PDF into the project's page layers (S03). The rules are in [pdf-text-layer.md](pdf-text-layer.md).
+  - `WordExtractor.kt`: turns the characters of a page's text layer into words (`RawWord`: text and box in PDF coordinates). `split` works on a plain list of characters, so the rules are tested without a PDF.
 - `korrektor.format`: the project format (S01), with no UI and no PDF code. The specification is [project-format.md](project-format.md).
   - `Model.kt`: the data model of a page layer: `PageLayer` → `Region` → `Line` → `Word`, with `Box` and `RegionType`. Original OCR and corrected text use the same types. Unknown fields are kept in `extra`. It also holds `Metadata` (title, author, year, source as typed).
   - `AtomicFile.kt`: crash-safe replacement of a file (temp file, flush, atomic rename) and cleanup of leftover temp files. Every file the project writes goes through it, except the append-only history.
