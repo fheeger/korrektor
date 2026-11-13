@@ -31,7 +31,7 @@ object CanonicalJson {
         try {
             decodeUtf8(file.readBytes(), file)
         } catch (e: java.io.IOException) {
-            throw FormatException("Cannot read $file: ${e.message}", e)
+            throw FormatException("Cannot read $file: ${e.reason()}", e)
         }
 
     fun decodeUtf8(

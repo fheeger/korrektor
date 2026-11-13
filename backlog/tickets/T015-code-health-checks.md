@@ -1,6 +1,6 @@
 # T015 Code health checks (Detekt, Kover)
 
-**Type:** task · **Status:** in progress · **Story:** none
+**Type:** task · **Status:** done · **Story:** none
 
 Add a static analysis check for complexity and code smells that blocks the PR, and a coverage report that Claude reads during code review.
 
@@ -46,3 +46,4 @@ None. T009 is in progress, so this ticket is worked on after it is merged.
 
 ## Progress
 Done: Detekt (default rules, Compose rules, no baseline) and Kover added; all 53 findings fixed; CI runs `build koverXmlReport` and uploads `build/reports`; `process.md`, README and `docs/architecture.md` updated. Checked locally: `./gradlew clean build` green (62 tests, 1 skipped by design); a throwaway file with a complex function and a badly named composable made the build fail (criteria 3 and 4). Line coverage is about 97%. Code review (Opus) found no behaviour change in the refactors; its findings are fixed: Compose overrides, `--continue`, doc wording, and two tests for the refactored paths (empty history file, bad number in a word box). Next: PR.
+Finished: PR #13 merged, CI green. T009's code (merged into the S02 story branch afterwards) was adapted to the new structure: its metadata encoding and decoding live in `ProjectFile`, and `Project` lost a one-use helper to stay under Detekt's function limit.

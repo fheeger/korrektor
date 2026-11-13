@@ -9,12 +9,21 @@ import kotlinx.serialization.json.JsonPrimitive
 internal object ProjectFile {
     private const val FILE = Project.PROJECT_FILE
 
+    /** What `project.json` holds. */
+    class Parsed(
+        val pages: List<PageInfo>,
+        val metadata: Metadata?,
+        val extra: Map<String, JsonElement>,
+    )
+
     fun encode(
         pages: List<PageInfo>,
+        metadata: Metadata?,
         extra: Map<String, JsonElement>,
     ): String {
         val members =
             mutableListOf("  \"format\": ${CanonicalJson.quote(Project.FORMAT)}", "  \"version\": ${Project.VERSION}")
+        metadata?.let { members += "  \"metadata\": ${encodeMetadata(it)}" }
         members +=
             if (pages.isEmpty()) {
                 "  \"pages\": []"
@@ -35,7 +44,44 @@ internal object ProjectFile {
         return "{" + members.joinToString(", ") + "}"
     }
 
-    fun decode(text: String): Pair<List<PageInfo>, Map<String, JsonElement>> {
+    /** One line; empty author, year and source are left out. */
+    private fun encodeMetadata(m: Metadata): String {
+        val members = mutableListOf("\"title\": ${CanonicalJson.quote(m.title)}")
+        if (m.author.isNotEmpty()) members += "\"author\": ${CanonicalJson.quote(m.author)}"
+        if (m.year.isNotEmpty()) members += "\"year\": ${CanonicalJson.quote(m.year)}"
+        if (m.source.isNotEmpty()) members += "\"source\": ${CanonicalJson.quote(m.source)}"
+        m.extra.entries
+            .sortedBy { it.key }
+            .forEach { members += "${CanonicalJson.quote(it.key)}: ${CanonicalJson.write(it.value)}" }
+        return "{" + members.joinToString(", ") + "}"
+    }
+
+    private fun decodeMetadata(element: JsonElement): Metadata {
+        val o = element as? JsonObject ?: throw FormatException("$FILE: \"metadata\" must be an object")
+        val title = metadataText(o, "title")
+        if (title.isNullOrBlank()) throw FormatException("$FILE: metadata.title must be a non-blank string")
+        return Metadata(
+            title,
+            metadataText(o, "author") ?: "",
+            metadataText(o, "year") ?: "",
+            metadataText(o, "source") ?: "",
+            o.filterKeys { it !in Metadata.KNOWN_KEYS },
+        )
+    }
+
+    private fun metadataText(
+        o: JsonObject,
+        key: String,
+    ): String? {
+        val v = o[key]
+        return when {
+            v == null -> null
+            v is JsonPrimitive && v.isString -> v.content
+            else -> throw FormatException("$FILE: metadata.$key must be a string")
+        }
+    }
+
+    fun decode(text: String): Parsed {
         val root = CanonicalJson.parse(text) as? JsonObject ?: throw FormatException("$FILE: expected an object")
         checkFormat(root)
         checkVersion(root)
@@ -44,7 +90,11 @@ internal object ProjectFile {
                 root["pages"] as? JsonArray
                     ?: throw FormatException("$FILE: \"pages\" must be an array")
             ).mapIndexed { i, p -> decodePage(p, i) }
-        return pages to root.filterKeys { it !in setOf("format", "version", "pages") }
+        return Parsed(
+            pages,
+            root["metadata"]?.let { decodeMetadata(it) },
+            root.filterKeys { it !in setOf("format", "version", "metadata", "pages") },
+        )
     }
 
     private fun checkFormat(root: JsonObject) {

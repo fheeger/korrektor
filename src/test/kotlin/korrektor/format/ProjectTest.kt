@@ -87,7 +87,7 @@ class ProjectTest {
             assertFalse(folder.exists())
 
             assertFailsWith<FormatException> {
-                Project.create(folder, pdf(dir), listOf(PageInfo(1))) { from, to ->
+                Project.create(folder, pdf(dir), listOf(PageInfo(1)), null) { from, to ->
                     Files.copy(from, to)
                     throw java.io.IOException("disk full")
                 }

@@ -12,7 +12,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | ID | Story | Features | Status |
 |---|---|---|---|
 | [S01](stories/S01-project-format.md) | Project format | N5, N4 | done |
-| [S02](stories/S02-create-project.md) | Create a project with metadata | A1 | ready for development |
+| [S02](stories/S02-create-project.md) | Create a project with metadata | A1 | in review |
 | [S03](stories/S03-import-pdf-with-ocr.md) | Import a PDF with OCR | A2 | ready for development |
 | [S04](stories/S04-page-viewer.md) | Page viewer | C2, N1 | ready for development |
 | [S05](stories/S05-side-by-side-editor.md) | Scan and text side by side | C1 | ready for development |
@@ -34,4 +34,10 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T006](tickets/T006-history-log.md) | Undo history: append-only log | task | S01 | done |
 | [T007](tickets/T007-format-spec.md) | Project format specification | task | S01 | done |
 | [T008](tickets/T008-sample-fits-format.md) | The sample book fits the format | task | S01 | done |
-| [T015](tickets/T015-code-health-checks.md) | Code health checks (Detekt, Kover) | task | – | in progress |
+| [T009](tickets/T009-project-metadata.md) | Project metadata in the format | task | S02 | done |
+| [T010](tickets/T010-create-project-service.md) | Create a project from a PDF (logic) | task | S02 | done |
+| [T011](tickets/T011-app-shell-open-project.md) | App shell: start screen, open a project, window title | task | S02 | done |
+| [T012](tickets/T012-new-project-dialog.md) | New project dialog | task | S02 | done |
+| [T013](tickets/T013-edit-metadata.md) | Edit the metadata of an open project | task | S02 | done |
+| [T014](tickets/T014-project-lifecycle-tests.md) | Project lifecycle tests | task | S02 | done |
+| [T015](tickets/T015-code-health-checks.md) | Code health checks (Detekt, Kover) | task | – | done |

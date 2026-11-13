@@ -30,13 +30,35 @@ data class PageInfo(
 class Project private constructor(
     val folder: Path,
     val pages: List<PageInfo>,
+    metadata: Metadata?,
     private val extra: Map<String, JsonElement>,
 ) {
+    /** The metadata, or null for a project that has none (made before S02). */
+    var metadata: Metadata? = metadata
+        private set
+
     val sourcePdf: Path get() = folder.resolve(SOURCE_PDF)
 
     /** Writes `project.json` again. Without changes, the bytes are identical to what was read. */
-    fun saveProjectFile() =
-        AtomicFile.write(folder.resolve(PROJECT_FILE), ProjectFile.encode(pages, extra).toByteArray(Charsets.UTF_8))
+    fun saveProjectFile() {
+        val text = ProjectFile.encode(pages, metadata, extra)
+        AtomicFile.write(folder.resolve(PROJECT_FILE), text.toByteArray(Charsets.UTF_8))
+    }
+
+    /** Replaces the metadata and writes `project.json`. If writing fails, the old metadata stays. */
+    fun updateMetadata(new: Metadata) {
+        val old = metadata
+        metadata = new
+        try {
+            saveProjectFile()
+        } catch (
+            // The old value must come back after any failure; the failure is rethrown.
+            @Suppress("TooGenericExceptionCaught") e: Throwable,
+        ) {
+            metadata = old
+            throw e
+        }
+    }
 
     /** The corrected layer of page [n]. */
     fun readPage(n: Int): PageLayer = read(pageFile(n, ".json"), n)
@@ -74,14 +96,7 @@ class Project private constructor(
         n: Int,
     ): PageLayer {
         if (!file.exists()) throw FormatException("Page $n has no file ${file.fileName}")
-        return decodeChecked(file, n, readText(file))
-    }
-
-    private fun decodeChecked(
-        file: Path,
-        n: Int,
-        text: String,
-    ): PageLayer {
+        val text = readText(file)
         val layer =
             try {
                 PageCodec.decode(text)
@@ -129,13 +144,15 @@ class Project private constructor(
             folder: Path,
             sourcePdf: Path,
             pages: List<PageInfo>,
-        ): Project = create(folder, sourcePdf, pages, AtomicFile::copy)
+            metadata: Metadata? = null,
+        ): Project = create(folder, sourcePdf, pages, metadata, AtomicFile::copy)
 
         /** [copyPdf] is a seam for tests, to simulate a failure while copying. */
         internal fun create(
             folder: Path,
             sourcePdf: Path,
             pages: List<PageInfo>,
+            metadata: Metadata?,
             copyPdf: (Path, Path) -> Unit,
         ): Project {
             checkCanCreate(folder, sourcePdf)
@@ -144,7 +161,7 @@ class Project private constructor(
                 try {
                     copyPdf(sourcePdf, folder.resolve(SOURCE_PDF))
                     folder.resolve(PAGES_DIR).createDirectories()
-                    val project = Project(folder, pages, emptyMap())
+                    val project = Project(folder, pages, metadata, emptyMap())
                     project.saveProjectFile()
                     // Last step: a read-only file would make cleanup after a failure harder.
                     // Best effort: not every file system supports it.
@@ -158,7 +175,7 @@ class Project private constructor(
                     throw e
                 }
             } catch (e: IOException) {
-                throw FormatException("Cannot create the project at $folder: ${e.message}", e)
+                throw FormatException("Cannot create the project at $folder: ${e.reason()}", e)
             }
         }
 
@@ -172,10 +189,10 @@ class Project private constructor(
 
         /** Opens an existing project. Nothing is changed if it can't be opened. */
         fun open(folder: Path): Project {
-            val (pages, extra) = ProjectFile.decode(readText(projectFileOf(folder)))
+            val parsed = ProjectFile.decode(readText(projectFileOf(folder)))
             if (!folder.resolve(SOURCE_PDF).exists()) throw FormatException("$folder has no $SOURCE_PDF")
             AtomicFile.cleanupTemp(folder)
-            return Project(folder, pages, extra)
+            return Project(folder, parsed.pages, parsed.metadata, parsed.extra)
         }
 
         private fun projectFileOf(folder: Path): Path {
@@ -189,7 +206,7 @@ class Project private constructor(
             try {
                 CanonicalJson.readUtf8(file)
             } catch (e: IOException) {
-                throw FormatException("Cannot read $file: ${e.message}", e)
+                throw FormatException("Cannot read $file: ${e.reason()}", e)
             }
 
         private fun deleteTree(folder: Path) {

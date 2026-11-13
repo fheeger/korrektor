@@ -38,7 +38,7 @@ class HistoryLog(
                 channel.force(true)
             }
         } catch (e: IOException) {
-            throw FormatException("Cannot write $file: ${e.message}", e)
+            throw FormatException("Cannot write $file: ${e.reason()}", e)
         }
     }
 
@@ -69,7 +69,7 @@ class HistoryLog(
                 return wanted.mapIndexed { i, l -> parse(l, "${wanted.size - i} from the end") }
             }
         } catch (e: IOException) {
-            throw FormatException("Cannot read $file: ${e.message}", e)
+            throw FormatException("Cannot read $file: ${e.reason()}", e)
         }
     }
 
@@ -80,7 +80,7 @@ class HistoryLog(
             try {
                 CanonicalJson.readUtf8(file)
             } catch (e: IOException) {
-                throw FormatException("Cannot read $file: ${e.message}", e)
+                throw FormatException("Cannot read $file: ${e.reason()}", e)
             }
         // A last line without newline is torn; with a complete text the rest after the final newline is empty.
         val lines = text.split('\n').dropLast(1)
