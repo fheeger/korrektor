@@ -1,6 +1,6 @@
 # T012 "New project" dialog
 
-**Type:** task · **Status:** ready for development · **Story:** S02 · **Task:** S02.2
+**Type:** task · **Status:** in progress · **Story:** S02 · **Task:** S02.2
 
 The dialog that creates a project: choose a PDF, fill in the metadata, choose where to store it, create.
 
@@ -40,5 +40,12 @@ T010, T011.
 - Title, author, year and source are on one page: there are only four fields.
 - Creating runs on a background thread; the UI stays responsive for large PDFs.
 
+- **The in-window `Dialog` of Compose** (not a separate window), so it works in the UI tests and stays on top of the app. Closing it by clicking outside or pressing Escape is ignored while creating.
+- **A suggestion never overwrites what the user decided:** a typed title (or a chosen location) stays when a PDF is chosen. A suggested title follows a second PDF, and a cleared title gets a new suggestion. An error disappears as soon as the user changes something.
+- **Creating needs a location too:** `canCreate` also requires a location, which is always set once a PDF is chosen.
+- **"New project…" is also on the project screen** (next to "Open another project…"), so a second project can be created without restarting. The ticket only named the start screen.
+- **Time-limited waits in the UI tests:** creation runs on a real background thread, so the tests wait for the result (up to 10 s) instead of assuming it is instant.
+- **The dialog model uses coroutines directly** (`kotlinx-coroutines`, already on the classpath through Compose): a scope from the dialog and a dispatcher for the copy. Tests use a dispatcher they control to look at the busy state.
+
 ## Progress
-Not started.
+Code done; `./gradlew build` green (14 new tests in `NewProjectModelTest`, 5 new Compose UI tests for the dialog in `AppUiTest`; Detekt and ktlint clean). Checked for real: `./gradlew run` opened a window titled `korrektor` with no errors in the log. Not checked (for the story report, "how to try it"): the real PDF file dialog and the Swing folder dialog, how the dialog looks and fits, and creating a project from the 165-page sample PDF. Docs updated: README, `docs/architecture.md`. Next: PR into `story/S02-create-project`; when CI is green, squash-merge, set this ticket to done, then start T013.

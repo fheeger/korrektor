@@ -16,15 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-/**
- * What the user sees without an open project. "New project…" is only enabled when [onNewProject] is given
- * (it is wired in T012).
- */
+/** What the user sees without an open project. */
 @Composable
 fun StartScreen(
     onOpenProject: () -> Unit,
+    onNewProject: () -> Unit,
     modifier: Modifier = Modifier,
-    onNewProject: (() -> Unit)? = null,
 ) {
     Column(
         modifier.fillMaxSize().padding(32.dp),
@@ -34,7 +31,7 @@ fun StartScreen(
         Text(APP_NAME, style = MaterialTheme.typography.displaySmall)
         Text("Correct the OCR of historical PDFs and turn them into clean, searchable text.")
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(onClick = { onNewProject?.invoke() }, enabled = onNewProject != null) { Text("New project…") }
+            Button(onClick = onNewProject) { Text("New project…") }
             Button(onClick = onOpenProject) { Text("Open project…") }
         }
     }
