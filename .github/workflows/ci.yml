@@ -25,7 +25,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       # `build` runs compile, all tests, ktlint (format and lint checks) and Detekt (complexity and code smells).
       # Tests that need the sample PDF must skip themselves when it's missing.
-      - run: ./gradlew build koverXmlReport
+      # --continue: a Detekt finding must not hide failing tests, and the reports are still written.
+      - run: ./gradlew build koverXmlReport --continue
       - uses: actions/upload-artifact@v7
         if: always()
         with:

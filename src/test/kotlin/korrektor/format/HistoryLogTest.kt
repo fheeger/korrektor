@@ -111,6 +111,14 @@ class HistoryLogTest {
         }
 
     @Test
+    fun anEmptyFileHasNoEntries() =
+        withFile { file ->
+            Files.createDirectories(file.parent)
+            file.writeText("")
+            assertEquals(emptyList(), HistoryLog(file).readAll())
+        }
+
+    @Test
     fun aFileWithOnlyATornLineIsEmptyAndCanBeAppendedTo() =
         withFile { file ->
             Files.createDirectories(file.parent)

@@ -145,7 +145,7 @@ The concrete tools (test framework, formatter, linter) are chosen with the techn
 - Performance and crash tests run locally or on demand, not on every PR.
 
 ### Code style
-- One formatter (ktlint) and static analysis (Detekt) with their default settings, plus the Compose rule set. The tools decide, not discussions. A suppression needs a comment saying why.
+- One formatter (ktlint) and static analysis (Detekt) with their default settings, plus the Compose rule set and the few overrides in `.editorconfig` and `config/detekt/detekt.yml` (each with a comment saying why). The tools decide, not discussions. A suppression needs a comment saying why.
 - No coverage target. Kover reports coverage for review, but nothing fails on it. The rule is that every criterion is tested.
 
 ## Documentation

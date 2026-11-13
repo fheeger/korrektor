@@ -196,6 +196,10 @@ class PageCodecTest {
             """{$head, "regions": [$r1, "lines": [{"id": "l1", "words": []}, {"id": "l1", "words": []}]}]}""",
             "l1",
         )
+        assertInvalid(
+            """{$head, "regions": [$r1, "lines": [{"id": "l1", "words": [["a", 1, 2, "x", 4]]}]}]}""",
+            "words[0][3]",
+        )
         assertInvalid("""[1]""", "object")
         assertInvalid("""{"pdfPage": """, "Invalid JSON")
     }

@@ -1,3 +1,15 @@
 # Only overrides of the Detekt defaults (buildUponDefaultConfig). Keep this file small.
+
+# The Compose rules (naming, modifiers, ...) replace Detekt's own checks for Compose code.
 Compose:
   active: true
+
+naming:
+  FunctionNaming:
+    # Composable functions are PascalCase.
+    ignoreAnnotated: ['Composable']
+
+style:
+  UnusedPrivateMember:
+    # Previews are never called from code.
+    ignoreAnnotated: ['Preview']
