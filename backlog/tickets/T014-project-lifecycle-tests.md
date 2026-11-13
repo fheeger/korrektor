@@ -1,6 +1,6 @@
 # T014 Project lifecycle tests
 
-**Type:** task · **Status:** ready for development · **Story:** S02 · **Task:** S02.6
+**Type:** task · **Status:** in progress · **Story:** S02 · **Task:** S02.6
 
 Tests that cover several tickets of S02 together: create, reopen, edit metadata, and cleanup after failure, with real files.
 
@@ -24,7 +24,25 @@ Tests that cover several tickets of S02 together: create, reopen, edit metadata,
 T010, T013 (so the whole flow exists).
 
 ## Decisions
-None yet.
+- **The PDF for each test lives outside the folder the projects go to,** so a snapshot of that folder (every path with its size) shows exactly what the app made, and "exactly what it contained before" can be compared directly.
+- **Failure while writing `project.json` is simulated for real:** the copy seam copies the PDF and then puts a folder where the temporary file of `project.json` must go. The test then checks that the project folder is gone, and that creating the same project afterwards works.
+- **The flow through the app models is included** (create, a new session opens it, edit, a third session reads it), because the ticket asks for the whole flow and the models are plain Kotlin that needs no window.
+- **The sample PDF test uses `assumeTrue`,** like the other sample tests, so it shows as skipped when the file is missing (as in CI, where `samples/` is not present).
 
 ## Progress
-Not started.
+Code done; `./gradlew build` green (11 new tests in `ProjectLifecycleTest`, including the sample PDF case, which ran locally). Criterion 3 (skipped without the file) is checked on the CI run of the PR.
+
+Which test covers which logic or file criterion of S02 (for the story report):
+
+| S02 criterion | Test |
+|---|---|
+| No project without a PDF; a bad or missing PDF is refused | `NewProjectTest` (not a PDF, missing, folder, unreadable), `NewProjectModelTest` (`canCreate`), `ProjectLifecycleTest` |
+| The project has its own copy of the PDF | `NewProjectTest`, `ProjectLifecycleTest` (incl. the sample PDF, byte-identical) |
+| Title, author, year, source; only the title required; title suggested from the file name | `MetadataTest` (blank title), `NewProjectTest` (`suggestTitle`), `NewProjectModelTest` |
+| Year and source are free text (`ca. 1790`, `1785?`) | `MetadataTest`, `NewProjectModelTest`, `ProjectLifecycleTest` |
+| Metadata can be edited later | `MetadataTest` (`updateMetadata`), `EditMetadataModelTest`, `ProjectLifecycleTest` |
+| Stored in the format and documented | `MetadataTest`, `SpecExamplesTest` (spec examples round-trip) |
+| An existing project can be opened | `AppModelTest`, `AppUiTest` (the file dialog itself is a manual check) |
+| The window title shows the project title | `AppModelTest`, `AppUiTest`, `EditMetadataModelTest`, `ProjectLifecycleTest` |
+| Errors are clear and nothing half-created is left | `NewProjectTest`, `NewProjectModelTest`, `ProjectLifecycleTest` (parent folder unchanged after every failure) |
+| Projects from before S02 still open | `MetadataTest`, `ProjectLifecycleTest` (S01-style `project.json`) |
