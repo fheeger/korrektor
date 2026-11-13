@@ -138,3 +138,20 @@ data class PageLayer(
         require(duplicate == null) { "Duplicate $what '${duplicate?.key}' on page $pdfPage" }
     }
 }
+
+/**
+ * The metadata of a project (A1). All values are free text, stored exactly as typed (V1), so `ca. 1790` or
+ * `1785?` are fine as a year. Only the [title] is required. Empty values are not written to the file.
+ */
+data class Metadata(
+    val title: String,
+    val author: String = "",
+    val year: String = "",
+    val source: String = "",
+    val extra: Map<String, JsonElement> = emptyMap(),
+) {
+    init {
+        require(title.isNotBlank()) { "The title must not be blank" }
+        requireUnknownKeys(extra, setOf("title", "author", "year", "source"), "Metadata")
+    }
+}

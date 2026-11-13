@@ -1,6 +1,6 @@
 # T009 Project metadata in the format
 
-**Type:** task · **Status:** ready for development · **Story:** S02 · **Task:** S02.1
+**Type:** task · **Status:** done · **Story:** S02 · **Task:** S02.1
 
 Add the metadata (title, author, year, source) to the data model and to `project.json`, and document it in the format spec.
 
@@ -40,4 +40,4 @@ None.
 - Empty optional values are omitted rather than written as `""`, like other optional fields.
 
 ## Progress
-Not started.
+Done. Build, tests and ktlint are green. `Project.create` takes an optional `metadata`; `Project.updateMetadata` restores the old value if writing fails. The spec example for `project` now includes metadata and is checked by `SpecExamplesTest`.
