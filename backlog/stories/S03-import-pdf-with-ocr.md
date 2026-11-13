@@ -25,7 +25,7 @@ Known limitation: pages with several columns may have their lines mixed up until
 - [x] S03.3 Group words into lines and put lines into reading order; create one body region per page → [T020](../tickets/T020-lines-and-region.md)
 - [x] S03.4 Convert coordinates into the format's coordinate system → [T019](../tickets/T019-coordinates.md)
 - [x] S03.5 Write the original and corrected layers for each page → [T021](../tickets/T021-import-into-project.md)
-- [ ] S03.6 Run the import in the background with progress and cancel → [T023](../tickets/T023-import-in-background.md)
+- [x] S03.6 Run the import in the background with progress and cancel → [T023](../tickets/T023-import-in-background.md)
 - [x] S03.7 Handle pages without text or with a broken text layer → [T022](../tickets/T022-pages-without-text.md)
 - [ ] S03.8 Tests: the sample PDF plus small generated test PDFs (page without text, rotated text, two columns to check the import doesn't fail) → [T024](../tickets/T024-import-tests.md)
 
