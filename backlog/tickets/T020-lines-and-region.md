@@ -1,6 +1,6 @@
 # T020 Lines in reading order and one body region
 
-**Type:** task · **Status:** ready for development · **Story:** S03 · **Task:** S03.3
+**Type:** task · **Status:** in progress · **Story:** S03 · **Task:** S03.3
 
 Group a page's words into lines, put the lines and the words in reading order, and wrap them in one region. Layout detection (B3) comes later, so every page gets one body region.
 
@@ -30,7 +30,13 @@ Group a page's words into lines, put the lines and the words in reading order, a
 T018, T019.
 
 ## Decisions
-None yet.
+- **The tolerance is an overlap ratio, not points.** A word joins a line if it shares at least half of the smaller of the two heights with the line's latest word (0.5). That is relative to the size of the text, so it works for small and large pages alike; the "median word height" planned in the approach was not needed.
+- **Sweep from left to right and compare with the latest word of each line, not with the whole line.** That is what keeps a skewed line together: its words drift by a fraction of their height from one to the next, while its first and last word can be several points apart.
+- **Lines are ordered by the median centre height of their words**, and the words of a line by their left edge. Nothing depends on the order the words arrive in (tested with shuffled and reversed input).
+- **Stray words** (OCR noise from scan shadows at the page edge, between two lines) get a line of their own unless they overlap a text line enough. They are part of the text and stay (V1); a later feature can offer to clean them up. Seen on pages 24 and 36.
+- **The independent oracle is PDFBox's position-based lines**, not PDFium's line breaks (PDFium breaks a line at only about one line end in three, see the analysis). PDFBox is stricter, so it finds as many lines or more on every page; the two are within two lines on 145 of 165 pages. The builder never finds more lines than PDFBox, and the sample tests say so.
+- **I looked at it:** the lines drawn over the rendered pages 6, 24 and 36. All printed lines are one box each, in order; the extra lines PDFBox counts are the stray margin words.
+- **The overlap rule was checked by changing it** (0.05 and 0.95): five tests fail each time.
 
 ## Progress
-Not started.
+Done: `LineBuilder` and `PlacedWord`; 13 tests in `LineBuilderTest`: scrambled and reversed input, a skewed line (7 points of drift over 240 points) with its neighbours, close lines, words of different sizes on one line, the region and the line ids and boxes, words and their boxes unchanged, one-decimal boxes, a stray word, the two-column page (rows mixed, as the story says), and on the sample page 6 (`Vorrede. 5`, 30 lines in order) and all 165 pages (lines in order, words in order, no word lost, never more lines than PDFBox, within two lines on at least 140 pages). `./gradlew build` is green.
