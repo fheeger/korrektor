@@ -10,6 +10,7 @@ internal object PageEncoder {
         members += "  \"width\": ${CanonicalJson.formatNumber(page.width)}"
         members += "  \"height\": ${CanonicalJson.formatNumber(page.height)}"
         members += "  \"regions\": " + encodeRegions(page.regions)
+        page.note?.let { members += "  \"note\": ${CanonicalJson.quote(it)}" }
         members += extraMembers(page.extra).map { "  $it" }
         return "{\n" + members.joinToString(",\n") + "\n}\n"
     }

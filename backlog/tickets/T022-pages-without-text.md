@@ -1,6 +1,6 @@
 # T022 Pages without text or with a broken text layer
 
-**Type:** task · **Status:** ready for development · **Story:** S03 · **Task:** S03.7
+**Type:** task · **Status:** in progress · **Story:** S03 · **Task:** S03.7
 
 A page the import cannot get text from must not stop the import: it becomes an empty page with a note, and the import goes on.
 
@@ -31,7 +31,12 @@ A page the import cannot get text from must not stop the import: it becomes an e
 T021, T017.
 
 ## Decisions
-None yet.
+- **`note` is a field of the page, written after `regions`** and kept in both layers: the corrected layer is a copy, and the user may want to see why a page is empty while correcting it. It is a normal optional field, so the format version stays 1; a reader that does not know it keeps it like any unknown field.
+- **"No text" means no words.** A page with only a picture, or only spaces, has no words, so it gets the note, like a page with no characters at all. Whether the text is any good is not judged: garbage text is imported like any other.
+- **Failures are caught per page, and only there.** Two levels: if the page cannot be loaded (or its size cannot be read), the page gets the size of the previous page (A4, 595.3 × 841.9, if it is the first) and the note says so; if the page is there but its text cannot be read, the page keeps its own size. The catch is on `Exception` and carries a comment; cancelling is checked before each page, outside the catch, so it is never swallowed.
+- **PDFium is lenient with broken content:** a content stream cut off in the middle of an operator is read as far as it goes (the test PDF gives `Broken` and no note). So the "text could not be read" path is only reached through the `openPage` seam of `PdfImport.run`, which the tests use to fail a page to load and to hand over a page whose text cannot be read.
+- **`ImportResult.notes`** lists the page numbers and notes, so the UI (T023) can tell the user without reading every page.
+- **Not done:** a way to remove a note, or to re-import a page. The note is just text on the page for now.
 
 ## Progress
-Not started.
+Done: `PageLayer.note` with codec and spec (table, text, and a `page-note` example checked by `SpecExamplesTest`); per-page error handling in `PdfImport` with `PageNote` and `ImportResult.notes`; `TestPdfs` can make pages with only a picture and pages with a cut-off content stream. 11 new tests: 3 for the codec (written after `regions`, before unknown fields, a page without a note is written as before; `null` accepted; a non-string refused naming `page.note`), 8 for the import (a page without text, an image-only page and a spaces-only page, notes surviving open and save, a broken content stream, a page that cannot be loaded and takes the previous size, the same at the start (A4), a page whose text cannot be read and keeps its own size, and the sample: notes on exactly pages 3, 139, 161, 163 and 165 in both layers). `./gradlew build` is green.

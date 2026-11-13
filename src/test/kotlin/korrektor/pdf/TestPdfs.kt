@@ -13,7 +13,10 @@ import org.apache.pdfbox.pdmodel.font.PDFont
 import org.apache.pdfbox.pdmodel.font.PDType1Font
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts
 import org.apache.pdfbox.pdmodel.font.encoding.WinAnsiEncoding
+import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory
 import org.apache.pdfbox.pdmodel.graphics.state.RenderingMode
+import java.awt.Color
+import java.awt.image.BufferedImage
 import java.nio.file.Path
 
 /** A piece of text on a generated page, at a position in PDF coordinates (origin bottom-left). */
@@ -56,14 +59,20 @@ object TestPdfs {
         path: Path,
         pages: List<TestPage>,
         userPassword: String? = null,
+        /** Indices of pages that get a picture and no text, like a scan without OCR. */
+        picturePages: Set<Int> = emptySet(),
+        /** Indices of pages whose content is cut off in the middle of an operator. */
+        brokenPages: Set<Int> = emptySet(),
     ) {
         PDDocument().use { doc ->
-            for (spec in pages) {
+            for ((index, spec) in pages.withIndex()) {
                 val page = PDPage(PDRectangle(spec.area.originX, spec.area.originY, spec.width, spec.height))
                 spec.area.cropBox?.let { page.cropBox = PDRectangle(it[0], it[1], it[2] - it[0], it[3] - it[1]) }
                 page.rotation = spec.rotation
                 doc.addPage(page)
                 draw(doc, page, spec)
+                if (index in picturePages) drawPicture(doc, page)
+                if (index in brokenPages) breakContent(doc, page)
             }
             if (userPassword != null) {
                 val policy = StandardProtectionPolicy("owner-secret", userPassword, AccessPermission())
@@ -72,6 +81,38 @@ object TestPdfs {
             }
             doc.save(path.toFile())
         }
+    }
+
+    /** A grey square, as the scan of a page would be. */
+    private fun drawPicture(
+        doc: PDDocument,
+        page: PDPage,
+    ) {
+        val image = BufferedImage(40, 40, BufferedImage.TYPE_INT_RGB)
+        image.createGraphics().apply {
+            color = Color.GRAY
+            fillRect(0, 0, 40, 40)
+            dispose()
+        }
+        PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true).use {
+            it.drawImage(LosslessFactory.createFromImage(doc, image), 20f, 20f, 100f, 100f)
+        }
+    }
+
+    /** Replaces the content of the page by something that stops half way: text, then an operator without its end. */
+    private fun breakContent(
+        doc: PDDocument,
+        page: PDPage,
+    ) {
+        val stream = PDStream(doc)
+        stream.createOutputStream(COSName.FLATE_DECODE).use {
+            it.write(
+                "BT /F1 12 Tf 20 100 Td (Broken) Tj ET q 1 0 0 1 10 [ (unterminated << /X".toByteArray(
+                    Charsets.US_ASCII,
+                ),
+            )
+        }
+        page.setContents(stream)
     }
 
     private fun draw(
