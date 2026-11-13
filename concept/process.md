@@ -80,6 +80,7 @@ Claude lists the open loose tickets. Together we decide which of them to do firs
 - Before a story goes to `in review`, all of its changes get a code review using the review model. Claude fixes what it finds, and the report lists what was found and fixed.
 - Loose tickets go straight into `main`, so they get the same review before their PR. The PR description lists what was found and fixed.
 - Story tickets get no review of their own. The end-of-story review covers them.
+- Before the review, Claude runs `./gradlew build koverXmlReport` and reads the Detekt and coverage reports. Findings are fixed before the review. Uncovered new code is either tested or listed in the PR description or story report with the reason.
 - Anything Claude can't check itself (especially in the UI) is listed in the report under "how to try it" for the user to check.
 
 ### What Claude may do on its own
@@ -140,11 +141,12 @@ The concrete tools (test framework, formatter, linter) are chosen with the techn
 - GitHub Actions runs on every PR: build, all tests except those needing the sample PDF, formatter and linter.
 - A ticket PR is only merged when CI is green.
 - CI runs on Windows first. macOS and Linux are added with those platforms.
+- `./gradlew build` includes Detekt. Any finding fails the build; there is no baseline. Detekt and Kover reports are uploaded as a CI artifact.
 - Performance and crash tests run locally or on demand, not on every PR.
 
 ### Code style
-- One formatter and one linter, with their standard settings. The tools decide, not discussions.
-- No coverage target. The rule is that every criterion is tested.
+- One formatter (ktlint) and static analysis (Detekt) with their default settings, plus the Compose rule set. The tools decide, not discussions. A suppression needs a comment saying why.
+- No coverage target. Kover reports coverage for review, but nothing fails on it. The rule is that every criterion is tested.
 
 ## Documentation
 

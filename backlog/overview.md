@@ -34,3 +34,4 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T006](tickets/T006-history-log.md) | Undo history: append-only log | task | S01 | done |
 | [T007](tickets/T007-format-spec.md) | Project format specification | task | S01 | done |
 | [T008](tickets/T008-sample-fits-format.md) | The sample book fits the format | task | S01 | done |
+| [T015](tickets/T015-code-health-checks.md) | Code health checks (Detekt, Kover) | task | – | in progress |
