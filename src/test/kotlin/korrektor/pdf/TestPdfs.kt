@@ -28,6 +28,17 @@ class TestText(
     val codes: List<Int>? = null,
 )
 
+/**
+ * Where a generated page's boxes are. [originX] and [originY] are the lower-left corner of the media box (text
+ * positions are in the page's own coordinates, so they include it). [cropBox] is left, bottom, right, top in the
+ * same coordinates, if the visible area is smaller than the media box.
+ */
+class TestArea(
+    val originX: Float = 0f,
+    val originY: Float = 0f,
+    val cropBox: List<Float>? = null,
+)
+
 /** A generated page. [toUnicode] maps single-byte codes to the text PDF readers extract for them. */
 class TestPage(
     val width: Float = 200f,
@@ -35,6 +46,7 @@ class TestPage(
     val rotation: Int = 0,
     val texts: List<TestText> = emptyList(),
     val toUnicode: Map<Int, String> = emptyMap(),
+    val area: TestArea = TestArea(),
 )
 
 /** Small PDFs for tests, made with PDFBox. */
@@ -47,7 +59,8 @@ object TestPdfs {
     ) {
         PDDocument().use { doc ->
             for (spec in pages) {
-                val page = PDPage(PDRectangle(spec.width, spec.height))
+                val page = PDPage(PDRectangle(spec.area.originX, spec.area.originY, spec.width, spec.height))
+                spec.area.cropBox?.let { page.cropBox = PDRectangle(it[0], it[1], it[2] - it[0], it[3] - it[1]) }
                 page.rotation = spec.rotation
                 doc.addPage(page)
                 draw(doc, page, spec)
