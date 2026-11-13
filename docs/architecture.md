@@ -12,6 +12,13 @@ An overview of the code structure. Every ticket that changes the structure updat
   - `PdfPicker.kt`: the interface for choosing a PDF, and `AwtPdfPicker` (the system file dialog). Tests replace it.
   - `FolderPicker.kt`: the interface for choosing a folder, and `SwingFolderPicker` (a `JFileChooser` in folder mode, because the AWT dialog cannot choose folders on Windows). Tests replace it.
   - `NewProject.kt`: the logic behind "New project": suggests a title from the PDF's file name, makes a safe folder name (`<title>.korrektur`), checks the PDF (a file with `%PDF-` near its start; pages are read at import, S03) and the target, and creates the project through `Project.create`.
+- `korrektor.pdf`: PDFium for Kotlin (T016, D04). Nothing outside this package touches the native library.
+  - `PdfiumLib.kt`: the C functions of PDFium that are used, bound with JNA direct mapping (internal).
+  - `Pdfium.kt`: loads and initialises the library on first use, and the one lock every call runs under. Also `PdfException`, the error with a message for the user.
+  - `PdfDocument.kt`: an open PDF (`PdfDocument.open(path)`): page count, pages. If opening fails, the reason (not a PDF, needs a password, damaged) comes from looking at the file.
+  - `PdfPage.kt`: a page: size after rotation, rotation, the visible area (`bounds`), `text()`, and `render(width)` to an image. Also `PdfRect`.
+  - `PdfTextPage.kt`: the characters of a page's text layer with their boxes, as PDFium reports them (`PdfChar`).
+  - Documents, pages and text pages close their children; a closed object fails with a clear error instead of crashing the JVM.
 - `korrektor.format`: the project format (S01), with no UI and no PDF code. The specification is [project-format.md](project-format.md).
   - `Model.kt`: the data model of a page layer: `PageLayer` → `Region` → `Line` → `Word`, with `Box` and `RegionType`. Original OCR and corrected text use the same types. Unknown fields are kept in `extra`. It also holds `Metadata` (title, author, year, source as typed).
   - `AtomicFile.kt`: crash-safe replacement of a file (temp file, flush, atomic rename) and cleanup of leftover temp files. Every file the project writes goes through it, except the append-only history.

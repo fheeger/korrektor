@@ -88,3 +88,26 @@ Principles for the data model (details in S01.2):
 **Consequences:**
 - A folder is awkward to share. Sharing as a single file comes with A5.
 - On Windows, a project is a folder and doesn't open with a double-click. The app opens it through "Open…" (S02).
+
+## D04 Binding PDFium: JNA, with the library downloaded at build time
+**Date:** 2026-11-13
+
+**Decision:** Kotlin calls PDFium through JNA (`net.java.dev.jna:jna`, direct mapping), in the package `korrektor.pdf`. The PDFium library itself (prebuilt by `bblanchon/pdfium-binaries`, release `chromium/8152`) is not stored in the repository. A Gradle task downloads it for the current platform, checks it against a pinned SHA-256 and unpacks it into `build/pdfium`. `test` and `run` point `jna.library.path` there. All calls into PDFium go through one lock, because PDFium is not thread-safe (D02).
+
+**Reasons:**
+- JNA works on JDK 21 as it is. The Java FFM API, the alternative D02 named, is still a preview feature in JDK 21 (final in JDK 22): it would need `--enable-preview` for the build, the tests and the app, and its API may still change.
+- JNA exists for Android as well, which the plan for tablets needs. FFM does not run there.
+- Direct mapping keeps the cost of a call low enough for the one call per character the import makes.
+- The library is about 4 MB per platform. Downloading it with a pinned checksum keeps the repository small and the builds reproducible, and a changed or broken download fails the build.
+
+**Alternatives considered:**
+- The Java FFM API: no extra dependency, but preview in JDK 21 and not available on Android.
+- Committing the binaries: simpler offline builds, but binary files in the history for every update, for four platforms.
+- An existing PDFium wrapper library: none was found that is maintained, covers desktop and Android, and gives access to characters with their boxes.
+- JNI with our own C code: needs a C toolchain for every platform.
+
+**Consequences:**
+- The first build needs network access (GitHub). CI has it.
+- Only Windows is exercised so far. The checksums for Linux and macOS are pinned, the code is the same, and those platforms are tried when they are added.
+- An installer has to bundle the library (distribution, later). Updating PDFium means changing the release tag and the four checksums in `build.gradle.kts`.
+- PDFium's error code for a failed open is kept in a per-thread slot on Windows that the calls in between overwrite, so the binding looks at the file to tell "not a PDF", "needs a password" and "damaged" apart.

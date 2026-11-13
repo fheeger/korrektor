@@ -7,6 +7,7 @@ This is a hobby project in early development.
 - Vision: [concept/vision.md](concept/vision.md)
 - Features: [concept/features.md](concept/features.md)
 - Project file format: [docs/project-format.md](docs/project-format.md)
+- Third-party software and licenses: [docs/third-party.md](docs/third-party.md)
 - Development process: [concept/process.md](concept/process.md)
 - Backlog: [backlog/overview.md](backlog/overview.md)
 
@@ -18,7 +19,7 @@ Start the app from the project folder with `./gradlew run`. Features arrive with
 - **Open a project:** click "Open project…" and choose the project folder (the folder that ends in `.korrektur`). The window title then shows the project's title. If the folder is not a project, an error is shown and nothing changes; dismiss it with "Dismiss".
 
 ## Development
-Requires JDK 21. From the project folder:
+Requires JDK 21 and network access for the first build, which downloads PDFium (about 4 MB, checked against a pinned checksum) into `build/pdfium`. From the project folder:
 
 - `./gradlew run` starts the app.
 - `./gradlew build` compiles, runs the tests and checks formatting and lint (ktlint) and complexity and code smells (Detekt). Any finding fails the build.

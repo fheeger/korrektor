@@ -1,6 +1,6 @@
 # T016 PDFium and its Kotlin binding
 
-**Type:** task · **Status:** ready for development · **Story:** S03 · **Task:** S03.1
+**Type:** task · **Status:** in progress · **Story:** S03 · **Task:** S03.1
 
 Bring PDFium into the build and give the app a small, safe Kotlin interface to it: open a PDF, read page sizes and the characters of a page's text layer with their boxes, and render a page. The rest of S03 builds on this.
 
@@ -40,6 +40,12 @@ None.
 - **JNA, not the Java FFM API** (D04 will say so). FFM is still a preview feature in JDK 21 (final in 22), so it needs flags and may change. JNA runs on JDK 21 as it is and also exists for Android, which the tablet plan needs.
 - **The PDFium binary is downloaded and verified at build time, not committed.** It is about 4 MB per platform. The version and checksum are pinned, so builds are reproducible.
 - **Packaging the library into an installer** is not part of this ticket (distribution comes later).
+- **Why a failed open is classified by looking at the file.** PDFium's `FPDF_GetLastError` returned 0 in every test: on Windows PDFium stores the error in a per-thread slot that the JVM and JNA overwrite between the two calls. So `PdfDocument.open` checks for the `%PDF-` marker in the first 1024 bytes ("not a PDF file"), then for an `/Encrypt` entry ("needs a password", or "password is wrong" if one was given), and otherwise says "damaged, or uses something that is not supported". A password-protected file is recognised by its encryption entry, which is how PDF marks it.
+- **Names and mapping:** the Kotlin functions are camelCase; a name table maps them to the C names (`FPDF_LoadDocument` …). Declarations mirror the C signatures, so Detekt's parameter-count rule is suppressed for that one file with a comment. Integer results of `unsigned int` are read as `Int`; `unsigned long` arguments use `NativeLong`.
+- **Characters outside the BMP:** `PdfChar.unicode` is PDFium's value as it is. The test shows that a character like 😀 arrives as two UTF-16 halves (two entries), which `StringBuilder.appendCodePoint` turns back into one character. T018 has to join such pairs.
+- **Boxes:** `PdfChar.box` is PDFium's character box in PDF coordinates; a character without a box gets an empty box at the origin.
+- **Closing:** a document closes its open pages, a page closes its text page, so nothing is left open by mistake. All handle use is under the one lock, and 300 open/close rounds and 8 threads running at the same time pass.
+- **`render` is small:** white background, no annotations, black text as the PDF draws it. It is the oracle for the coordinate tests (T019) and the base for the viewer (S04).
 
 ## Progress
-Not started.
+Done: build task (download, checksum, unpack; wrong checksum fails with a clear message, shown once), JNA direct-mapped binding, wrapper classes, `TestPdfs` helper, 16 new tests, D04, third-party notices, architecture, README. `./gradlew build` is green (175 tests, 1 skipped by design). The sample test ran locally (165 pages; page 6 is 305.52 × 489.6). The sample PDF's path contains `ü`; PDFium opens it (UTF-8 path).
