@@ -1,6 +1,6 @@
 # T020 Lines in reading order and one body region
 
-**Type:** task · **Status:** in progress · **Story:** S03 · **Task:** S03.3
+**Type:** task · **Status:** done · **Story:** S03 · **Task:** S03.3
 
 Group a page's words into lines, put the lines and the words in reading order, and wrap them in one region. Layout detection (B3) comes later, so every page gets one body region.
 
@@ -39,4 +39,4 @@ T018, T019.
 - **The overlap rule was checked by changing it** (0.05 and 0.95): five tests fail each time.
 
 ## Progress
-Done: `LineBuilder` and `PlacedWord`; 13 tests in `LineBuilderTest`: scrambled and reversed input, a skewed line (7 points of drift over 240 points) with its neighbours, close lines, words of different sizes on one line, the region and the line ids and boxes, words and their boxes unchanged, one-decimal boxes, a stray word, the two-column page (rows mixed, as the story says), and on the sample page 6 (`Vorrede. 5`, 30 lines in order) and all 165 pages (lines in order, words in order, no word lost, never more lines than PDFBox, within two lines on at least 140 pages). `./gradlew build` is green.
+Done: PR #25 merged, CI green. `LineBuilder` and `PlacedWord`; 13 tests in `LineBuilderTest`: scrambled and reversed input, a skewed line (7 points of drift over 240 points) with its neighbours, close lines, words of different sizes on one line, the region and the line ids and boxes, words and their boxes unchanged, one-decimal boxes, a stray word, the two-column page (rows mixed, as the story says), and on the sample page 6 (`Vorrede. 5`, 30 lines in order) and all 165 pages (lines in order, words in order, no word lost, never more lines than PDFBox, within two lines on at least 140 pages). `./gradlew build` is green.
