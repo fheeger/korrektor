@@ -5,26 +5,28 @@
 Turn the characters of a page's text layer into words: the text of each word, exactly as in the PDF, and its box.
 
 ## What needs doing
-`WordExtractor` (package `korrektor.importer`): `words(textPage): List<RawWord>`, where `RawWord(text, left, bottom, right, top)` is in PDF coordinates (origin bottom-left; T019 converts them).
-- Split into words at whitespace, at characters PDFium generated as separators, and — for text layers without space characters, like the notice page — at gaps between neighbouring characters that are wider than a threshold relative to the font size (the value comes from T017).
-- The text of a word is the code points of its characters, unchanged: no normalization (V1), no joining of hyphenated words (D4 comes later), hyphens and `=` at the end of a line stay in the word. Surrogate pairs stay together.
-- The box of a word is the union of its characters' boxes.
-- What is discarded and how unusual characters are treated follows the "Rules for the import" of T017 (for example control characters).
-- Words come in the order of the text layer; sorting is T020's job.
+`WordExtractor` (package `korrektor.importer`): `words(textPage): List<RawWord>`, where `RawWord(text, left, bottom, right, top)` is in PDF coordinates (origin bottom-left; T019 converts them). It implements rules 1–5 of "Rules for the import" in [docs/pdf-text-layer.md](../../docs/pdf-text-layer.md):
+- **Characters** are PDFium's, unchanged: no normalization (V1), no repair of OCR errors, no joining of hyphenated words (D4 comes later). The two halves of a UTF-16 surrogate pair become one character.
+- **Word boundaries:** real whitespace and PDFium's generated line breaks always separate words. A generated space separates words if the page has no real space characters (the words are separate text pieces, as in Abhandlung); on a page with real spaces, it separates words only if the gap to the next character is at least 0.6 of the font size.
+- **Hyphen marker:** a character with the `hyphen` flag (U+0002) becomes `-` and ends the word; the next character starts a new word. (PDFium replaced a line-end hyphen by that marker and dropped the line break, see the analysis.)
+- **Control characters** (below U+0020 other than whitespace) and U+0000 are dropped; a word left empty is dropped.
+- **The box of a word** is the union of the boxes of its real characters; generated characters have empty boxes and are ignored.
+- Words come in PDFium's order; sorting them is T020's job.
 
 ## Acceptance criteria
 1. On a generated page with known words, the extractor returns exactly those words, with boxes within 1 point of the drawn positions.
-2. Text without space characters (words separated only by gaps) is split into the right words; a normal space inside a word's neighbourhood does not split a word that has no gap.
-3. `ſ`, a combining `ͤ`, `ꝛ` and a character outside the BMP come out unchanged (same code points).
-4. A hyphen or `=` at the end of a line stays at the end of its word, and the next line's first word is not joined to it.
-5. Invisible text (render mode 3, as in the OCR PDFs) is extracted like visible text.
-6. A page without text gives an empty list, without an error.
-7. On page 6 of the sample (if present) the first words are `Vorrede.` and `5`, and the number of words matches an independent count from PDFBox within a few words, with line-end hyphens kept.
+2. On a page without space characters, where the words are separate text pieces (as in Abhandlung), each gap between pieces separates words.
+3. On a page with real space characters, a real space separates words, a generated space with a small gap (letter-spaced text) does not, and a generated space with a gap of 0.6 of the font size or more does.
+4. `ſ`, a combining `ͤ`, `ꝛ` and a character outside the BMP come out unchanged (same code points; the pair is one character).
+5. A hyphen or `=` at the end of a line stays at the end of its word, and the next line's first word is not joined to it. In particular a hyphen marker becomes `-` and ends its word. (On the sample, the ten places listed in the analysis give words like `Erin-` and `nerung`.)
+6. Invisible text (render mode 3, as in the OCR PDFs) is extracted like visible text.
+7. A page without text gives an empty list, without an error.
+8. On page 6 of the sample (if present) the first words are `Vorrede.` and `5`; over the whole sample no word contains U+0002 or a space, and no word is empty.
 
 ## Approach
-- Unit tests on generated PDFs (`TestPdfs`): words in two lines, kerning-only spacing, unusual Unicode, line-end hyphens, invisible text, an empty page. One sample-PDF test.
+- Unit tests on generated PDFs (`TestPdfs`): words in two lines, words as separate text pieces, a page with real spaces and one letter-spaced piece, unusual Unicode, line-end hyphens, invisible text, an empty page. Sample-PDF tests for the whole book.
 - Reading characters in blocks keeps the number of native calls low; the box of a word needs only the extent of its characters.
-- The parameters (gap threshold, discarded characters) are constants with the T017 evidence in a comment.
+- The 0.6 threshold and the other parameters are constants with a reference to the analysis in a comment.
 
 ## Dependencies
 T016, T017.

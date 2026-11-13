@@ -1,6 +1,6 @@
 # T017 Analysis of the sample PDFs' text layers
 
-**Type:** task · **Status:** ready for development · **Story:** S03 · **Task:** S03.1
+**Type:** task · **Status:** in progress · **Story:** S03 · **Task:** S03.1
 
 Find out, with the real files, how their text layer is built and what PDFium makes of it, and write it down. The next tickets implement the rules this ticket settles.
 
@@ -34,7 +34,14 @@ End the document with **"Rules for the import"**: the concrete rules T018–T022
 T016.
 
 ## Decisions
-None yet.
+- **The generated space is the word boundary where the PDF has no spaces** (Abhandlung), but not where it has real spaces and PDFium also generates some between letter-spaced pieces (Clausewitz). So T018 uses a per-page rule plus a gap of 0.6 of the font size. The number 0.6 is a judgement from the measured gaps (real spaces: median 0.45; generated spaces inside letter-spaced text: smaller), not a measurement.
+- **PDFium's hyphen marker is undone in the import** (U+0002 with the `hyphen` flag becomes `-` and ends the word). This was the one place where PDFium's text differs from the PDF's: it joins hyphenated words, which the story forbids.
+- **PDFBox is only a test oracle**, not a second reader: it combines `^` with the next letter, leaves out a letter drawn twice, and orders text pieces differently. The sample test therefore compares as a multiset of characters and names the one known difference (page 156).
+- **Speed is not asserted in a test** (timing on shared CI machines is flaky); it is stated in the document with the machine.
 
 ## Progress
-Not started. Findings so far (from PDFBox, before any code): 165 pages in `samples/Abhandlung…pdf`, 5 without text (3, 139, 161, 163, 165), all pages unrotated, all page sizes slightly different (about 300 × 488 pt; the notice page is 612 × 792). Page 1 is Times text drawn with kerning gaps instead of spaces. About 1,200 lines in the first 36 pages; line-end `-` and `=` are in the text, and OCR errors such as missing spaces are too.
+Done: `docs/pdf-text-layer.md` answers the ten questions and ends with the rules for the import; `SampleTextLayerTest` (6 tests, skipped without the samples) pins the facts: structure of both layers (pages without text, no real spaces in Abhandlung, only spaces and CR LF generated, no control characters, 65 `-`, 33 `=`, 94 `ſ`, ten hyphen markers each followed by a lower line), the first characters and box of page 6, the notice page, that PDFium separates `einem Scharmüzel`, and agreement with PDFBox on 164 of 165 pages.
+
+Two things the earlier PDFBox-only look got wrong, found by this ticket: PDFBox had made `einemScharmüzel` look like an OCR error (the layer has the two words apart), and I had expected that PDFium would not change hyphens (it replaces ten of them by a marker).
+
+Not looked at: the eight pages without text in Clausewitz, and rotated pages (none in the samples; generated PDFs cover them in T019).

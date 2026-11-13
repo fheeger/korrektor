@@ -8,6 +8,7 @@ This is a hobby project in early development.
 - Features: [concept/features.md](concept/features.md)
 - Project file format: [docs/project-format.md](docs/project-format.md)
 - Third-party software and licenses: [docs/third-party.md](docs/third-party.md)
+- The text layer of PDFs with OCR, as the import sees it: [docs/pdf-text-layer.md](docs/pdf-text-layer.md)
 - Development process: [concept/process.md](concept/process.md)
 - Backlog: [backlog/overview.md](backlog/overview.md)
 
