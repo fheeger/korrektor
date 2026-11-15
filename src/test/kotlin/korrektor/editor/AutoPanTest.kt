@@ -25,6 +25,7 @@ import korrektor.pdf.TestPdfs
 import korrektor.pdf.TestText
 import korrektor.viewer.PageSize
 import korrektor.viewer.ViewerState
+import korrektor.viewer.pagePointAt
 import korrektor.viewer.reveal
 import korrektor.viewer.toScreen
 import java.nio.file.Files
@@ -239,5 +240,38 @@ class AutoPanTest {
 
             assertEquals(editor.lines[0].id, editor.activeLineId)
             assertEquals(before, viewer.offsetX to viewer.offsetY, "the clicked line was in view already")
+        }
+
+    @Test
+    fun aBoxThatIsPartlyInViewSidewaysIsLeftWhereItIs() {
+        val state = state(offsetX = 50.0) // shows x 50..150 pixels
+        state.reveal(Box(10.0, 5.0, 100.0, 10.0)) // pixels x 20..220 and y 10..30: wider than the view, partly in it
+
+        assertEquals(50.0, state.offsetX, 1e-9, "a click on the visible part must not make the scan jump")
+    }
+
+    @Test
+    fun clickingTheVisiblePartOfAWideLineDoesNotMoveTheScanSideways() =
+        withOpenProject { model ->
+            val editor = assertNotNull(model.editor)
+            val viewer = assertNotNull(model.viewer)
+            runOnIdle {
+                viewer.zoomTo(viewer.scale * 3, 0.0, 0.0)
+                viewer.scrollBy(-10_000.0, -10_000.0)
+                viewer.scrollBy(300.0, 0.0) // the line is wider than the panel: its left part is out of view
+            }
+            waitForIdle()
+            val box = editor.lines[0].box!!
+            val inView = viewer.pagePointAt(300.0, 40.0).let { Box(it.x, box.y + box.height / 2, 0.0, 0.0) }
+            val rect = viewer.toScreen(inView)
+            val before = viewer.offsetX to viewer.offsetY
+
+            onNodeWithContentDescription(
+                "Page 1",
+            ).performMouseInput { click(Offset(rect.x.toFloat(), rect.y.toFloat())) }
+            waitForIdle()
+
+            assertEquals(editor.lines[0].id, editor.activeLineId)
+            assertEquals(before.first, viewer.offsetX, 1e-9, "the scan did not jump sideways")
         }
 }
