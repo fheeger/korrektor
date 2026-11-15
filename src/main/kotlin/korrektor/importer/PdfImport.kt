@@ -63,7 +63,7 @@ object PdfImport {
             val total = pdf.pageCount
             project.setPages((1..total).map { PageInfo(it) })
             val notes = mutableListOf<PageNote>()
-            var size = A4_WIDTH to A4_HEIGHT
+            var size: Pair<Double, Double>? = null
             for (number in 1..total) {
                 if (isCancelled()) {
                     throw CancellationException("The import was cancelled after ${number - 1} of $total pages")
@@ -86,7 +86,7 @@ object PdfImport {
     private fun importPage(
         pdf: PdfDocument,
         number: Int,
-        previousSize: Pair<Double, Double>,
+        previousSize: Pair<Double, Double>?,
         openPage: (PdfDocument, Int) -> PdfPage,
     ): PageLayer =
         try {
@@ -95,8 +95,13 @@ object PdfImport {
             // A page the PDF cannot give us must not stop the import of the others, whatever the reason.
             @Suppress("TooGenericExceptionCaught") e: Exception,
         ) {
-            val reason = "${e.message ?: e::class.simpleName}. The size of the previous page is used."
-            emptyPage(number, previousSize, "The text of this page could not be read: $reason")
+            val fallback = if (previousSize == null) "A4 size is used" else "The size of the previous page is used"
+            val reason = "${e.message ?: e::class.simpleName}. $fallback."
+            emptyPage(
+                number,
+                previousSize ?: (A4_WIDTH to A4_HEIGHT),
+                "The text of this page could not be read: $reason",
+            )
         }
 
     private fun readPage(

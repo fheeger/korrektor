@@ -147,6 +147,31 @@ class ImportSampleTest {
             }
         }
 
+    /**
+     * Checked by eye against the rendered pages with the boxes drawn over them (T024): the first word of each of the
+     * first twelve lines, top to bottom. A speck the OCR read as a word, like the `"` on page 50, starts its line when
+     * it lies to the left of it; the text stays as the OCR gave it (V1).
+     */
+    @Test
+    fun theLinesFollowThePrintedOrderOnPagesLookedAt() =
+        withImport { imported ->
+            val expected =
+                mapOf(
+                    6 to "Vorrede. Man er man mit ficier im Lorbeeren dat Freyheit zahlen auf",
+                    50 to "49 Fünfter Von wie eines Reuterey halten er \" gegen befindenden ternehmungen",
+                    100 to "Von Man einem Reuterey einen welche kommt; eine Feind cier das antworten",
+                )
+            for ((page, firstWords) in expected) {
+                assertEquals(firstWords, firstWordsOf(imported.original(page)).joinToString(" "), "page $page")
+            }
+        }
+
+    private fun firstWordsOf(layer: PageLayer) =
+        layer.regions
+            .flatMap { it.lines }
+            .take(LINES_LOOKED_AT)
+            .map { it.words.first().text }
+
     // --- the independent reader ---------------------------------------------------------------------------
 
     @Test
@@ -277,6 +302,7 @@ class ImportSampleTest {
 
     private companion object {
         const val HALF_TURN = 180
+        const val LINES_LOOKED_AT = 12
         const val TOLERANCE = 1.0
 
         /**
