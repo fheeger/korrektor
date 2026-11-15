@@ -50,3 +50,4 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T022](tickets/T022-pages-without-text.md) | Pages without text or with a broken text layer | task | S03 | done |
 | [T023](tickets/T023-import-in-background.md) | Import in the background with progress and cancel | task | S03 | done |
 | [T024](tickets/T024-import-tests.md) | Import tests: sample PDF and generated PDFs | task | S03 | done |
+| [T025](tickets/T025-review-fixes.md) | Fixes from the S03 code review | task | S03 | done |

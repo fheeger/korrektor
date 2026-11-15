@@ -4,6 +4,7 @@ import korrektor.CreationOutcome
 import korrektor.CreationRequest
 import korrektor.DefaultProjectFactory
 import korrektor.NewProject
+import korrektor.ProjectFactory
 import korrektor.createProject
 import korrektor.format.Metadata
 import korrektor.format.Project
@@ -11,6 +12,8 @@ import korrektor.pdf.TestPage
 import korrektor.pdf.TestPdfs
 import korrektor.pdf.TestText
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
@@ -150,6 +153,29 @@ class ImportFlowTest {
                 assertEquals(byHand.readOriginalPage(n), flow.readOriginalPage(n), "page $n")
                 assertEquals(byHand.readPage(n), flow.readPage(n), "corrected page $n")
             }
+        }
+
+    @Test
+    fun aCancelWhileTheProjectFolderIsBeingMadeLeavesNoFolder() =
+        withDir { dir ->
+            val request = request(dir, pdf(dir, 3))
+            lateinit var job: Job
+            val factory =
+                object : ProjectFactory by DefaultProjectFactory {
+                    override fun create(
+                        location: Path,
+                        pdf: Path,
+                        metadata: Metadata,
+                    ): Project = DefaultProjectFactory.create(location, pdf, metadata).also { job.cancel() }
+                }
+            val cancelling = CreationRequest(request.location, request.pdf, request.metadata, factory, Dispatchers.IO)
+
+            runBlocking {
+                job = launch { createProject(cancelling, { false }, { _, _ -> }) }
+                job.join()
+            }
+
+            assertEquals(emptyList(), projectFolders(request), "the project made a moment ago is deleted")
         }
 
     // --- 1000 pages ---------------------------------------------------------------------------------------

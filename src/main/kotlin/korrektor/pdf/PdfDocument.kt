@@ -25,7 +25,15 @@ class PdfDocument private constructor(
             val page =
                 PdfiumLib.loadPage(live(), index)
                     ?: throw PdfException("Page ${index + 1} of $path cannot be loaded")
-            PdfPage(this, page, index).also { openPages += it }
+            try {
+                PdfPage(this, page, index).also { openPages += it }
+            } catch (
+                // The page is loaded but unusable: release it, or it stays loaded until the document is closed.
+                @Suppress("TooGenericExceptionCaught") e: Exception,
+            ) {
+                PdfiumLib.closePage(page)
+                throw e
+            }
         }
     }
 

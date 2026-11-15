@@ -151,6 +151,7 @@ class PageNotesTest {
             val layer = project.readOriginalPage(1)
             assertEquals(595.3 to 841.9, layer.width to layer.height)
             assertTrue("broken" in layer.note!!, layer.note)
+            assertTrue("A4 size is used" in layer.note && "previous page" !in layer.note, layer.note)
             assertEquals("Two", firstLine(project, 2))
         }
 

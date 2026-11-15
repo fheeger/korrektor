@@ -49,11 +49,20 @@ internal suspend fun createProject(
     request: CreationRequest,
     cancelRequested: () -> Boolean,
     progress: (done: Int, total: Int) -> Unit,
-): CreationOutcome =
-    try {
+): CreationOutcome {
+    // withContext throws a CancellationException even when create has finished, and then the project is only known
+    // here: it must not stay behind. Once importInto has it, importInto is responsible.
+    var created: Project? = null
+    return try {
         val project =
-            withContext(request.io) { request.factory.create(request.location, request.pdf, request.metadata) }
+            withContext(request.io) {
+                request.factory.create(request.location, request.pdf, request.metadata).also { created = it }
+            }
+        created = null
         importInto(project, request, cancelRequested, progress)
+    } catch (e: CancellationException) {
+        created?.let { discard(it, request) }
+        throw e
     } catch (e: FormatException) {
         CreationOutcome.Failed(e.message ?: "The project could not be created.")
     } catch (
@@ -63,6 +72,7 @@ internal suspend fun createProject(
         currentCoroutineContext().ensureActive() // being cancelled from outside is not a failure to report
         CreationOutcome.Failed("Creating the project failed unexpectedly: ${e.message ?: e::class.simpleName}")
     }
+}
 
 /** Imports into the new [project]; on anything but success the project is deleted before the outcome is returned. */
 private suspend fun importInto(

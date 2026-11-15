@@ -153,7 +153,7 @@ A page the import found no text on, or could not read, is an empty page with a n
 }
 ```
 
-The notes the import writes are *"No text on this page."* and *"The text of this page could not be read: …"* (with the reason, and, if the page itself could not be loaded, a remark that the size of the previous page is used). Readers keep a note they do not understand like any other field; a page without a note is written as before.
+The notes the import writes are *"No text on this page."* and *"The text of this page could not be read: …"* (with the reason, and, if the page itself could not be loaded, a remark that the size of the previous page is used, or A4 if it is the first page). Readers keep a note they do not understand like any other field; a page without a note is written as before.
 
 ### Region
 
