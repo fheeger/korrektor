@@ -65,7 +65,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T037](tickets/T037-line-operations.md) | Line operations on a page layer | task | S05 | done |
 | [T038](tickets/T038-book-editor.md) | The editor state: corrected pages in memory | task | S05 | done |
 | [T039](tickets/T039-font.md) | A font for historical characters | task | S05 | done |
-| [T040](tickets/T040-two-panel-layout.md) | Two panels with a divider you can drag | task | S05 | ready for development |
+| [T040](tickets/T040-two-panel-layout.md) | Two panels with a divider you can drag | task | S05 | done |
 | [T041](tickets/T041-text-panel.md) | The text panel shows the corrected lines | task | S05 | ready for development |
 | [T042](tickets/T042-edit-lines.md) | Edit the text of a line | task | S05 | ready for development |
 | [T043](tickets/T043-line-operations-ui.md) | Split, join, add and delete lines in the panel | task | S05 | ready for development |
