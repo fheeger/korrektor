@@ -56,14 +56,18 @@ private const val WHEEL_SCROLL_PIXELS = 80.0
 
 /**
  * Scrolls the least that brings [box] (in points of the page) fully into the viewport, with a margin of a fifth of
- * the viewport on the side it came from, so that a line is not left right at the edge. A box that is already in view
- * changes nothing; a box larger than the viewport is aligned at its top left; in a direction in which the page is
- * smaller than the viewport (it is centred) nothing moves. The scroll stops at the edges of the page.
+ * the viewport on the side it came from, so that a line is not left right at the edge. A box that is already in
+ * view changes nothing (sideways it is enough that part of it is); a box larger than the viewport is aligned at its
+ * top left; in a direction in which the page is smaller than the viewport (it is centred) nothing moves. The scroll
+ * stops at the edges of the page.
  */
 fun ViewerState.reveal(box: Box) {
     if (viewportWidth <= 0 || viewportHeight <= 0 || pageSize == null) return
     val rect = toScreen(box)
-    val dx = if (contentWidth > viewportWidth) shiftInto(rect.x, rect.width, viewportWidth) else 0.0
+    // Sideways a box that is partly in view stays: a line is often wider than the panel when zoomed in, and a
+    // click on the visible part of it must not make the scan jump to its beginning.
+    val partlyInView = rect.x < viewportWidth && rect.x + rect.width > 0
+    val dx = if (contentWidth > viewportWidth && !partlyInView) shiftInto(rect.x, rect.width, viewportWidth) else 0.0
     val dy = if (contentHeight > viewportHeight) shiftInto(rect.y, rect.height, viewportHeight) else 0.0
     if (dx != 0.0 || dy != 0.0) scrollBy(dx, dy)
 }

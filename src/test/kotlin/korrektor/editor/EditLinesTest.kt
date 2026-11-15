@@ -4,6 +4,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -33,6 +34,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 @OptIn(ExperimentalTestApi::class)
 class EditLinesTest {
@@ -285,4 +287,69 @@ class EditLinesTest {
             }
         }
     }
+
+    @Test
+    fun aCursorWishFromOnePageIsNotCarriedOutOnTheNextPage() =
+        runComposeUiTest {
+            val pages = mapOf(1 to page1, 2 to page2)
+            val editor =
+                BookEditor({ n ->
+                    if (n ==
+                        2
+                    ) {
+                        Thread.sleep(150).let { pages.getValue(n) }
+                    } else {
+                        pages.getValue(n)
+                    }
+                }, Dispatchers.IO)
+            runBlocking { editor.show(1) }
+            setContent { TextPanel(editor) }
+            runOnIdle { editor.requestFocus("l1", 3) }
+            waitForIdle()
+
+            runBlocking { editor.show(2) } // the read takes longer than a frame: "Loading…" is shown meanwhile
+            waitForIdle()
+
+            assertEquals("zwei", field("l1").text())
+            assertNull(editor.activeLineId, "nothing is active on the new page")
+            assertNull(editor.focusRequest)
+            field("l1").assertIsNotFocused()
+        }
+
+    @Test
+    fun aRowThatIsLeftOverFromAnotherPageCannotChangeTheLinesOfThePageShown() =
+        runComposeUiTest {
+            val editor = editor()
+            runBlocking { editor.show(1) }
+            setContent { TextPanel(editor) }
+            field("l1").performTextReplacement("Geändert")
+
+            runBlocking { editor.show(2) }
+            waitForIdle()
+            runBlocking { editor.show(1) }
+            waitForIdle()
+            runBlocking { editor.show(2) }
+            waitForIdle()
+
+            assertEquals("zwei", editor.line("l1").text, "page 2 is as it was")
+            assertEquals(setOf(1), editor.changedPages)
+        }
+
+    @Test
+    fun thePanelSaysHowManyPagesAreChangedAndNotSaved() =
+        runComposeUiTest {
+            val editor = editor()
+            runBlocking { editor.show(1) }
+            setContent { TextPanel(editor) }
+            onNode(hasTestTag("unsaved")).assertDoesNotExist()
+
+            field("l2").performTextReplacement("rung iſt nützlich")
+            onNodeWithText("1 page changed, not saved yet").assertExists()
+
+            runBlocking { editor.show(2) }
+            waitForIdle()
+            runOnIdle { editor.addLineAfter("l1") }
+            waitForIdle()
+            onNodeWithText("2 pages changed, not saved yet").assertExists()
+        }
 }

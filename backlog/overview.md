@@ -73,3 +73,4 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T045](tickets/T045-click-line-on-scan.md) | Click a line on the scan to put the cursor in it | task | S05 | done |
 | [T046](tickets/T046-auto-pan.md) | Keep the active line visible by panning | task | S05 | done |
 | [T047](tickets/T047-editor-tests.md) | Tests with the sample, and typing speed | task | S05 | done |
+| [T048](tickets/T048-review-fixes.md) | Fixes from the S05 code review | task | S05 | done |

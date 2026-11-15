@@ -41,9 +41,8 @@ private fun mergeWord(
         else -> Word(a.text + b.text, if (a.box != null && b.box != null) union(a.box, b.box) else null)
     }
 
-/** The union of the boxes of [words], or null if there are none or one of them has no box. */
-internal fun boxOfWords(words: List<Word>): Box? =
-    if (words.isEmpty() || words.any { it.box == null }) null else words.map { it.box }.reduce(::union)
+/** The union of the boxes that [words] have (a word without a box adds nothing), or null if none has one. */
+internal fun boxOfWords(words: List<Word>): Box? = words.mapNotNull { it.box }.reduceOrNull(::union)
 
 internal fun union(
     a: Box?,

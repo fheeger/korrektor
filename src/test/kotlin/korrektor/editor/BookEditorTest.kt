@@ -359,6 +359,20 @@ class BookEditorTest {
             assertFalse(model.editor === first, "another project, another editor")
             assertEquals(emptySet(), model.editor!!.changedPages)
         }
+
+    @Test
+    fun aWishForTheCursorDoesNotFollowToAnotherPage() =
+        withDir { dir ->
+            val editor = editor(project(dir))
+            runBlocking { editor.show(1) }
+            editor.requestFocus(editor.lines[0].id, 3)
+            assertNotNull(editor.focusRequest)
+
+            runBlocking { editor.show(3) }
+
+            assertNull(editor.focusRequest, "the wish belonged to page 1")
+            assertNull(editor.activeLineId)
+        }
 }
 
 /** Layers for the tests above. */

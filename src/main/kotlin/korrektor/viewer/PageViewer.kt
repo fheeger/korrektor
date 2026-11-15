@@ -32,6 +32,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -214,6 +215,7 @@ private fun PageArea(
     modifier: Modifier = Modifier,
 ) {
     val page = state.page
+    val onClick by rememberUpdatedState(links.onClick) // the gesture is not restarted when the handler is new
     val load = rememberPageLoad(source, page, state)
     val boxes = rememberBoxes(boxSource, page, state)
 
@@ -224,8 +226,8 @@ private fun PageArea(
             .onSizeChanged { state.setViewport(it.width, it.height) }
             .pointerHoverIcon(if (state.canPan) PointerIcon.Hand else PointerIcon.Default)
             // A click is a tap that did not turn into a drag; the drag below pans the page.
-            .pointerInput(state, links.onClick) {
-                detectTapGestures { tap -> links.onClick(state.pagePointAt(tap.x.toDouble(), tap.y.toDouble())) }
+            .pointerInput(state) {
+                detectTapGestures { tap -> onClick(state.pagePointAt(tap.x.toDouble(), tap.y.toDouble())) }
             }.pointerInput(state) {
                 detectDragGestures { change, drag ->
                     state.scrollBy(-drag.x.toDouble(), -drag.y.toDouble())

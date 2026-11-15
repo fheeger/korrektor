@@ -173,7 +173,11 @@ class PageEditsTest {
                 .box,
             "iegsfüh-",
         )
-        assertEquals(l1.box, result.layer.line("l1").box, "the first part keeps the old box")
+        assertEquals(
+            Box(10.0, 10.0, 50.0, 10.0),
+            result.layer.line("l1").box,
+            "the union of Von and der, the words it has",
+        )
         assertNull(result.layer.line("l4").box)
         assertValid(result.layer)
     }
@@ -449,5 +453,32 @@ class PageEditsTest {
             val ids = current.lines().map { it.id }
             assertEquals(ids.size, ids.toSet().size, "ids stay unique")
         }
+    }
+
+    // --- found in the review of S05 -----------------------------------------------------------------------------
+
+    @Test
+    fun enterAtTheStartOfALineWithoutWordBoxesGivesTheTextTheLinesBox() {
+        val edited = PageEdits.setLineText(layer, "l2", "rung iſt nuͤtzlich und").layer // the words have no boxes now
+
+        val result = PageEdits.splitLine(edited, "l2", 0).layer
+
+        assertNull(result.line("l2").box, "the empty first part has no place")
+        assertEquals(l2.box, result.line("l4").box, "the text keeps the line's place on the scan")
+    }
+
+    @Test
+    fun joiningByMistakeAndSplittingAgainKeepsBothLinesOnTheirOwnBoxes() {
+        val joined = PageEdits.joinWithPrevious(layer, "l2").layer
+        val junction = "Von der Kriegsfüh-".length
+
+        val result = PageEdits.splitLine(joined, "l1", junction).layer
+
+        assertEquals(listOf("Von der Kriegsfüh-", "rnng iſt nuͤtzlich"), result.texts().take(2))
+        val first = result.line("l1").box!!
+        val second = result.line("l4").box
+        assertEquals(10.0 to 10.0, first.x to first.y)
+        assertEquals(10.0, first.height, 1e-9, "line 1 is one line tall again, not two")
+        assertEquals(24.0, second!!.y, 1e-9, "line 2 is on its own place and can be clicked")
     }
 }

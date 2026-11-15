@@ -52,9 +52,9 @@ object PageEdits {
     /**
      * Cuts the line at character [index] (0 to the length of the text); one space at the cut is dropped (the one
      * between two words). The first part keeps the line's id, `origin` and extra fields; the second part is a new line
-     * after it with a new id and no `origin`. Words that the cut goes through lose their boxes. A part whose words all
-     * have boxes gets their union as its box; otherwise the first part keeps the old box (if it has any text) and the
-     * second has none. The cursor goes to the start of the second part.
+     * after it with a new id and no `origin`. Words that the cut goes through lose their boxes. A part gets the union
+     * of the boxes its words have; if none has one, the part with the text takes the old line box (the second part only
+     * if the first is empty) and the other has none. The cursor goes to the start of the second part.
      */
     fun splitLine(
         layer: PageLayer,
@@ -82,8 +82,9 @@ object PageEdits {
         val left = leftTexts.mapIndexed { i, t -> keepBox(line.words.getOrNull(i), t) }
         val right = rightTexts.mapIndexed { i, t -> keepBox(line.words.getOrNull(firstOfRight + i), t) }
         val newId = newLineId(layer)
+        // A part is where its own words' boxes are; a part with none takes the line's box if it has the text.
         val first = line.copy(box = if (left.isEmpty()) null else boxOfWords(left) ?: line.box, words = left)
-        val second = Line(newId, boxOfWords(right), null, right)
+        val second = Line(newId, boxOfWords(right) ?: if (left.isEmpty()) line.box else null, null, right)
         val changed = replaceLines(layer, lineId) { listOf(first, second) }
         return EditResult(changed, Focus(newId, 0))
     }

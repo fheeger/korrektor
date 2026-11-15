@@ -69,6 +69,7 @@ class BookEditor(
         layer = null
         error = null
         activeLineId = null
+        focusRequest = null // a wish for the cursor belongs to the page it was made on
         val kept = changed[number]
         if (kept != null) {
             layer = kept

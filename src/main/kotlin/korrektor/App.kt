@@ -5,12 +5,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import korrektor.editor.TextPanel
 import korrektor.editor.clickOnScan
 import korrektor.editor.highlightFor
 import korrektor.viewer.DefaultPageSourceFactory
+import korrektor.viewer.PagePoint
 import korrektor.viewer.PageSourceFactory
 import korrektor.viewer.ProjectViewer
 import korrektor.viewer.ScanLinks
@@ -51,10 +55,18 @@ fun App(
                             left = {
                                 val viewer = checkNotNull(model.viewer)
                                 val editor = model.editor
-                                val links =
-                                    ScanLinks(
-                                        editor?.highlightFor(viewer.page),
-                                    ) { editor?.clickOnScan(viewer.page, it) }
+                                // Only what changes the scan is read here, so typing does not recompose it.
+                                val highlight by remember(
+                                    editor,
+                                    viewer,
+                                ) { derivedStateOf { editor?.highlightFor(viewer.page) } }
+                                val onClick =
+                                    remember(editor, viewer) {
+                                        { point: PagePoint ->
+                                            if (editor != null) editor.clickOnScan(viewer.page, point)
+                                        }
+                                    }
+                                val links = ScanLinks(highlight, onClick)
                                 // The scan follows the cursor: a line that is out of view is brought into it.
                                 LaunchedEffect(links.highlight) { links.highlight?.let { viewer.reveal(it.box) } }
                                 ProjectViewer(project, viewer, Modifier.fillMaxSize(), pageSources, links)

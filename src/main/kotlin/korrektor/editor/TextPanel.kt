@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -83,7 +84,8 @@ fun TextPanel(
                     )
                 layer == null -> Message("Loading…")
                 lines.isEmpty() -> Message(layer.note ?: "No lines on this page.")
-                else -> LineList(editor, lines)
+                // A new page is a new list: the rows of the old page (same ids) must not keep the focus or the scroll.
+                else -> key(editor.page) { LineList(editor, lines) }
             }
         }
     }
@@ -104,6 +106,16 @@ private fun LineCommands(editor: BookEditor) {
         OutlinedButton({
             editor.activeLineId?.let(editor::deleteLine)
         }, enabled = ready && editor.activeLineId != null) { Text("Delete line") }
+        // Until saving exists (S07) the corrections live in memory only: say so, so that nobody loses work unaware.
+        val unsaved = editor.changedPages.size
+        if (unsaved > 0) {
+            val pages = if (unsaved == 1) "1 page" else "$unsaved pages"
+            Text(
+                "$pages changed, not saved yet",
+                Modifier.align(Alignment.CenterVertically).testTag("unsaved"),
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
     }
 }
 
@@ -140,7 +152,18 @@ private fun LineList(
     }
 
     // One instance of each action for all rows, so that a row whose line did not change is not recomposed.
-    val actions = remember(editor) { RowActions(editor::activate, editor::setLineText, { wishes.remove(it) }, editor) }
+    // They belong to this page: line ids repeat on every page, so a row that is left over from the page before (a field
+    // that reports its text or its focus a moment late) must not change or activate a line of the page shown now.
+    val listPage = editor.page
+    val actions =
+        remember(editor, listPage) {
+            RowActions(
+                { id -> if (editor.page == listPage) editor.activate(id) },
+                { id, text -> if (editor.page == listPage) editor.setLineText(id, text) },
+                { wishes.remove(it) },
+                editor,
+            )
+        }
     val numberWidth = (lines.size.toString().length * DIGIT_WIDTH + NUMBER_PADDING).dp
     LazyColumn(Modifier.fillMaxSize(), state) {
         itemsIndexed(lines, key = { _, line -> line.id }) { index, line ->
@@ -220,7 +243,8 @@ private fun LineRow(
             onValueChange = { typed ->
                 val clean = typed.text.replace('\n', ' ').replace('\r', ' ')
                 field = if (clean == typed.text) typed else typed.copy(text = clean)
-                if (clean != line.text) actions.changeText(line.id, clean)
+                // Always passed on: `line` may be one keystroke behind, and the editor ignores a text it already has.
+                actions.changeText(line.id, clean)
             },
             modifier =
                 Modifier
@@ -253,27 +277,30 @@ private fun lineKey(
     field: TextFieldValue,
     editor: BookEditor,
 ): Boolean {
-    val plain =
-        event.type == KeyEventType.KeyDown && !event.isCtrlPressed && !event.isAltPressed && !event.isMetaPressed
     val selection = field.selection
     return when {
-        !plain -> false
-        event.key == Key.Enter -> {
+        !event.isPlainKeyDown() -> false
+        event.key == Key.Enter || event.key == Key.NumPadEnter -> {
             if (!selection.collapsed) editor.setLineText(lineId, field.text.removeRange(selection.min, selection.max))
             editor.splitLine(lineId, selection.min)
             true
         }
-        event.key == Key.Backspace && selection.collapsed && selection.start == 0 -> {
-            editor.joinWithPrevious(lineId)
-            true
-        }
-        event.key == Key.Delete && selection.collapsed && selection.end == field.text.length -> {
-            editor.joinWithNext(lineId)
-            true
-        }
+        event.key == Key.Backspace && selection.collapsed && selection.start == 0 ->
+            editor
+                .joinWithPrevious(
+                    lineId,
+                ).let {
+                    true
+                }
+        event.key == Key.Delete && selection.collapsed && selection.end == field.text.length ->
+            editor.joinWithNext(lineId).let { true }
         else -> false
     }
 }
+
+/** A key press without Ctrl, Alt or Meta: those combinations are left to the text field. */
+private fun KeyEvent.isPlainKeyDown() =
+    type == KeyEventType.KeyDown && !isCtrlPressed && !isAltPressed && !isMetaPressed
 
 /** The line number, and a dot if the line has no box: it has no place on the scan, so it is not highlighted there. */
 @Composable

@@ -340,4 +340,18 @@ class LineOperationsUiTest {
             assertEquals(3, page.regions[0].lines.size)
             assertEquals(setOf(1), editor.changedPages)
         }
+
+    @Test
+    fun theEnterKeyOfTheNumpadSplitsToo() =
+        runComposeUiTest {
+            val editor = editor()
+            runBlocking { editor.show(1) }
+            setContent { TextPanel(editor) }
+            cursorAt(editor, "l1", 8)
+
+            press("l1", Key.NumPadEnter)
+            waitForIdle()
+
+            assertEquals(listOf("Von der", "Kriegsfüh-", "rung iſt nützlich", "Anmerkung"), editor.texts())
+        }
 }

@@ -97,7 +97,7 @@ Further fields (such as the page status) are added by later stories as new field
 
 `pages/NNNN.ocr.json` holds the **original OCR layer** of a page. It is written once, when the page is imported, and never changed. `pages/NNNN.json` holds the **corrected layer**: a full copy of the text that starts as a copy of the original and is edited. Both files have the same structure.
 
-A corrected layer keeps the IDs of the regions and lines it started from, and each corrected line names the original line it came from in `origin`. A line the user added has a new ID and no `origin`. A line without a `box` (and words without boxes) is allowed in the corrected layer: it has no place on the scan.
+A corrected layer keeps the IDs of the regions and lines it started from, and each corrected line names the original line it came from in `origin`. A line the user added has a new ID and no `origin`. Its ID is `l<N>` with N one more than the largest `l<number>` of the page; if the line with the largest number was deleted before, the new line can get the ID that the deleted one had, and it has no `origin`, so the `origin` (not the ID) tells which lines come from the original OCR. A line without a `box` (and words without boxes) is allowed in the corrected layer: it has no place on the scan.
 
 Original layer of page 3:
 
