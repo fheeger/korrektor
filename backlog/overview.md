@@ -15,7 +15,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [S02](stories/S02-create-project.md) | Create a project with metadata | A1 | done |
 | [S03](stories/S03-import-pdf-with-ocr.md) | Import a PDF with OCR | A2 | done |
 | [S04](stories/S04-page-viewer.md) | Page viewer | C2, N1 | done |
-| [S05](stories/S05-side-by-side-editor.md) | Scan and text side by side | C1 | ready for development |
+| [S05](stories/S05-side-by-side-editor.md) | Scan and text side by side | C1 | in review |
 | [S06](stories/S06-keyboard-navigation.md) | Keyboard navigation | C2 | ready for development |
 | [S07](stories/S07-autosave.md) | Autosave | N4 | ready for development |
 | [S08](stories/S08-undo-redo.md) | Undo/redo | F1 | ready for development |
@@ -62,3 +62,15 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T034](tickets/T034-review-fixes.md) | Fixes from the S04 code review | task | S04 | done |
 | [T035](tickets/T035-zoom-limit.md) | Zoom stops at the scan's resolution, and gets stuck on a coarse scan | bug | S04 | done |
 | [T036](tickets/T036-smooth-scrolling.md) | Scrolling down at fit width: the lower part appears late | bug | S04 | done |
+| [T037](tickets/T037-line-operations.md) | Line operations on a page layer | task | S05 | done |
+| [T038](tickets/T038-book-editor.md) | The editor state: corrected pages in memory | task | S05 | done |
+| [T039](tickets/T039-font.md) | A font for historical characters | task | S05 | done |
+| [T040](tickets/T040-two-panel-layout.md) | Two panels with a divider you can drag | task | S05 | done |
+| [T041](tickets/T041-text-panel.md) | The text panel shows the corrected lines | task | S05 | done |
+| [T042](tickets/T042-edit-lines.md) | Edit the text of a line | task | S05 | done |
+| [T043](tickets/T043-line-operations-ui.md) | Split, join, add and delete lines in the panel | task | S05 | done |
+| [T044](tickets/T044-highlight-active-line.md) | Highlight the active line on the scan | task | S05 | done |
+| [T045](tickets/T045-click-line-on-scan.md) | Click a line on the scan to put the cursor in it | task | S05 | done |
+| [T046](tickets/T046-auto-pan.md) | Keep the active line visible by panning | task | S05 | done |
+| [T047](tickets/T047-editor-tests.md) | Tests with the sample, and typing speed | task | S05 | done |
+| [T048](tickets/T048-review-fixes.md) | Fixes from the S05 code review | task | S05 | done |

@@ -1,0 +1,142 @@
+package korrektor.editor
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import korrektor.format.Line
+import korrektor.format.PageLayer
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
+import java.util.concurrent.CancellationException
+
+/** A request to put the cursor at [focus]. A new request has a new [serial], also if the place is the same. */
+class FocusRequest(
+    val focus: Focus,
+    val serial: Long,
+)
+
+/**
+ * The corrected text of the book while it is being worked on, shared by the scan and the text panel (S05). It holds
+ * the corrected layer of the page shown, and keeps every page that was changed in this session, so that going to
+ * another page and back does not lose a correction. It does not write anything: saving is autosave (S07), which will
+ * write [changedPages]. The original OCR layer is never touched.
+ *
+ * Compose state, all of it changed from the UI thread, except that [show] reads a page file on [io].
+ *
+ * @param readPage reads the corrected layer of a page from the project (`Project::readPage`); a seam for tests.
+ */
+class BookEditor(
+    private val readPage: (Int) -> PageLayer,
+    private val io: CoroutineDispatcher,
+) {
+    private val changed = mutableMapOf<Int, PageLayer>()
+    private var serial = 0L
+
+    /** The page shown, from 1. */
+    var page: Int by mutableIntStateOf(1)
+        private set
+
+    /** The corrected layer of the page shown, or null while it is being read or if it could not be read. */
+    var layer: PageLayer? by mutableStateOf(null)
+        private set
+
+    /** Why the page could not be read, if it could not. */
+    var error: String? by mutableStateOf(null)
+        private set
+
+    /** The line the cursor is in; none after a page change. */
+    var activeLineId: String? by mutableStateOf(null)
+        private set
+
+    /** The latest wish to move the cursor (after a split, a join, a click on the scan): the panel carries it out. */
+    var focusRequest: FocusRequest? by mutableStateOf(null)
+        private set
+
+    /** The pages with corrections that are not saved: the pages S07 has to write. */
+    var changedPages: Set<Int> by mutableStateOf(emptySet())
+        private set
+
+    /** The lines of the page shown in reading order. */
+    val lines: List<Line> get() = layer?.let(PageEdits::readingOrder) ?: emptyList()
+
+    /**
+     * Shows [number]: from memory if it was changed in this session, otherwise read from the project. The layer is
+     * empty while it is read. If the caller is cancelled (the next page was asked for), the result is not used.
+     */
+    suspend fun show(number: Int) {
+        page = number
+        layer = null
+        error = null
+        activeLineId = null
+        focusRequest = null // a wish for the cursor belongs to the page it was made on
+        val kept = changed[number]
+        if (kept != null) {
+            layer = kept
+            return
+        }
+        try {
+            val read = withContext(io) { readPage(number) }
+            if (page == number) layer = read
+        } catch (e: CancellationException) {
+            throw e
+        } catch (
+            // A page file that cannot be read is a message in the panel, not a crash.
+            @Suppress("TooGenericExceptionCaught") e: Exception,
+        ) {
+            if (page == number) error = e.message ?: e::class.simpleName
+        }
+    }
+
+    /** Makes the line the active one, if it is on the page. */
+    fun activate(lineId: String?) {
+        activeLineId = lineId?.takeIf { id -> lines.any { it.id == id } }
+    }
+
+    fun setLineText(
+        lineId: String,
+        text: String,
+    ) = edit { PageEdits.setLineText(it, lineId, text) }
+
+    fun splitLine(
+        lineId: String,
+        index: Int,
+    ) = edit { PageEdits.splitLine(it, lineId, index) }
+
+    fun joinWithPrevious(lineId: String) = edit { PageEdits.joinWithPrevious(it, lineId) }
+
+    fun joinWithNext(lineId: String) = edit { PageEdits.joinWithNext(it, lineId) }
+
+    /** Adds a line after [lineId], or at the end of the page if it is null. */
+    fun addLineAfter(
+        lineId: String?,
+        text: String = "",
+    ) = edit { PageEdits.addLineAfter(it, lineId, text) }
+
+    fun deleteLine(lineId: String) = edit { PageEdits.deleteLine(it, lineId) }
+
+    /** Asks the panel to put the cursor at [index] of the line [lineId], also without an edit (a click on the scan). */
+    fun requestFocus(
+        lineId: String,
+        index: Int,
+    ) {
+        activate(lineId)
+        focusRequest = FocusRequest(Focus(lineId, index), ++serial)
+    }
+
+    private fun edit(change: (PageLayer) -> EditResult) {
+        val current = layer ?: return
+        val result = change(current)
+        if (result.layer !== current) {
+            layer = result.layer
+            changed[page] = result.layer
+            changedPages = changedPages + page
+        }
+        val focus = result.focus
+        when {
+            focus != null -> requestFocus(focus.lineId, focus.index)
+            // The active line is gone (the only line of the page was deleted).
+            activeLineId != null && lines.none { it.id == activeLineId } -> activeLineId = null
+        }
+    }
+}
