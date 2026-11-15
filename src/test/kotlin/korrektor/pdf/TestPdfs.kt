@@ -13,6 +13,7 @@ import org.apache.pdfbox.pdmodel.font.PDFont
 import org.apache.pdfbox.pdmodel.font.PDType1Font
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts
 import org.apache.pdfbox.pdmodel.font.encoding.WinAnsiEncoding
+import org.apache.pdfbox.pdmodel.graphics.image.JPEGFactory
 import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory
 import org.apache.pdfbox.pdmodel.graphics.state.RenderingMode
 import java.awt.Color
@@ -81,6 +82,69 @@ class TestPage(
 
 /** Small PDFs for tests, made with PDFBox. */
 object TestPdfs {
+    /**
+     * A book of [count] pages of 300 x 480 points with two lines of text each, for tests of size. If [blankEvery] is
+     * positive, the first page and every [blankEvery]th after it have no text. With [scanPixels] every page also has
+     * the same picture of that many pixels across it, like a scan: JPEG compressed, drawn on the whole page, stored
+     * once in the file. Made fresh in a temp folder by the tests that need it, never stored.
+     */
+    fun book(
+        path: Path,
+        count: Int,
+        blankEvery: Int = 0,
+        scanPixels: Pair<Int, Int>? = null,
+    ) {
+        PDDocument().use { doc ->
+            val font = PDType1Font(Standard14Fonts.FontName.HELVETICA)
+            val scan = scanPixels?.let { (w, h) -> JPEGFactory.createFromImage(doc, scanImage(w, h)) }
+            repeat(count) { i ->
+                val page = PDPage(PDRectangle(300f, 480f))
+                doc.addPage(page)
+                PDPageContentStream(doc, page).use { content ->
+                    scan?.let { content.drawImage(it, 0f, 0f, 300f, 480f) }
+                    if (blankEvery <= 0 || i % blankEvery != 0) {
+                        content.beginText()
+                        content.setFont(font, 11f)
+                        content.newLineAtOffset(40f, 400f)
+                        content.showText("Page ${i + 1} of the long book, first line")
+                        content.newLineAtOffset(0f, -14f)
+                        content.showText("second line with some more words on it")
+                        content.endText()
+                    }
+                }
+            }
+            doc.save(path.toFile())
+        }
+    }
+
+    /** Paper with many small dark marks, so that the JPEG has something to decode. */
+    private fun scanImage(
+        width: Int,
+        height: Int,
+    ): BufferedImage {
+        val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+        val random = java.util.Random(SCAN_SEED)
+        image.createGraphics().apply {
+            color = Color(250, 245, 230)
+            fillRect(0, 0, width, height)
+            color = Color(30, 25, 20)
+            repeat(SCAN_MARKS) {
+                fillRect(
+                    random.nextInt(width),
+                    random.nextInt(height),
+                    random.nextInt(MAX_MARK) + 1,
+                    random.nextInt(MAX_MARK) + 1,
+                )
+            }
+            dispose()
+        }
+        return image
+    }
+
+    private const val SCAN_SEED = 7L
+    private const val SCAN_MARKS = 20_000
+    private const val MAX_MARK = 12
+
     /** Writes a PDF with [pages]. With [userPassword] it is encrypted and needs that password to open. */
     fun write(
         path: Path,
