@@ -157,6 +157,24 @@ class ViewerState(
         return true
     }
 
+    /**
+     * A state for another page of the same book: the same viewport, zoom mode and fixed scale, at the top left of
+     * the page of [size] (and [native] resolution). It answers what the viewer will ask for when that page is shown,
+     * which is what the background rendering of the neighbours needs. It shares nothing with this state.
+     */
+    fun preview(
+        size: PageSize,
+        native: Double?,
+    ): ViewerState =
+        ViewerState(pageCount).also {
+            it.viewportWidth = viewportWidth
+            it.viewportHeight = viewportHeight
+            it.mode = mode
+            it.fixedScale = fixedScale
+            it.pageSize = size
+            it.nativeScale = native
+        }
+
     /** Selects a zoom mode; the page point at the top left of the viewport stays there. */
     fun useMode(newMode: ZoomMode) {
         val old = scale

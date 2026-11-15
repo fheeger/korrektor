@@ -139,19 +139,27 @@ private fun ZoomToolbar(state: ViewerState) {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
+/** What loading the current page has produced so far: the picture, or why there is none. */
+private class PageLoad {
+    var shown by mutableStateOf<Shown?>(null)
+    var failure by mutableStateOf<String?>(null)
+}
+
+/**
+ * Loads the page for the viewer, in three effects that restart when the page changes: its size (which tells the
+ * state what to fit), the picture of what is visible (a new request cancels the old one), and, once there is a
+ * picture and the source has a cache, the neighbours in the background. Navigating or zooming restarts the last one
+ * and so cancels what was still running. One neighbour at a time, the next page first.
+ */
 @Composable
-private fun PageArea(
+private fun rememberPageLoad(
     source: PageSource,
     page: Int,
     state: ViewerState,
-    modifier: Modifier = Modifier,
-) {
-    var shown by remember(source, page) { mutableStateOf<Shown?>(null) }
-    var failure by remember(source, page) { mutableStateOf<String?>(null) }
-
+): PageLoad {
+    val load = remember(source, page) { PageLoad() }
     LaunchedEffect(source, page) {
-        val size = tryOrFail({ failure = it }) { source.size(page) to source.nativeScale(page) }
+        val size = tryOrFail({ load.failure = it }) { source.size(page) to source.nativeScale(page) }
         size?.let { (pageSize, native) -> state.setPage(pageSize, native) }
     }
     LaunchedEffect(source, page) {
@@ -161,12 +169,30 @@ private fun PageArea(
             .filterNotNull()
             .collectLatest { request ->
                 last = request
-                tryOrFail({ failure = it }) { source.render(page, request.scale, request.region) }?.let {
-                    shown = Shown(it, request.scale, request.region)
-                    failure = null
+                tryOrFail({ load.failure = it }) { source.render(page, request.scale, request.region) }?.let {
+                    load.shown = Shown(it, request.scale, request.region)
+                    load.failure = null
                 }
             }
     }
+    LaunchedEffect(source, page, load.shown, state.scale) {
+        if (load.shown != null && source.caches) {
+            val neighbours = listOf(page + 1, page - 1).filter { it in 1..state.pageCount }
+            for (neighbour in neighbours) prefetch(source, state, neighbour)
+        }
+    }
+    return load
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun PageArea(
+    source: PageSource,
+    page: Int,
+    state: ViewerState,
+    modifier: Modifier = Modifier,
+) {
+    val load = rememberPageLoad(source, page, state)
 
     Box(
         modifier
@@ -192,8 +218,8 @@ private fun PageArea(
                 change.consume()
             },
     ) {
-        val picture = shown
-        val reason = failure
+        val picture = load.shown
+        val reason = load.failure
         when {
             reason != null ->
                 Text(
@@ -268,3 +294,15 @@ private suspend fun <T> tryOrFail(
         onFailure(e.message ?: e::class.simpleName ?: "unknown error")
         null
     }
+
+/** Renders what the viewer will ask for when [page] is shown, so it is in the cache by then. Errors are ignored. */
+private suspend fun prefetch(
+    source: PageSource,
+    state: ViewerState,
+    page: Int,
+) {
+    tryOrFail({ }) {
+        val request = state.preview(source.size(page), source.nativeScale(page)).nextRequest(null)
+        if (request != null) source.render(page, request.scale, request.region)
+    }
+}
