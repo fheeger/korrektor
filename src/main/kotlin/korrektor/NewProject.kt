@@ -4,6 +4,7 @@ import korrektor.format.AtomicFile
 import korrektor.format.FormatException
 import korrektor.format.Metadata
 import korrektor.format.Project
+import korrektor.format.deleteTree
 import korrektor.format.reason
 import java.io.IOException
 import java.nio.file.Files
@@ -90,6 +91,19 @@ object NewProject {
         checkPdf(pdf, readPdfHeader)
         val folder = checkTarget(parent, metadata.title)
         return Project.create(folder, pdf, emptyList(), metadata, copyPdf)
+    }
+
+    /**
+     * Deletes a project that was created a moment ago and is not wanted any more (the import was cancelled or
+     * failed). Refuses anything that does not look like a project folder, so that a mistake elsewhere can never
+     * delete some other folder.
+     */
+    fun discard(project: Project) {
+        val folder = project.folder
+        require(folder.name.endsWith(PROJECT_SUFFIX) && folder.resolve(Project.PROJECT_FILE).exists()) {
+            "$folder is not a project folder and is not deleted"
+        }
+        deleteTree(folder)
     }
 
     private fun readHeader(pdf: Path): ByteArray = Files.newInputStream(pdf).use { it.readNBytes(HEADER_BYTES) }

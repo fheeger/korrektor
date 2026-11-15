@@ -2,7 +2,6 @@ package korrektor
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -16,10 +15,11 @@ fun App(
     modifier: Modifier = Modifier,
 ) {
     val openProject = { folderPicker.pick()?.let(model::openProject) ?: Unit }
-    MaterialTheme {
+    KorrektorTheme {
         Surface(modifier.fillMaxSize()) {
             Column {
                 model.error?.let { ErrorBanner(message = it, onDismiss = model::dismissError) }
+                model.notice?.let { NoticeBanner(message = it, onDismiss = model::dismissNotice) }
                 val project = model.project
                 if (project == null) {
                     StartScreen(onOpenProject = openProject, onNewProject = model::openNewProject)

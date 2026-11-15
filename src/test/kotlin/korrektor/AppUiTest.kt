@@ -12,14 +12,22 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.v2.runComposeUiTest
 import korrektor.format.Metadata
 import korrektor.format.Project
+import korrektor.importer.ImportResult
+import korrektor.pdf.PdfException
+import korrektor.pdf.TestPage
+import korrektor.pdf.TestPdfs
+import korrektor.pdf.TestText
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CountDownLatch
 import kotlin.io.path.exists
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 import kotlin.io.path.writeBytes
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -121,6 +129,21 @@ class AppUiTest {
         name: String,
     ): Path = dir.resolve(name).also { it.writeBytes("%PDF-1.4\n".toByteArray()) }
 
+    /** A real PDF of three pages; the middle one has no text. */
+    private fun realPdf(
+        dir: Path,
+        name: String,
+    ): Path =
+        dir.resolve(name).also {
+            val pages =
+                listOf(
+                    TestPage(texts = listOf(TestText("First page", 20f, 200f))),
+                    TestPage(),
+                    TestPage(texts = listOf(TestText("Third", 20f, 200f))),
+                )
+            TestPdfs.write(it, pages)
+        }
+
     @Test
     fun theDialogStartsWithChoosingAPdf() =
         runComposeUiTest {
@@ -149,7 +172,7 @@ class AppUiTest {
     @Test
     fun choosingAPdfSuggestsATitleAndCreateOpensTheProject() =
         withDir { dir ->
-            val source = pdf(dir, "Some_Book.pdf")
+            val source = realPdf(dir, "Some_Book.pdf")
             runComposeUiTest {
                 val model = AppModel()
                 setContent { App(model, { null }, { source }) }
@@ -168,6 +191,9 @@ class AppUiTest {
 
                 onNodeWithText("Abhandlung").assertExists()
                 onNodeWithText("Year: ca. 1790").assertExists()
+                onNodeWithText("Pages: 3").assertExists()
+                // The import found no text on page 2: a notice says so, and it can be dismissed.
+                onNodeWithText("1 page has no text: 2.").assertExists()
                 onNodeWithText("Choose PDF…").assertDoesNotExist()
                 assertEquals("Abhandlung – korrektor", windowTitle(model.project, model.metadata))
                 assertTrue(dir.resolve("Abhandlung.korrektur/source.pdf").exists())
@@ -293,6 +319,119 @@ class AppUiTest {
                 onNodeWithText("Save").assertExists()
                 assertEquals(oldTitle, model.metadata?.title)
                 assertEquals(oldTitle, Project.open(folder).metadata?.title)
+            }
+        }
+
+    // --- the import in the dialog -------------------------------------------------------------------------
+
+    /** A factory whose import reports two of three pages, then waits for [release] or a cancel. */
+    private fun slowFactory(release: CountDownLatch) =
+        FakeFactory(importer = { _, progress, isCancelled ->
+            progress(1, 3)
+            progress(2, 3)
+            while (release.count > 0L && !isCancelled()) Thread.sleep(5)
+            if (isCancelled()) throw CancellationException("stop")
+            ImportResult(3)
+        })
+
+    @Test
+    fun theDialogShowsTheProgressOfTheImportAndCancelDeletesTheProject() =
+        withDir { dir ->
+            val source = realPdf(dir, "Some_Book.pdf")
+            runComposeUiTest {
+                val model = AppModel(slowFactory(CountDownLatch(1)))
+                setContent { App(model, { null }, { source }) }
+                onNodeWithText("New project…").performClick()
+                onNodeWithText("Choose PDF…").performClick()
+
+                onNodeWithText("Create").performClick()
+                waitUntil(
+                    timeoutMillis = 10_000,
+                ) { onAllNodesWithText("Importing page 2 of 3").fetchSemanticsNodes().isNotEmpty() }
+                onNodeWithText("Cancel").assertIsEnabled()
+                onNodeWithText("Create").assertIsNotEnabled()
+                onNodeWithText("Choose PDF…").assertIsNotEnabled()
+                assertFalse(model.canClose, "the window cannot be closed while importing")
+
+                onNodeWithText("Cancel").performClick()
+                waitUntil(
+                    timeoutMillis = 10_000,
+                ) { onAllNodesWithText("Import cancelled.").fetchSemanticsNodes().isNotEmpty() }
+                // The dialog is still there with its fields, and creating is possible again.
+                onNodeWithText("Create").assertIsEnabled()
+                onNodeWithText("Choose PDF…").assertIsEnabled()
+                onNodeWithText("Some Book").assertExists()
+                assertTrue(model.canClose)
+                assertNull(model.project)
+                assertEquals(emptyList(), dir.listDirectoryEntries("*.korrektur"), "nothing is left in the folder")
+            }
+        }
+
+    @Test
+    fun whenTheImportIsDoneTheProjectOpensAndTheDialogGoes() =
+        withDir { dir ->
+            val source = realPdf(dir, "Some_Book.pdf")
+            runComposeUiTest {
+                val release = CountDownLatch(1)
+                val model = AppModel(slowFactory(release))
+                setContent { App(model, { null }, { source }) }
+                onNodeWithText("New project…").performClick()
+                onNodeWithText("Choose PDF…").performClick()
+                onNodeWithText("Create").performClick()
+                waitUntil(
+                    timeoutMillis = 10_000,
+                ) { onAllNodesWithText("Importing page 2 of 3").fetchSemanticsNodes().isNotEmpty() }
+
+                release.countDown()
+                waitUntil(timeoutMillis = 10_000) { model.project != null }
+                waitForIdle()
+
+                onNodeWithText("Some Book").assertExists()
+                onNodeWithText("Importing page 2 of 3").assertDoesNotExist()
+                onNodeWithText("Choose PDF…").assertDoesNotExist()
+                assertTrue(model.canClose)
+            }
+        }
+
+    @Test
+    fun aFailedImportShowsItsReasonInTheDialogAndLeavesNothing() =
+        withDir { dir ->
+            val source = realPdf(dir, "Some_Book.pdf")
+            runComposeUiTest {
+                val model = AppModel(FakeFactory(importer = { _, _, _ -> throw PdfException("The PDF is damaged") }))
+                setContent { App(model, { null }, { source }) }
+                onNodeWithText("New project…").performClick()
+                onNodeWithText("Choose PDF…").performClick()
+
+                onNodeWithText("Create").performClick()
+                waitUntil(
+                    timeoutMillis = 10_000,
+                ) { onAllNodesWithText("The PDF is damaged").fetchSemanticsNodes().isNotEmpty() }
+
+                onNodeWithText("Create").assertIsEnabled()
+                assertNull(model.project)
+                assertEquals(emptyList(), dir.listDirectoryEntries("*.korrektur"))
+            }
+        }
+
+    @Test
+    fun theNoticeAboutPagesWithoutTextCanBeDismissed() =
+        withDir { dir ->
+            val source = realPdf(dir, "Some_Book.pdf")
+            runComposeUiTest {
+                val model = AppModel()
+                setContent { App(model, { null }, { source }) }
+                onNodeWithText("New project…").performClick()
+                onNodeWithText("Choose PDF…").performClick()
+                onNodeWithText("Create").performClick()
+                waitUntil(timeoutMillis = 10_000) { model.project != null }
+                waitForIdle()
+                onNodeWithText("1 page has no text: 2.").assertExists()
+
+                onNodeWithText("Dismiss").performClick()
+
+                onNodeWithText("1 page has no text: 2.").assertDoesNotExist()
+                onNodeWithText("Pages: 3").assertExists()
             }
         }
 }

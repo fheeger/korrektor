@@ -22,12 +22,15 @@ class SpecExamplesTest {
 
     @Test
     fun theSpecHasAllExamples() {
-        assertEquals(setOf("project", "page-original", "page-corrected", "page-unknown", "history"), examples().keys)
+        assertEquals(
+            setOf("project", "page-original", "page-corrected", "page-unknown", "page-note", "history"),
+            examples().keys,
+        )
     }
 
     @Test
     fun pageExamplesRoundTripByteForByte() {
-        for (name in listOf("page-original", "page-corrected", "page-unknown")) {
+        for (name in listOf("page-original", "page-corrected", "page-unknown", "page-note")) {
             val text = example(name)
             assertEquals(text, PageCodec.encode(PageCodec.decode(text)), name)
         }

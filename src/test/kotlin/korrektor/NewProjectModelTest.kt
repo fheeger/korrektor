@@ -1,13 +1,22 @@
 package korrektor
 
+import korrektor.format.FormatException
 import korrektor.format.Metadata
 import korrektor.format.Project
+import korrektor.importer.ImportResult
+import korrektor.importer.PageNote
+import korrektor.importer.PdfImport
+import korrektor.pdf.PdfException
+import korrektor.pdf.TestPage
+import korrektor.pdf.TestPdfs
+import korrektor.pdf.TestText
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.CancellationException
 import kotlin.coroutines.CoroutineContext
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteExisting
@@ -71,7 +80,7 @@ class NewProjectModelTest {
     @Test
     fun createIsDisabledUntilAPdfIsChosenAndTheTitleIsNotBlank() =
         withDir { dir ->
-            val model = newModel(AppModel())
+            val model = newModel(AppModel(FakeFactory()))
             assertFalse(model.canCreate)
             assertNull(model.create())
 
@@ -89,7 +98,7 @@ class NewProjectModelTest {
     @Test
     fun choosingAPdfSuggestsTheTitleAndTheLocation() =
         withDir { dir ->
-            val model = newModel(AppModel())
+            val model = newModel(AppModel(FakeFactory()))
             model.selectPdf(pdf(dir, "Abhandlung_über_den_kleinen_Krieg.pdf"))
 
             assertEquals("Abhandlung über den kleinen Krieg", model.title)
@@ -101,7 +110,7 @@ class NewProjectModelTest {
     fun theSuggestionCanBeEditedAndTheLocationChanged() =
         withDir { dir ->
             val elsewhere = dir.resolve("elsewhere").also { it.createDirectories() }
-            val model = newModel(AppModel())
+            val model = newModel(AppModel(FakeFactory()))
             model.selectPdf(pdf(dir))
 
             model.updateTitle("My own title")
@@ -114,7 +123,7 @@ class NewProjectModelTest {
     @Test
     fun aTitleTypedBeforeChoosingThePdfIsNotOverwritten() =
         withDir { dir ->
-            val model = newModel(AppModel())
+            val model = newModel(AppModel(FakeFactory()))
             model.updateTitle("Typed first")
 
             model.selectPdf(pdf(dir))
@@ -126,7 +135,7 @@ class NewProjectModelTest {
     fun aLocationChosenBeforeChoosingThePdfIsNotOverwritten() =
         withDir { dir ->
             val elsewhere = dir.resolve("elsewhere").also { it.createDirectories() }
-            val model = newModel(AppModel())
+            val model = newModel(AppModel(FakeFactory()))
             model.selectLocation(elsewhere)
 
             model.selectPdf(pdf(dir))
@@ -137,7 +146,7 @@ class NewProjectModelTest {
     @Test
     fun aSuggestedTitleFollowsASecondPdfButAClearedTitleGetsASuggestion() =
         withDir { dir ->
-            val model = newModel(AppModel())
+            val model = newModel(AppModel(FakeFactory()))
             model.selectPdf(pdf(dir, "First_Book.pdf"))
             model.selectPdf(pdf(dir, "Second_Book.pdf"))
             assertEquals("Second Book", model.title)
@@ -156,7 +165,7 @@ class NewProjectModelTest {
     @Test
     fun creatingMakesTheProjectAndOpensIt() =
         withDir { dir ->
-            val app = AppModel().also { it.openNewProject() }
+            val app = AppModel(FakeFactory()).also { it.openNewProject() }
             val model = newModel(app)
             model.selectPdf(pdf(dir))
             model.updateTitle("Abhandlung")
@@ -193,7 +202,7 @@ class NewProjectModelTest {
     @Test
     fun yearsLikeASingleQuestionMarkAreKept() =
         withDir { dir ->
-            val app = AppModel()
+            val app = AppModel(FakeFactory())
             val model = newModel(app)
             model.selectPdf(pdf(dir))
             model.updateYear(
@@ -206,7 +215,7 @@ class NewProjectModelTest {
     @Test
     fun anExistingProjectFolderIsAnErrorAndTheDialogStaysOpen() =
         withDir { dir ->
-            val app = AppModel().also { it.openNewProject() }
+            val app = AppModel(FakeFactory()).also { it.openNewProject() }
             val model = newModel(app)
             model.selectPdf(pdf(dir))
             model.updateTitle("Same")
@@ -214,7 +223,7 @@ class NewProjectModelTest {
             val first = assertNotNull(app.project)
             val before = first.folder.resolve("project.json").readBytes()
 
-            val app2 = AppModel().also { it.openNewProject() }
+            val app2 = AppModel(FakeFactory()).also { it.openNewProject() }
             val second = newModel(app2)
             second.selectPdf(pdf(dir, "Other.pdf"))
             second.updateTitle("Same")
@@ -236,7 +245,7 @@ class NewProjectModelTest {
     @Test
     fun aLocationThatDoesNotExistIsAnErrorAndNothingIsCreated() =
         withDir { dir ->
-            val app = AppModel()
+            val app = AppModel(FakeFactory())
             val model = newModel(app)
             model.selectPdf(pdf(dir))
             model.selectLocation(dir.resolve("not-there"))
@@ -251,7 +260,7 @@ class NewProjectModelTest {
     @Test
     fun aPdfThatVanishedIsAnErrorAndNothingIsCreated() =
         withDir { dir ->
-            val app = AppModel()
+            val app = AppModel(FakeFactory())
             val model = newModel(app)
             val source = pdf(dir)
             model.selectPdf(source)
@@ -267,7 +276,7 @@ class NewProjectModelTest {
     @Test
     fun anErrorGoesAwayWhenTheUserChangesSomething() =
         withDir { dir ->
-            val model = newModel(AppModel())
+            val model = newModel(AppModel(FakeFactory()))
             val source = pdf(dir)
             model.selectPdf(source)
             source.deleteExisting()
@@ -285,7 +294,7 @@ class NewProjectModelTest {
     fun whileCreatingTheModelIsBusyAndCannotStartAgain() =
         withDir { dir ->
             val manual = ManualDispatcher()
-            val app = AppModel()
+            val app = AppModel(FakeFactory())
             val model = newModel(app, manual)
             model.selectPdf(pdf(dir))
 
@@ -308,7 +317,7 @@ class NewProjectModelTest {
     fun theWindowCannotBeClosedWhileCreating() =
         withDir { dir ->
             val manual = ManualDispatcher()
-            val app = AppModel()
+            val app = AppModel(FakeFactory())
             val model = newModel(app, manual)
             model.selectPdf(pdf(dir))
             assertTrue(app.canClose)
@@ -323,11 +332,8 @@ class NewProjectModelTest {
     @Test
     fun anUnexpectedFailureBecomesAMessageAndTheModelIsNotStuck() =
         withDir { dir ->
-            val app = AppModel()
-            val model =
-                NewProjectModel(app, CoroutineScope(Dispatchers.Unconfined), Dispatchers.Unconfined) { _, _, _ ->
-                    throw IllegalStateException("something unexpected")
-                }
+            val app = AppModel(FakeFactory(createFails = IllegalStateException("something unexpected")))
+            val model = newModel(app)
             model.selectPdf(pdf(dir))
 
             model.createAndWait()
@@ -343,7 +349,7 @@ class NewProjectModelTest {
     fun cancellingWhileCreatingIsNotAnError() =
         withDir { dir ->
             val manual = ManualDispatcher()
-            val app = AppModel()
+            val app = AppModel(FakeFactory())
             val model = newModel(app, manual)
             model.selectPdf(pdf(dir))
 
@@ -361,7 +367,7 @@ class NewProjectModelTest {
     fun theModelIsNotBusyAfterAFailure() =
         withDir { dir ->
             val manual = ManualDispatcher()
-            val model = newModel(AppModel(), manual)
+            val model = newModel(AppModel(FakeFactory()), manual)
             val source = pdf(dir)
             model.selectPdf(source)
             source.deleteExisting()
@@ -373,5 +379,241 @@ class NewProjectModelTest {
             assertFalse(model.busy)
             assertNotNull(model.error)
             assertTrue(model.canCreate)
+        }
+
+    // --- the import ---------------------------------------------------------------------------------------
+
+    /** A real PDF of [count] pages; the second page has no text. */
+    private fun realPdf(
+        dir: Path,
+        count: Int = 3,
+    ): Path =
+        dir.resolve("Real_Book.pdf").also { file ->
+            val pages =
+                List(count) { i ->
+                    if (i ==
+                        1
+                    ) {
+                        TestPage()
+                    } else {
+                        TestPage(texts = listOf(TestText("Page ${i + 1}", 20f, 200f)))
+                    }
+                }
+            TestPdfs.write(file, pages)
+        }
+
+    private fun projectFolders(dir: Path) = dir.listDirectoryEntries("*.korrektur")
+
+    @Test
+    fun theProgressOfTheImportIsShown() =
+        withDir { dir ->
+            lateinit var model: NewProjectModel
+            val seen = mutableListOf<Triple<Int, Int, Boolean>>()
+            val factory =
+                FakeFactory(importer = { _, progress, _ ->
+                    for (n in 1..3) {
+                        progress(n, 3)
+                        seen += Triple(model.importedPages, model.totalPages, model.importing)
+                    }
+                    ImportResult(3)
+                })
+            model = newModel(AppModel(factory))
+            model.selectPdf(pdf(dir))
+
+            model.createAndWait()
+
+            assertEquals(listOf(Triple(1, 3, true), Triple(2, 3, true), Triple(3, 3, true)), seen)
+            assertFalse(model.busy)
+            assertFalse(model.importing)
+        }
+
+    @Test
+    fun theProjectOpensWithASummaryOfThePagesThatHadNoTextAndTheDialogCloses() =
+        withDir { dir ->
+            val factory = FakeFactory(importer = { _, _, _ -> ImportResult(3, listOf(PageNote(2, PdfImport.NO_TEXT))) })
+            val app = AppModel(factory).also { it.openNewProject() }
+            val model = newModel(app)
+            model.selectPdf(pdf(dir))
+
+            model.createAndWait()
+
+            assertNotNull(app.project)
+            assertEquals("1 page has no text: 2.", app.notice)
+            assertFalse(app.newProjectOpen)
+            app.dismissNotice()
+            assertNull(app.notice)
+        }
+
+    @Test
+    fun cancellingDeletesTheProjectAndLeavesTheDialogAsItWas() =
+        withDir { dir ->
+            lateinit var model: NewProjectModel
+            val factory =
+                FakeFactory(importer = { _, progress, isCancelled ->
+                    for (n in 1..5) {
+                        if (isCancelled()) throw CancellationException("stop")
+                        progress(n, 5)
+                        if (n == 2) model.cancel() // the user clicks "Cancel" while page 2 is done
+                    }
+                    ImportResult(5)
+                })
+            val app = AppModel(factory).also { it.openNewProject() }
+            model = newModel(app)
+            model.selectPdf(pdf(dir))
+            model.updateAuthor("Someone")
+
+            model.createAndWait()
+
+            assertEquals("Import cancelled.", model.error)
+            assertEquals(emptyList(), projectFolders(dir), "the project folder is gone")
+            assertEquals(
+                listOf("Some_Book.pdf"),
+                dir.listDirectoryEntries().map { it.name },
+                "the target folder is as it was",
+            )
+            assertNull(app.project)
+            assertTrue(app.newProjectOpen, "the dialog stays open")
+            assertEquals("Some Book", model.title)
+            assertEquals("Someone", model.author)
+            assertFalse(model.busy)
+            assertTrue(app.canClose)
+            assertTrue(model.canCreate, "the user can create again")
+        }
+
+    @Test
+    fun aFailedImportDeletesTheProjectAndShowsTheReason() =
+        withDir { dir ->
+            val failures =
+                listOf(
+                    PdfException("The PDF is damaged") to "The PDF is damaged",
+                    FormatException("A page is wrong") to "A page is wrong",
+                )
+            for ((failure, message) in failures) {
+                val model = newModel(AppModel(FakeFactory(importer = { _, _, _ -> throw failure })))
+                model.selectPdf(pdf(dir))
+
+                model.createAndWait()
+
+                assertEquals(message, model.error)
+                assertEquals(emptyList(), projectFolders(dir), "nothing is left behind")
+                assertFalse(model.busy)
+            }
+        }
+
+    @Test
+    fun anUnexpectedImportFailureIsAMessageAndDeletesTheProject() =
+        withDir { dir ->
+            val model = newModel(AppModel(FakeFactory(importer = { _, _, _ -> error("boom") })))
+            model.selectPdf(pdf(dir))
+
+            model.createAndWait()
+
+            assertTrue("Importing the text failed unexpectedly: boom" in model.error!!, model.error)
+            assertEquals(emptyList(), projectFolders(dir))
+            assertTrue(model.canCreate)
+        }
+
+    @Test
+    fun cancelDoesNothingWhenNothingIsRunningAndDoesNotSpoilTheNextCreate() =
+        withDir { dir ->
+            val app = AppModel(FakeFactory())
+            val model = newModel(app)
+            model.selectPdf(pdf(dir))
+
+            model.cancel()
+            model.createAndWait()
+
+            assertNotNull(app.project)
+            assertNull(model.error)
+        }
+
+    @Test
+    fun theWindowCannotBeClosedWhileTheTextIsImported() =
+        withDir { dir ->
+            lateinit var app: AppModel
+            val during = mutableListOf<Boolean>()
+            app =
+                AppModel(
+                    FakeFactory(importer = { _, _, _ ->
+                        during += app.canClose
+                        ImportResult(0)
+                    }),
+                )
+            val model = newModel(app)
+            model.selectPdf(pdf(dir))
+
+            model.createAndWait()
+
+            assertEquals(listOf(false), during)
+            assertTrue(app.canClose)
+        }
+
+    @Test
+    fun aRealImportOpensTheProjectWithAllItsPagesAndTheNote() =
+        withDir { dir ->
+            val app = AppModel().also { it.openNewProject() }
+            val model = newModel(app, Dispatchers.IO)
+            model.selectPdf(realPdf(dir))
+
+            model.createAndWait()
+
+            val project = assertNotNull(app.project)
+            assertEquals(3, project.pages.size)
+            assertEquals("1 page has no text: 2.", app.notice)
+            assertEquals(PdfImport.NO_TEXT, project.readOriginalPage(2).note)
+            val firstPage =
+                project.readOriginalPage(1).regions.flatMap { it.lines }.map { l ->
+                    l.words.joinToString(" ") { it.text }
+                }
+            assertEquals(listOf("Page 1"), firstPage)
+            assertFalse(app.newProjectOpen)
+        }
+
+    @Test
+    fun aRealImportThatIsCancelledLeavesNothingBehind() =
+        withDir { dir ->
+            lateinit var model: NewProjectModel
+            val real = DefaultProjectFactory
+            val factory =
+                object : ProjectFactory {
+                    override fun create(
+                        location: Path,
+                        pdf: Path,
+                        metadata: Metadata,
+                    ) = real.create(location, pdf, metadata)
+
+                    override fun importText(
+                        project: Project,
+                        progress: (Int, Int) -> Unit,
+                        isCancelled: () -> Boolean,
+                    ) = real.importText(project, { done, total ->
+                        progress(done, total)
+                        if (done == 2) model.cancel()
+                    }, isCancelled)
+                }
+            val app = AppModel(factory).also { it.openNewProject() }
+            model = newModel(app, Dispatchers.IO)
+            val source = realPdf(dir, count = 6)
+            model.selectPdf(source)
+
+            model.createAndWait()
+
+            assertEquals("Import cancelled.", model.error)
+            assertEquals(emptyList(), projectFolders(dir))
+            assertEquals(listOf(source.name), dir.listDirectoryEntries().map { it.name })
+            assertNull(app.project)
+            assertTrue(app.newProjectOpen)
+        }
+
+    @Test
+    fun aRealImportOfAPdfThatIsNotOneFailsWithItsMessageAndLeavesNothing() =
+        withDir { dir ->
+            val model = newModel(AppModel(), Dispatchers.IO)
+            model.selectPdf(pdf(dir)) // a stand-in with a %PDF- header but no structure
+
+            model.createAndWait()
+
+            assertTrue("damaged" in model.error!!, model.error)
+            assertEquals(emptyList(), projectFolders(dir))
         }
 }

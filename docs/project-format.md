@@ -52,7 +52,8 @@ Every JSON file is written canonically, so that opening and saving a project wit
 
 - Unit: PDF points (1/72 inch). Origin: top-left corner of the page, x to the right, y downwards.
 - A **box** is `[x, y, width, height]`.
-- `width` and `height` of a page are the size of the PDF page in points.
+- **The page** is the page as it is shown: the part of the PDF page that a viewer displays (the crop box within the media box, after the page's rotation). `width` and `height` are its size in points, so a page rotated by 90° or 270° has them swapped. The origin is the top-left corner of that visible page as it is shown, not the PDF's own origin (bottom-left, y upwards), and not the corner of the media box if the crop box is smaller.
+- Boxes are not clamped to the page: text that lies partly outside keeps its coordinates, so boxes can have negative values or reach past `width` and `height`.
 
 ## `project.json`
 
@@ -90,7 +91,7 @@ All values are free text, stored exactly as typed (no trimming, no normalization
 
 `metadata` is written on one line. Unknown fields inside it are kept and written after the known ones, in alphabetical order. It is a new optional field, so the format version is unchanged.
 
-Further fields (such as the page status) are added by later stories as new fields. Unknown fields are kept, at the top level and in page entries. An empty book is written as `"pages": []`. A new project starts that way: it holds the PDF and the metadata, and the import (S03) fills the page list.
+Further fields (such as the page status) are added by later stories as new fields. Unknown fields are kept, at the top level and in page entries. An empty book is written as `"pages": []`. A new project starts that way: it holds the PDF and the metadata. The import (S03) then sets the page list to one entry per page of the PDF (`pdfPage` 1, 2, 3, …) and writes the page files; its rules are in [pdf-text-layer.md](pdf-text-layer.md).
 
 ## Page files
 
@@ -138,6 +139,21 @@ Corrected layer of the same page: `rnng` is corrected to `rung`, and a line was 
 | `pdfPage` | integer ≥ 1 | the page of `source.pdf`; must equal the `pdfPage` of the page's entry in `project.json` |
 | `width`, `height` | number > 0 | page size in points |
 | `regions` | array | the regions; written one region per block. An empty page is `"regions": []` |
+| `note` | string, optional | a short message about the page for the user, written after `regions` and kept in both layers; the import sets it on a page it could not get text from (see below) |
+
+A page the import found no text on, or could not read, is an empty page with a note:
+
+```json page-note
+{
+  "pdfPage": 3,
+  "width": 307.4,
+  "height": 488.2,
+  "regions": [],
+  "note": "No text on this page."
+}
+```
+
+The notes the import writes are *"No text on this page."* and *"The text of this page could not be read: …"* (with the reason, and, if the page itself could not be loaded, a remark that the size of the previous page is used, or A4 if it is the first page). Readers keep a note they do not understand like any other field; a page without a note is written as before.
 
 ### Region
 

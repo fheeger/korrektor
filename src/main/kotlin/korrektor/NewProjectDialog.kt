@@ -5,10 +5,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,8 +40,9 @@ fun NewProjectDialog(
                 PdfRow(model, pdfPicker)
                 MetadataFields(model, enabled = model.pdf != null && !model.busy)
                 LocationRow(model, folderPicker)
+                if (model.busy) ProgressArea(model)
                 model.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                ButtonRow(model, onCancel = app::closeNewProject)
+                ButtonRow(model, onClose = app::closeNewProject)
             }
         }
     }
@@ -77,17 +77,32 @@ private fun LocationRow(
 }
 
 @Composable
+private fun ProgressArea(model: NewProjectModel) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (model.importing) {
+            Text("Importing page ${model.importedPages} of ${model.totalPages}")
+            LinearProgressIndicator(progress = {
+                model.importedPages / model.totalPages.toFloat()
+            }, modifier = Modifier.fillMaxWidth())
+        } else {
+            Text("Creating the project…")
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
+    }
+}
+
+/** While the project is made, "Cancel" stops it and deletes what was made; otherwise it closes the dialog. */
+@Composable
 private fun ButtonRow(
     model: NewProjectModel,
-    onCancel: () -> Unit,
+    onClose: () -> Unit,
 ) {
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (model.busy) CircularProgressIndicator(Modifier.size(24.dp))
-        TextButton(onClick = onCancel, enabled = !model.busy) { Text("Cancel") }
+        TextButton(onClick = if (model.busy) model::cancel else onClose) { Text("Cancel") }
         Button(onClick = { model.create() }, enabled = model.canCreate) { Text("Create") }
     }
 }
