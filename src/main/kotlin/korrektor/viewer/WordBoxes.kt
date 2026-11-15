@@ -38,3 +38,15 @@ fun ViewerState.visibleBoxes(boxes: List<Box>): List<ScreenRect> =
     boxes
         .map { toScreen(it) }
         .filter { it.x < viewportWidth && it.x + it.width > 0 && it.y < viewportHeight && it.y + it.height > 0 }
+
+/** A point of the page in points, origin top left (the coordinates of the format). */
+data class PagePoint(
+    val x: Double,
+    val y: Double,
+)
+
+/** The page point under the screen position ([screenX], [screenY]): the inverse of [toScreen]. */
+fun ViewerState.pagePointAt(
+    screenX: Double,
+    screenY: Double,
+): PagePoint = PagePoint((screenX - originX) / scale, (screenY - originY) / scale)

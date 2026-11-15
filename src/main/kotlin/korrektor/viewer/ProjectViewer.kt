@@ -18,11 +18,11 @@ fun ProjectViewer(
     state: ViewerState,
     modifier: Modifier = Modifier,
     pageSources: PageSourceFactory = DefaultPageSourceFactory,
-    highlight: LineHighlight? = null,
+    links: ScanLinks = ScanLinks(),
 ) {
     val source = remember(project) { pageSources.open(project.sourcePdf) }
     DisposableEffect(source) { onDispose { source.close() } }
-    PageViewer(source, modifier, state, remember(project) { projectBoxes(project) }, highlight)
+    PageViewer(source, modifier, state, remember(project) { projectBoxes(project) }, links)
 }
 
 /**

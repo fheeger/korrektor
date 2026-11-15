@@ -8,10 +8,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import korrektor.editor.TextPanel
+import korrektor.editor.clickOnScan
 import korrektor.editor.highlightFor
 import korrektor.viewer.DefaultPageSourceFactory
 import korrektor.viewer.PageSourceFactory
 import korrektor.viewer.ProjectViewer
+import korrektor.viewer.ScanLinks
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -47,8 +49,12 @@ fun App(
                             { scope.launch(Dispatchers.IO) { model.layout.save() } },
                             left = {
                                 val viewer = checkNotNull(model.viewer)
-                                val highlight = model.editor?.highlightFor(viewer.page)
-                                ProjectViewer(project, viewer, Modifier.fillMaxSize(), pageSources, highlight)
+                                val editor = model.editor
+                                val links =
+                                    ScanLinks(
+                                        editor?.highlightFor(viewer.page),
+                                    ) { editor?.clickOnScan(viewer.page, it) }
+                                ProjectViewer(project, viewer, Modifier.fillMaxSize(), pageSources, links)
                             },
                             modifier = room,
                             right = { TextPanel(checkNotNull(model.editor), Modifier.fillMaxSize()) },

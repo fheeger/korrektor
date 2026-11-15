@@ -33,6 +33,7 @@ import korrektor.pdf.TestText
 import korrektor.viewer.FakePageSource
 import korrektor.viewer.LineHighlight
 import korrektor.viewer.PageViewer
+import korrektor.viewer.ScanLinks
 import korrektor.viewer.ViewerState
 import korrektor.viewer.toScreen
 import kotlinx.coroutines.Dispatchers
@@ -111,7 +112,7 @@ class HighlightTest {
         runComposeUiTest {
             val source = FakePageSource()
             var mark: LineHighlight? by mutableStateOf<LineHighlight?>(null)
-            setContent { PageViewer(source, highlight = mark) }
+            setContent { PageViewer(source, links = ScanLinks(mark)) }
             waitForPage()
             onNodeWithContentDescription("Highlighted line: l1").assertDoesNotExist()
 
@@ -140,7 +141,7 @@ class HighlightTest {
                     source,
                     Modifier.size(600.dp, 700.dp),
                     state,
-                    highlight = LineHighlight("l1", withBox.box!!),
+                    links = ScanLinks(LineHighlight("l1", withBox.box!!)),
                 )
             }
             waitForPage()
@@ -217,7 +218,7 @@ class HighlightTest {
             runBlocking { editor.show(1) }
             val source = FakePageSource()
             val state = ViewerState()
-            setContent { PageViewer(source, state = state, highlight = editor.highlightFor(1)) }
+            setContent { PageViewer(source, state = state, links = ScanLinks(editor.highlightFor(1))) }
             waitForPage()
 
             editor.activate("l1")
