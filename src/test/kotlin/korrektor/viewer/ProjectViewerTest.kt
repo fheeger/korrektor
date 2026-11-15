@@ -6,8 +6,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.v2.runComposeUiTest
-import korrektor.ProjectActions
-import korrektor.ProjectScreen
 import korrektor.format.Metadata
 import korrektor.format.Project
 import korrektor.pdf.TestPage
@@ -22,9 +20,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
-class ProjectScreenViewerTest {
-    private val noActions = ProjectActions({}, {}, {})
-
+class ProjectViewerTest {
     private fun withProject(block: (Project) -> Unit) {
         val dir = Files.createTempDirectory("projectviewer")
         try {
@@ -49,7 +45,7 @@ class ProjectScreenViewerTest {
             val source = FakePageSource()
             runComposeUiTest {
                 setContent {
-                    ProjectScreen(project, project.metadata, noActions, pageSources = {
+                    ProjectViewer(project, ViewerState(1), pageSources = {
                         opened.add(it)
                         source
                     })
@@ -68,7 +64,9 @@ class ProjectScreenViewerTest {
             runComposeUiTest {
                 var shown by mutableStateOf(true)
                 setContent {
-                    if (shown) ProjectScreen(project, project.metadata, noActions, pageSources = { source })
+                    if (shown) {
+                        ProjectViewer(project, ViewerState(1), pageSources = { source })
+                    }
                 }
                 waitUntil { source.requests.isNotEmpty() }
                 assertFalse(source.closed)
@@ -85,7 +83,7 @@ class ProjectScreenViewerTest {
         withProject { project ->
             runComposeUiTest {
                 var shown by mutableStateOf(true)
-                setContent { if (shown) ProjectScreen(project, project.metadata, noActions) }
+                setContent { if (shown) ProjectViewer(project, ViewerState(1)) }
                 waitForPage(1)
 
                 shown = false
