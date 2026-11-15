@@ -1,6 +1,6 @@
 # S04 Page viewer
 
-**Features:** C2, N1 · **Status:** in review
+**Features:** C2, N1 · **Status:** done
 
 As a reader of historical sources, I want to view the scanned pages with zoom and pan, loading quickly even in a book with 1000+ pages
 so that I can read the original comfortably while correcting.
