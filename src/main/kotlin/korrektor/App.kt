@@ -21,6 +21,10 @@ fun App(
 ) {
     val openProject = { folderPicker.pick()?.let(model::openProject) ?: Unit }
     LaunchedEffect(model.viewer) { model.keepViewSaved() }
+    // Both panels show the page the viewer is on: the editor follows it.
+    val editor = model.editor
+    val shownPage = model.viewer?.page
+    LaunchedEffect(editor, shownPage) { if (editor != null && shownPage != null) editor.show(shownPage) }
     KorrektorTheme {
         Surface(modifier.fillMaxSize()) {
             Column {

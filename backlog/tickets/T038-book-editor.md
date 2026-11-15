@@ -1,6 +1,6 @@
 # T038 The editor state: corrected pages in memory
 
-**Type:** task · **Status:** ready for development · **Story:** S05 · **Task:** S05.3
+**Type:** task · **Status:** done · **Story:** S05 · **Task:** S05.3
 
 The corrected text of the pages the user has looked at or changed lives in memory in a `BookEditor` that both panels share. Nothing is written to the project yet: saving is autosave (S07). This ticket makes the state, the loading and the page switch; the panels come later.
 
@@ -31,7 +31,13 @@ The corrected text of the pages the user has looked at or changed lives in memor
 T037.
 
 ## Decisions
-None yet.
+- **The editor takes a page reader** (`(Int) -> PageLayer`, `Project::readPage` in the app) instead of the project, so tests can make a read slow or fail without a project; the ticket text said `BookEditor(project, io)`.
+- **A page that was only looked at is not kept:** `changed` holds only pages with a real change (the layer after an edit is a different object); an edit that changes nothing (the same text, a join on the first line) is not a change and does not mark the page.
+- **`show` clears the layer first** (so the panel never shows the old page under the new page number), and ignores the result of a read for another page than the one shown (the cancel of the caller also stops it: `withContext` rethrows at its end).
+- **Focus requests have a serial number,** so asking twice for the same place moves the cursor twice (a click on the same line again, for example).
+- **`requestFocus` also activates the line,** so after a split, a join, an add and a delete the active line is where the cursor goes; deleting the only line leaves no active line.
+- **`AppModel.editor`** is made in `open` next to the viewer state; `App` follows `viewer.page` with an effect. For now nothing reads the editor except tests: the panels come with T041.
+- **The README note** that corrections are not saved yet comes with T042, where editing becomes possible.
 
 ## Progress
-Not started.
+Done. `BookEditor`, `FocusRequest`, `AppModel.editor`, the page effect in `App`. Tests (`BookEditorTest`, 16): a shown page is the project's corrected layer in reading order (also with regions stored in the wrong order), a page without text has its note and no lines, an edit marks the page and survives going away and back, looking is not changing, an edit that changes nothing is no change, nothing is written (the project folder byte for byte), a line added on a page without text creates `r1`, a read that was left for another page is never used (slow read), an unfinished load shows no layer, an unreadable page gives an error and the next page loads, the active line is none after a page change, an unknown line cannot become active, split, join, add and delete ask for the cursor where it belongs, every focus request is new, deleting the only line leaves no active line, and the app makes a fresh editor for each project. `./gradlew build` is green.

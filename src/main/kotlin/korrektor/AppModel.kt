@@ -3,12 +3,14 @@ package korrektor
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import korrektor.editor.BookEditor
 import korrektor.format.FormatException
 import korrektor.format.Metadata
 import korrektor.format.Project
 import korrektor.settings.AppSettings
 import korrektor.viewer.ViewerState
 import korrektor.viewer.restore
+import kotlinx.coroutines.Dispatchers
 import java.nio.file.Path
 import kotlin.io.path.name
 
@@ -30,6 +32,10 @@ class AppModel(
      * the settings remember, and saved back to them (see `saveView` and `keepViewSaved`).
      */
     var viewer: ViewerState? by mutableStateOf(null)
+        private set
+
+    /** The corrected text of the open project in memory, shared by the scan and the text panel (S05). */
+    var editor: BookEditor? by mutableStateOf(null)
         private set
 
     /**
@@ -119,6 +125,7 @@ class AppModel(
         saveView() // the project that was open until now
         project = opened
         viewer = ViewerState(opened.pages.size).also { state -> settings.viewOf(opened.folder)?.let(state::restore) }
+        editor = BookEditor(opened::readPage, Dispatchers.IO)
         metadata = opened.metadata
         error = null
         notice = null
