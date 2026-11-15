@@ -2,7 +2,9 @@ package korrektor.editor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +16,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,6 +31,15 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isAltPressed
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -60,13 +72,38 @@ fun TextPanel(
 ) {
     val layer = editor.layer
     val lines = editor.lines
-    Box(modifier.fillMaxSize().testTag("text list")) {
-        when {
-            editor.error != null -> Message("The text of this page could not be read: ${editor.error}", error = true)
-            layer == null -> Message("Loading…")
-            lines.isEmpty() -> Message(layer.note ?: "No lines on this page.")
-            else -> LineList(editor, lines)
+    Column(modifier.fillMaxSize().testTag("text list")) {
+        LineCommands(editor)
+        Box(Modifier.fillMaxSize()) {
+            when {
+                editor.error != null ->
+                    Message(
+                        "The text of this page could not be read: ${editor.error}",
+                        error = true,
+                    )
+                layer == null -> Message("Loading…")
+                lines.isEmpty() -> Message(layer.note ?: "No lines on this page.")
+                else -> LineList(editor, lines)
+            }
         }
+    }
+}
+
+/**
+ * "Add line" (below the active line, or at the end of the page) and "Delete line" (the active line). Enter, Backspace
+ * and Delete in a row do the same and more (split and join); these two are for the mouse.
+ */
+@Composable
+private fun LineCommands(editor: BookEditor) {
+    val ready = editor.layer != null
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        OutlinedButton({ editor.addLineAfter(editor.activeLineId) }, enabled = ready) { Text("Add line") }
+        OutlinedButton({
+            editor.activeLineId?.let(editor::deleteLine)
+        }, enabled = ready && editor.activeLineId != null) { Text("Delete line") }
     }
 }
 
@@ -103,11 +140,16 @@ private fun LineList(
     }
 
     // One instance of each action for all rows, so that a row whose line did not change is not recomposed.
-    val actions = remember(editor) { RowActions(editor::activate, editor::setLineText) { wishes.remove(it) } }
+    val actions = remember(editor) { RowActions(editor::activate, editor::setLineText, { wishes.remove(it) }, editor) }
     val numberWidth = (lines.size.toString().length * DIGIT_WIDTH + NUMBER_PADDING).dp
     LazyColumn(Modifier.fillMaxSize(), state) {
         itemsIndexed(lines, key = { _, line -> line.id }) { index, line ->
-            LineRow(line, numberWidth, RowState(index + 1, line.id == active, wishes[line.id]), actions)
+            LineRow(
+                line,
+                numberWidth,
+                RowState(index + 1, line.id == active, wishes[line.id], line.box != null),
+                actions,
+            )
         }
     }
 }
@@ -123,6 +165,7 @@ private data class RowState(
     val number: Int,
     val active: Boolean,
     val wish: Int?,
+    val hasBox: Boolean,
 )
 
 /** What a row can do; the same instance for every row. */
@@ -130,6 +173,7 @@ private class RowActions(
     val activate: (String?) -> Unit,
     val changeText: (String, String) -> Unit,
     val wishDone: (String) -> Unit,
+    val editor: BookEditor,
 )
 
 /**
@@ -170,12 +214,7 @@ private fun LineRow(
             .padding(horizontal = 8.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            state.number.toString(),
-            Modifier.width(numberWidth).clickable { focus.requestFocus() },
-            color = MaterialTheme.colorScheme.outline,
-            fontSize = 12.sp,
-        )
+        NumberCell(line.id, state, numberWidth) { focus.requestFocus() }
         BasicTextField(
             value = field,
             onValueChange = { typed ->
@@ -188,6 +227,7 @@ private fun LineRow(
                     .weight(1f)
                     .focusRequester(focus)
                     .onFocusChanged { if (it.isFocused) actions.activate(line.id) }
+                    .onPreviewKeyEvent { event -> lineKey(event, line.id, field, actions.editor) }
                     .testTag("line text ${line.id}"),
             singleLine = true,
             textStyle =
@@ -198,5 +238,60 @@ private fun LineRow(
                 ),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
         )
+    }
+}
+
+/**
+ * The keys that change the lines. Enter splits the line at the cursor (a selection is replaced by the break, so the
+ * selected text goes); Backspace at the start joins the line with the previous one; Delete at the end joins the next
+ * one into it. Anything else, also these keys with Ctrl, Alt or Meta, is left to the text field. Returns whether the
+ * key was used.
+ */
+private fun lineKey(
+    event: KeyEvent,
+    lineId: String,
+    field: TextFieldValue,
+    editor: BookEditor,
+): Boolean {
+    val plain =
+        event.type == KeyEventType.KeyDown && !event.isCtrlPressed && !event.isAltPressed && !event.isMetaPressed
+    val selection = field.selection
+    return when {
+        !plain -> false
+        event.key == Key.Enter -> {
+            if (!selection.collapsed) editor.setLineText(lineId, field.text.removeRange(selection.min, selection.max))
+            editor.splitLine(lineId, selection.min)
+            true
+        }
+        event.key == Key.Backspace && selection.collapsed && selection.start == 0 -> {
+            editor.joinWithPrevious(lineId)
+            true
+        }
+        event.key == Key.Delete && selection.collapsed && selection.end == field.text.length -> {
+            editor.joinWithNext(lineId)
+            true
+        }
+        else -> false
+    }
+}
+
+/** The line number, and a dot if the line has no box: it has no place on the scan, so it is not highlighted there. */
+@Composable
+private fun NumberCell(
+    lineId: String,
+    state: RowState,
+    width: Dp,
+    onClick: () -> Unit,
+) {
+    Row(Modifier.width(width).clickable(onClick = onClick), verticalAlignment = Alignment.CenterVertically) {
+        Text(state.number.toString(), color = MaterialTheme.colorScheme.outline, fontSize = 12.sp)
+        if (!state.hasBox) {
+            Text(
+                "•",
+                Modifier.padding(start = 2.dp).testTag("no box $lineId"),
+                color = MaterialTheme.colorScheme.primary,
+                fontSize = 12.sp,
+            )
+        }
     }
 }

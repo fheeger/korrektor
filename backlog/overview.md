@@ -68,7 +68,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T040](tickets/T040-two-panel-layout.md) | Two panels with a divider you can drag | task | S05 | done |
 | [T041](tickets/T041-text-panel.md) | The text panel shows the corrected lines | task | S05 | done |
 | [T042](tickets/T042-edit-lines.md) | Edit the text of a line | task | S05 | done |
-| [T043](tickets/T043-line-operations-ui.md) | Split, join, add and delete lines in the panel | task | S05 | ready for development |
+| [T043](tickets/T043-line-operations-ui.md) | Split, join, add and delete lines in the panel | task | S05 | done |
 | [T044](tickets/T044-highlight-active-line.md) | Highlight the active line on the scan | task | S05 | ready for development |
 | [T045](tickets/T045-click-line-on-scan.md) | Click a line on the scan to put the cursor in it | task | S05 | ready for development |
 | [T046](tickets/T046-auto-pan.md) | Keep the active line visible by panning | task | S05 | ready for development |
