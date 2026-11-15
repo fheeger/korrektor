@@ -3,10 +3,12 @@ package korrektor.viewer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performMouseInput
@@ -36,9 +38,10 @@ class PageViewerTest {
             val request = source.requests.first()
             assertEquals(3, request.page)
             assertEquals(0 to 0, request.x to request.y)
-            // The test window is 1024 pixels wide: 200 points become 1024 pixels; the page is taller than the viewport.
+            // The test window is 1024 pixels wide: 200 points become 1024 pixels; the page is taller than the viewport,
+            // so the picture is the viewport plus half a viewport of margin below.
             assertEquals(1024, request.width)
-            assertEquals(state.viewportHeight, request.height)
+            assertEquals(state.viewportHeight * 3 / 2, request.height)
             assertEquals(1024 / 200.0, request.scale, 1e-9)
         }
 
@@ -195,5 +198,62 @@ class PageViewerTest {
 
             assertEquals(before, state.scale, 1e-9, "the plain wheel does not zoom")
             assertNotEquals(0.0, state.offsetY, "it scrolls")
+        }
+
+    // --- panning ------------------------------------------------------------------------------------------
+
+    @Test
+    fun draggingThePageMovesIt() =
+        runComposeUiTest {
+            val source = FakePageSource()
+            val state = ViewerState()
+            setContent { PageViewer(source, page = 1, state = state) }
+            waitForPage(1)
+
+            onNodeWithContentDescription("Page 1").performMouseInput {
+                moveTo(center)
+                press()
+                moveBy(Offset(0f, -100f)) // dragging up shows lower parts of the page
+                release()
+            }
+            waitForIdle()
+
+            assertTrue(state.offsetY in 90.0..100.0, "moved by the drag, less the touch slop: ${state.offsetY}")
+        }
+
+    @Test
+    fun theScrollbarsAreThereOnlyInTheDirectionsInWhichThePageIsLarger() =
+        runComposeUiTest {
+            val source = FakePageSource()
+            val state = ViewerState()
+            setContent { PageViewer(source, page = 1, state = state) }
+            waitForPage(1)
+
+            // Fit width: as wide as the viewport, much taller.
+            onNodeWithTag("Vertical scrollbar").assertExists()
+            onNodeWithTag("Horizontal scrollbar").assertDoesNotExist()
+
+            runOnIdle { state.zoomTo(state.scale * 2) }
+            waitForIdle()
+            onNodeWithTag("Horizontal scrollbar").assertExists()
+        }
+
+    @Test
+    fun movingInsideTheRenderedRegionRendersNothingAndLeavingItRendersAgain() =
+        runComposeUiTest {
+            val source = FakePageSource()
+            val state = ViewerState()
+            setContent { PageViewer(source, page = 1, state = state) }
+            waitForPage(1)
+            val first = source.requests.size
+
+            runOnIdle { state.scrollBy(0.0, 100.0) } // inside the margin
+            waitForIdle()
+            assertEquals(first, source.requests.size, "no new picture")
+
+            runOnIdle { state.scrollBy(0.0, 600.0) } // beyond it
+            waitUntil { source.requests.size > first }
+            val request = source.requests.last()
+            assertTrue(request.y <= state.offsetY && request.y + request.height >= state.offsetY + state.viewportHeight)
         }
 }

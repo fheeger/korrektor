@@ -1,10 +1,16 @@
 package korrektor.viewer
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.HorizontalScrollbar
+import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -26,9 +32,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isCtrlPressed
+import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
@@ -43,12 +54,6 @@ import kotlin.math.roundToInt
 /** A picture the source delivered: [image] shows [region] of the page at [scale]. */
 private class Shown(
     val image: ImageBitmap,
-    val scale: Double,
-    val region: PixelRegion,
-)
-
-/** What the viewer asks the source for: the visible [region] at [scale]. A new request cancels the old one. */
-private data class Request(
     val scale: Double,
     val region: PixelRegion,
 )
@@ -105,9 +110,12 @@ private fun PageArea(
         size?.let { (pageSize, native) -> state.setPage(pageSize, native) }
     }
     LaunchedEffect(source, page) {
-        snapshotFlow { state.visibleRegion?.let { Request(state.scale, it) } }
+        // `last` is the request being worked on: while it still covers what is visible, nothing new is asked.
+        var last: PictureRequest? = null
+        snapshotFlow { state.nextRequest(last) }
             .filterNotNull()
             .collectLatest { request ->
+                last = request
                 tryOrFail({ failure = it }) { source.render(page, request.scale, request.region) }?.let {
                     shown = Shown(it, request.scale, request.region)
                     failure = null
@@ -118,8 +126,15 @@ private fun PageArea(
     Box(
         modifier
             .clipToBounds()
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .onSizeChanged { state.setViewport(it.width, it.height) }
-            .onPointerEvent(PointerEventType.Scroll) { event ->
+            .pointerHoverIcon(if (state.canPan) PointerIcon.Hand else PointerIcon.Default)
+            .pointerInput(state) {
+                detectDragGestures { change, drag ->
+                    state.scrollBy(-drag.x.toDouble(), -drag.y.toDouble())
+                    change.consume()
+                }
+            }.onPointerEvent(PointerEventType.Scroll) { event ->
                 val change = event.changes.first()
                 val position = change.position
                 state.wheel(
@@ -127,6 +142,7 @@ private fun PageArea(
                     event.keyboardModifiers.isCtrlPressed,
                     position.x.toDouble(),
                     position.y.toDouble(),
+                    shift = event.keyboardModifiers.isShiftPressed,
                 )
                 change.consume()
             },
@@ -143,6 +159,24 @@ private fun PageArea(
             picture == null -> Text("Loading…", Modifier.align(Alignment.Center))
             else -> PageCanvas(picture, state, page)
         }
+        Scrollbars(state)
+    }
+}
+
+/** The scrollbars: one for each direction in which the page is larger than the viewport. */
+@Composable
+private fun BoxScope.Scrollbars(state: ViewerState) {
+    if (state.contentHeight > state.viewportHeight) {
+        VerticalScrollbar(
+            ViewerScrollbarAdapter(state, vertical = true),
+            Modifier.align(Alignment.CenterEnd).fillMaxHeight().testTag("Vertical scrollbar"),
+        )
+    }
+    if (state.contentWidth > state.viewportWidth) {
+        HorizontalScrollbar(
+            ViewerScrollbarAdapter(state, vertical = false),
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth().testTag("Horizontal scrollbar"),
+        )
     }
 }
 
