@@ -1,6 +1,6 @@
 # T043 Split, join, add and delete lines in the panel
 
-**Type:** task · **Status:** ready for development · **Story:** S05 · **Task:** S05.9
+**Type:** task · **Status:** done · **Story:** S05 · **Task:** S05.9
 
 ## What needs doing
 The user-facing side of T037: how lines are split, joined, added and deleted in the text panel.
@@ -27,7 +27,12 @@ The user-facing side of T037: how lines are split, joined, added and deleted in 
 T042.
 
 ## Decisions
-None yet.
+- **The keys are read in `onPreviewKeyEvent`** before the text field sees them, and only without Ctrl, Alt or Meta, so Ctrl+Backspace (delete a word) and the like stay with the field. Backspace in the middle of a line, and Delete not at the end, are left to the field (tested).
+- **Enter with a selection** removes the selected text first (`setLineText`) and then splits at the start of the selection: the break replaces the selection, as in a text editor. That is two edits in the editor (and two entries for the undo of S08, which can group them).
+- **Backspace at the start of the first line and Delete at the end of the last line are used up** (consumed) and change nothing; the editor reports no change, so the page is not marked.
+- **"Add line"** adds below the active line, and at the end of the page if there is none; **"Delete line"** removes the active line and is off without one. Both are off while the page is not there (loading, error). On a page without lines "Add line" makes region `r1` with the first line (T037).
+- **The marker** is a dot in the number column with the tag `no box <id>`; it says that the line has no place on the scan. It follows the data: a line gets or loses it as soon as its box changes (the second half of a split inside a word has no box; both halves of a split between words have one).
+- **The buttons are above the list,** not in the rows; keyboard shortcuts for them are S06.
 
 ## Progress
-Not started.
+Done. `lineKey`, `LineCommands`, the marker in `TextPanel`. Tests (`LineOperationsUiTest`, 15): Enter in the middle (two halves, no origin on the new line, the cursor at its start, the active line), Enter at the end (an empty line without a box), Enter with a selection, Backspace at the start (join, cursor at the junction), Backspace on the first line (nothing, no change), Backspace in the middle (left to the field), Delete at the end (join, cursor stays), Delete on the last line (nothing), "Add line", "Delete line" (cursor to the previous line, off without an active line), "Add line" on a page without lines, the commands are off while the page is not there, the marker for lines without a box (also for the half of a split), a row that was not changed keeps its focus and cursor when another line is edited, and the layer that was shown before an edit is not changed. The tests fail when Enter is not handled (checked by breaking it). `./gradlew build` is green.
