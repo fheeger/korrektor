@@ -1,6 +1,6 @@
 # T039 A font for historical characters
 
-**Type:** task · **Status:** ready for development · **Story:** S05 · **Task:** S05.7
+**Type:** task · **Status:** done · **Story:** S05 · **Task:** S05.7
 
 The text panel must show what is in the text layer exactly: `ſ`, `ꝛ`, `uͤ` (a `u` with a small `e` above, a combining character), `ß`, `ä`, long and double hyphens, and the odd characters of OCR noise. The default fonts of the three systems differ in what they cover, so the app brings its own.
 
@@ -26,7 +26,11 @@ The text panel must show what is in the text layer exactly: `ſ`, `ꝛ`, `uͤ` (
 None.
 
 ## Decisions
-None yet.
+- **Junicode** (regular, 2.226) was chosen: it is made for historical texts and the first candidate checked covered everything the samples need, so the others (Gentium Plus, Cardo, EB Garamond) were not examined. It is a serif face with a calm antiqua and a clear long s. 1.0 MB, SIL OFL 1.1; the license and the checksum are in `docs/third-party.md`.
+- **One file only,** the regular one: the text panel needs no bold or italic. The variable fonts of the release are 3 MB each and not needed.
+- **No fallback code:** the text engine (Skia) draws a character that the font lacks from a system font, so OCR noise in other scripts is shown (the screenshot shows Cyrillic, Hebrew and an Arabic letter in the default font; with Junicode the same fallback applies).
+- **What the samples contain:** the Abhandlung has 141 distinct characters, 35 of which Junicode lacks (Cyrillic, Hebrew, Arabic, Devanagari, Bengali, Tamil, Telugu, Khmer, Japanese and Chinese characters: OCR noise from specks, as noted in `docs/pdf-text-layer.md`); the Clausewitz has 183, 60 lacking (mostly Cyrillic letters, which the OCR made from Fraktur, plus `Ѳ ѵ`, `□` and `॥`). All Latin letters, digits, punctuation and combining marks of both are covered.
+- **The coverage test** asks the font itself (`java.awt.Font.canDisplay` on the bundled file), so a glyph that comes from a stand-in font does not count; the sample tests skip without the files. The rendering test draws on white and checks ink: the special characters have ink, the small `e` of `uͤ` reaches above the `u`, and the long s is not drawn as a short s.
 
 ## Progress
-Not started.
+Done. `Junicode-Regular.ttf` and `Junicode-OFL.txt` in `src/main/resources/fonts/`, `HistoricFonts`, `docs/third-party.md`, `docs/architecture.md`. Tests (`HistoricFontsTest`, 5): every required character has a glyph (`ſ ꝛ ß ä ö ü ů å é á à ó í ú ę`, combining small a, e, i, o, u, `=`, dashes, quotes, digits, punctuation, the abbreviation letters and ligatures), every Latin character of both samples has a glyph (the missing ones are printed), the special characters are drawn as ink, the small `e` lies over the `u`, the long s differs from the short s. By eye: a screenshot of the sample's first lines and of `ſtraße uͤber ꝛc. Haupt= Kriegsfüh-` shows all of them correctly. `./gradlew build` is green.
