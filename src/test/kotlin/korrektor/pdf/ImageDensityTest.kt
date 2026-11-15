@@ -88,4 +88,39 @@ class ImageDensityTest {
             }
         }
     }
+
+    /** The highest zoom of the viewer, 3200 % of actual size: a scan pixel is a block of many screen pixels. */
+    private val highestZoom = 32.0 * 96.0 / 72.0
+
+    @Test
+    fun theHighestZoomRendersTheVisiblePartOfAGeneratedPage() =
+        withPage(TestPage(200f, 300f, pictures = listOf(TestPicture(20f, 20f, 100f, 100f, 400)))) { page ->
+            // The picture's corner is at (20, 180) points: 853 and 7680 pixels at this scale.
+            val image = page.renderRegion(highestZoom, PixelRegion(853, 7680, 400, 300))
+
+            val colours =
+                (0 until 300 step 5)
+                    .flatMap { y ->
+                        (0 until 400 step 5).map { x ->
+                            image.getRGB(x, y) and
+                                0xFFFFFF
+                        }
+                    }.toSet()
+            assertEquals(setOf(0x000000, 0xFFFFFF), colours, "black and white blocks of the checkerboard, nothing else")
+            assertEquals(image.getRGB(2, 2), image.getRGB(8, 8), "one scan pixel is a block of about 10 screen pixels")
+        }
+
+    @Test
+    fun theHighestZoomRendersTheSampleToo() {
+        assumeTrue(sample.exists(), "the sample PDF is not available")
+        PdfDocument.open(sample).use { doc ->
+            doc.page(5).use { page ->
+                val started = System.nanoTime()
+                val image = page.renderRegion(highestZoom, PixelRegion(2000, 3000, 1400, 900))
+                val millis = (System.nanoTime() - started) / 1_000_000
+                assertEquals(1400 to 900, image.width to image.height)
+                println("The sample at 3200 %: $millis ms for 1400 x 900 pixels")
+            }
+        }
+    }
 }
