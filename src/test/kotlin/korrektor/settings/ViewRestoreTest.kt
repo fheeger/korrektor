@@ -277,4 +277,29 @@ class ViewRestoreTest {
         const val DELAY = 150L
         const val SETTLE = 100L
     }
+
+    @Test
+    fun goingAwayAndBackToTheStartingViewWithinTheDelayWritesTheStartingView() =
+        withDir { dir ->
+            val settings = AppSettings(dir.resolve("settings.json"))
+            val folder = project(dir, "book")
+            val model = AppModel(settings = settings)
+            model.openProject(folder)
+            val viewer = model.viewer!!
+            viewer.goTo(12) // the view the project was left in
+            model.saveView()
+            runBlocking {
+                val saver = launch { model.keepViewSaved(delayMs = DELAY) }
+                delay(SETTLE)
+                viewer.goTo(13)
+                Snapshot.sendApplyNotifications()
+                delay(DELAY / 10)
+                viewer.goTo(12) // back, within the delay
+                Snapshot.sendApplyNotifications()
+
+                delay(DELAY * 3)
+                assertEquals(12, settings.viewOf(folder)!!.page, "not the page the user has already left")
+                saver.cancel()
+            }
+        }
 }

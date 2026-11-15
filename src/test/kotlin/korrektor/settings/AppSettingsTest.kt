@@ -315,4 +315,18 @@ class AppSettingsTest {
             ),
         )
     }
+
+    @Test
+    fun settingsThatCannotBeReadAreNotOverwrittenByTheNextSave() =
+        withDir { dir ->
+            // A folder where the file should be: it exists, but reading it fails like a file locked by another program.
+            val file = dir.resolve("settings.json").also { Files.createDirectories(it) }
+            val settings = AppSettings(file)
+
+            settings.rememberView(project(dir, "a"), fixed) // must not throw and must not replace what is there
+
+            assertEquals(fixed, settings.viewOf(project(dir, "a")), "kept in memory for this session")
+            assertEquals(0, settings.writeCount)
+            assertTrue(Files.isDirectory(file), "the unreadable file is left alone")
+        }
 }

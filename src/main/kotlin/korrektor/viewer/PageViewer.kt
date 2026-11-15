@@ -41,7 +41,6 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isCtrlPressed
-import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
@@ -213,11 +212,11 @@ private fun PageArea(
                 val change = event.changes.first()
                 val position = change.position
                 state.wheel(
-                    change.scrollDelta.y.toDouble(),
                     event.keyboardModifiers.isCtrlPressed,
                     position.x.toDouble(),
                     position.y.toDouble(),
-                    shift = event.keyboardModifiers.isShiftPressed,
+                    deltaX = change.scrollDelta.x.toDouble(),
+                    deltaY = change.scrollDelta.y.toDouble(),
                 )
                 change.consume()
             },

@@ -30,7 +30,9 @@ fun ViewerState.nextRequest(have: PictureRequest?): PictureRequest? {
 private fun ViewerState.requestAround(visible: PixelRegion): PictureRequest {
     var marginX = viewportWidth / 2
     var marginY = viewportHeight / 2
-    while (area(visible, marginX, marginY) > MAX_REQUEST_PIXELS) {
+    // Without margin the request is the visible part itself; that is as small as it gets, and `renderRegion` decides
+    // whether one image can hold it. The loop must end there, or a very large screen would never leave it.
+    while ((marginX > 0 || marginY > 0) && area(visible, marginX, marginY) > MAX_REQUEST_PIXELS) {
         marginX /= 2
         marginY /= 2
     }

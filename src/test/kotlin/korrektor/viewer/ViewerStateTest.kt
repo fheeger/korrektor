@@ -2,6 +2,9 @@ package korrektor.viewer
 
 import korrektor.pdf.PixelRegion
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Assertions.assertTimeoutPreemptively
+import org.junit.jupiter.api.function.ThrowingSupplier
+import java.time.Duration
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -241,13 +244,13 @@ class ViewerStateTest {
         state.scrollBy(50.0, 50.0)
         // Under (30, 40) is the page point (40, 45), as in the anchor test.
 
-        state.wheel(-1.0, ctrl = true, x = 30.0, y = 40.0)
+        state.wheel(ctrl = true, x = 30.0, y = 40.0, deltaY = -1.0)
 
         assertEquals(2.2, state.scale, 1e-9, "one notch up zooms in by 10 %")
         assertEquals(40.0 * 2.2 - 30.0, state.offsetX, 1e-9)
         assertEquals(45.0 * 2.2 - 40.0, state.offsetY, 1e-9)
 
-        state.wheel(1.0, ctrl = true, x = 30.0, y = 40.0)
+        state.wheel(ctrl = true, x = 30.0, y = 40.0, deltaY = 1.0)
         assertEquals(2.0, state.scale, 1e-9, "and one notch down zooms out by the same factor")
     }
 
@@ -256,7 +259,7 @@ class ViewerStateTest {
         val state = state(100, 100)
         state.zoomTo(2.0, 0.0, 0.0)
 
-        state.wheel(1.0, ctrl = false, x = 10.0, y = 10.0)
+        state.wheel(ctrl = false, x = 10.0, y = 10.0, deltaY = 1.0)
 
         assertEquals(2.0, state.scale, 1e-9)
         assertEquals(80.0, state.offsetY, 1e-9, "80 pixels per notch")
@@ -264,11 +267,11 @@ class ViewerStateTest {
     }
 
     @Test
-    fun shiftWheelScrollsSideways() {
+    fun aSidewaysWheelDeltaScrollsSideways() {
         val state = state(100, 100)
         state.zoomTo(2.0, 0.0, 0.0)
 
-        state.wheel(1.0, ctrl = false, x = 10.0, y = 10.0, shift = true)
+        state.wheel(ctrl = false, x = 10.0, y = 10.0, deltaX = 1.0)
 
         assertEquals(80.0, state.offsetX, 1e-9)
         assertEquals(0.0, state.offsetY, 1e-9)
@@ -469,5 +472,36 @@ class ViewerStateTest {
 
         assertEquals(10.0, state.offsetX, 1e-9)
         assertEquals(PageSize(200.0, 300.0), state.pageSize)
+    }
+
+    // --- found in the review of S04 ------------------------------------------------------------------------
+
+    @Test
+    fun aViewportOfMoreThan30MillionPixelsIsRequestedWithoutMarginAndDoesNotHang() {
+        val state = ViewerState()
+        state.setViewport(7616, 4100) // 31.2 million pixels: an 8K screen with the window maximised
+        state.setPage(PageSize(300.0, 480.0), null)
+
+        val request = assertTimeoutPreemptively(Duration.ofSeconds(5), ThrowingSupplier { state.nextRequest(null) })
+
+        assertEquals(PixelRegion(0, 0, 7616, 4100), request!!.region, "just the visible part: no margin fits")
+    }
+
+    @Test
+    fun aTinyPageDoesNotMakeTheScaleOrAZoomThrow() {
+        val state = ViewerState(pageCount = 2)
+        state.setViewport(900, 900)
+        state.setPage(PageSize(300.0, 480.0), 1.0 * ViewerState.ACTUAL_SIZE)
+        state.zoomTo(1.0 * ViewerState.ACTUAL_SIZE) // fixed at 100 %
+
+        state.goTo(2)
+        // The floor, a tenth of the fit-page scale, is 1.5 here: above the limit of the page's scan.
+        state.setPage(PageSize(60.0, 60.0), 1.0 * ViewerState.ACTUAL_SIZE)
+
+        assertTrue(state.scale >= state.minScale, "reading the scale works: ${state.scale}")
+        state.zoomTo(0.5) // and so does zooming
+        state.zoomIn()
+        state.zoomOut()
+        assertTrue(state.scale >= state.minScale)
     }
 }

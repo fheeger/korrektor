@@ -37,6 +37,9 @@ class AppSettings(
     private val versionEntry = SettingsJson.VERSION to JsonPrimitive(SettingsJson.VERSION_NUMBER)
     private var root: JsonObject? = null
 
+    /** False if the file exists but cannot be read: then nothing is written, or other projects' views would go. */
+    private var readable = true
+
     /** How many times the file was written; tests use it to see that nothing is written for no change. */
     @Volatile
     var writeCount: Int = 0
@@ -89,12 +92,13 @@ class AppSettings(
         try {
             path.readText()
         } catch (e: IOException) {
-            warn("The settings in $path cannot be read: ${e.message}")
+            warn("The settings in $path cannot be read, they are kept in memory only: ${e.message}")
+            readable = false
             null
         }
 
     private fun write() {
-        val path = file ?: return
+        val path = file?.takeIf { readable } ?: return
         try {
             Files.createDirectories(path.parent)
             AtomicFile.write(path, SettingsJson.encode(current()).toByteArray(Charsets.UTF_8))
