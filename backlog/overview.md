@@ -58,4 +58,4 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T030](tickets/T030-cache.md) | Load pages on demand, with a cache of limited size | task | S04 | done |
 | [T031](tickets/T031-viewer-performance.md) | Performance test on a 1000-page PDF | task | S04 | done |
 | [T032](tickets/T032-remember-view.md) | Remember last page and zoom per project in the app settings | task | S04 | done |
-| [T033](tickets/T033-word-box-overlay.md) | Optional overlay: word boxes | task | S04 | ready for development |
+| [T033](tickets/T033-word-box-overlay.md) | Optional overlay: word boxes | task | S04 | done |

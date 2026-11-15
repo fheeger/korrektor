@@ -54,6 +54,9 @@ class ViewerState(
     var nativeScale: Double? by mutableStateOf(null)
         private set
 
+    /** Whether the boxes of the page's words are drawn over the scan: a view option, off at the start. */
+    var showWordBoxes: Boolean by mutableStateOf(false)
+
     var mode: ZoomMode by mutableStateOf(ZoomMode.FIT_WIDTH)
         private set
     private var fixedScale: Double by mutableDoubleStateOf(ACTUAL_SIZE)

@@ -5,6 +5,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import korrektor.format.Project
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * The viewer of an open project: one [PageSource] for the project's own copy of the PDF, made when the project
@@ -19,5 +21,15 @@ fun ProjectViewer(
 ) {
     val source = remember(project) { pageSources.open(project.sourcePdf) }
     DisposableEffect(source) { onDispose { source.close() } }
-    PageViewer(source, modifier, state)
+    PageViewer(source, modifier, state, remember(project) { projectBoxes(project) })
 }
+
+/** The boxes of the corrected layer of a page: what the user edits, not the original OCR. */
+private fun projectBoxes(project: Project) =
+    PageBoxSource { page ->
+        withContext(Dispatchers.IO) {
+            val regions = project.readPage(page).regions
+            val lines = regions.flatMap { it.lines }
+            PageBoxes(lines.mapNotNull { it.box }, lines.flatMap { it.words }.mapNotNull { it.box })
+        }
+    }
