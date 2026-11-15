@@ -1,5 +1,6 @@
 package korrektor.viewer
 
+import korrektor.format.Box
 import kotlin.math.pow
 
 /** Zooms by [factor] around an anchor (the wheel): the page point under the pointer stays under it. */
@@ -52,3 +53,35 @@ fun ViewerState.goToText(text: String): Boolean = text.trim().toIntOrNull()?.let
 /** One notch of the Ctrl+wheel zooms by this factor; one notch of the plain wheel scrolls this many pixels. */
 private const val WHEEL_ZOOM_FACTOR = 1.1
 private const val WHEEL_SCROLL_PIXELS = 80.0
+
+/**
+ * Scrolls the least that brings [box] (in points of the page) fully into the viewport, with a margin of a fifth of
+ * the viewport on the side it came from, so that a line is not left right at the edge. A box that is already in view
+ * changes nothing; a box larger than the viewport is aligned at its top left; in a direction in which the page is
+ * smaller than the viewport (it is centred) nothing moves. The scroll stops at the edges of the page.
+ */
+fun ViewerState.reveal(box: Box) {
+    if (viewportWidth <= 0 || viewportHeight <= 0 || pageSize == null) return
+    val rect = toScreen(box)
+    val dx = if (contentWidth > viewportWidth) shiftInto(rect.x, rect.width, viewportWidth) else 0.0
+    val dy = if (contentHeight > viewportHeight) shiftInto(rect.y, rect.height, viewportHeight) else 0.0
+    if (dx != 0.0 || dy != 0.0) scrollBy(dx, dy)
+}
+
+/** How far the view must move so that the span from [start] of [length] lies in 0..[viewport], with a margin. */
+private fun shiftInto(
+    start: Double,
+    length: Double,
+    viewport: Int,
+): Double {
+    val margin = viewport / REVEAL_MARGIN_DIVISOR
+    return when {
+        start >= 0 && start + length <= viewport -> 0.0 // already in view
+        length > viewport - 2 * margin -> start // too long to keep margins: its start at the edge
+        start < 0 -> start - margin
+        else -> start + length - viewport + margin
+    }
+}
+
+/** The margin kept around a revealed box is this fraction (one over) of the viewport. */
+private const val REVEAL_MARGIN_DIVISOR = 5

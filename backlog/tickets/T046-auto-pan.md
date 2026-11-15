@@ -1,6 +1,6 @@
 # T046 Keep the active line visible by panning
 
-**Type:** task · **Status:** ready for development · **Story:** S05 · **Task:** S05.6
+**Type:** task · **Status:** done · **Story:** S05 · **Task:** S05.6
 
 ## What needs doing
 - **`ViewerState.reveal(box)`**: scrolls the least that brings the box (page points) fully into the viewport, with a margin of a fifth of the viewport on the side it came from, so that a line near the edge is not left at the edge. A box larger than the viewport is aligned at its top left. In a direction in which the page is smaller than the viewport nothing moves (it is centred).
@@ -22,7 +22,12 @@
 T044.
 
 ## Decisions
-None yet.
+- **The scan follows when the active line changes, not while the user types:** `App` runs `reveal` in an effect keyed on the highlight (line id and box). Typing in a line changes neither, so the scan is not pulled back if the user has moved it away to look at another part of the page (tested). The ticket text said "unless the line is out of view"; keeping to the change of the active line is the safer reading, because pulling the view back at every keystroke would fight the user.
+- **A line wider than the panel** (a zoomed page, a long line) is aligned at its left edge, and so is a box taller than the viewport at its top; a box that is wider than the viewport minus its margins is "too long to keep margins". In the whole-app test the last line of the page at 300 % is wider than the panel: it is brought in vertically and its left edge is at the left.
+- **A box that is in view already is left alone,** also when it is within the margin of the edge: the margin only matters for the direction a box is moved in.
+- **The scroll is immediate;** an animation may come later. The render margin of T036 keeps the picture there (the page is rendered whole at fit width).
+- **Lines without a box do not move the scan** (nothing to bring into view), and a click on the scan does not jump (the clicked line was in view).
+- **No switch** to turn it off: at fit width the page is mostly in view, and when zoomed in this is what the story asks for.
 
 ## Progress
-Not started.
+Done. `ViewerState.reveal`, the effect in `App`. Tests (`AutoPanTest`, 12): a box in view changes nothing, below it (exact scroll with the margin), above it, to the right and the left (the page's edge stops the scroll), partly out, at the very bottom of the page (the last scroll position), a box larger than the viewport (top left), a page smaller than the viewport in a direction does not move there, no viewport or page is no crash; in the whole app moving the cursor to a line out of view scrolls the scan to it (and back), a line without a box does not move it, typing does not move it after the user moved it away, and a click on the scan does not jump. The whole-app test fails when the effect is removed (checked). `./gradlew build` is green.

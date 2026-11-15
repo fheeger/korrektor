@@ -14,6 +14,7 @@ import korrektor.viewer.DefaultPageSourceFactory
 import korrektor.viewer.PageSourceFactory
 import korrektor.viewer.ProjectViewer
 import korrektor.viewer.ScanLinks
+import korrektor.viewer.reveal
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -54,6 +55,8 @@ fun App(
                                     ScanLinks(
                                         editor?.highlightFor(viewer.page),
                                     ) { editor?.clickOnScan(viewer.page, it) }
+                                // The scan follows the cursor: a line that is out of view is brought into it.
+                                LaunchedEffect(links.highlight) { links.highlight?.let { viewer.reveal(it.box) } }
                                 ProjectViewer(project, viewer, Modifier.fillMaxSize(), pageSources, links)
                             },
                             modifier = room,
