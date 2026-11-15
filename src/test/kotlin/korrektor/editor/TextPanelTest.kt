@@ -60,9 +60,7 @@ class TextPanelTest {
     }
 
     private fun SemanticsNodeInteraction.text(): String =
-        fetchSemanticsNode().config[SemanticsProperties.Text].joinToString("") {
-            it.text
-        }
+        fetchSemanticsNode().config[SemanticsProperties.EditableText].text
 
     private fun androidx.compose.ui.test.ComposeUiTest.rows() =
         onAllNodes(
