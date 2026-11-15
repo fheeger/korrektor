@@ -18,17 +18,21 @@ fun ProjectViewer(
     state: ViewerState,
     modifier: Modifier = Modifier,
     pageSources: PageSourceFactory = DefaultPageSourceFactory,
+    highlight: LineHighlight? = null,
 ) {
     val source = remember(project) { pageSources.open(project.sourcePdf) }
     DisposableEffect(source) { onDispose { source.close() } }
-    PageViewer(source, modifier, state, remember(project) { projectBoxes(project) })
+    PageViewer(source, modifier, state, remember(project) { projectBoxes(project) }, highlight)
 }
 
-/** The boxes of the corrected layer of a page: what the user edits, not the original OCR. */
+/**
+ * The boxes of the **original** OCR layer of a page, which never changes. The corrected layer is what the user edits:
+ * an edited line has no word boxes, and the overlay must not change while the user types.
+ */
 private fun projectBoxes(project: Project) =
     PageBoxSource { page ->
         withContext(Dispatchers.IO) {
-            val regions = project.readPage(page).regions
+            val regions = project.readOriginalPage(page).regions
             val lines = regions.flatMap { it.lines }
             PageBoxes(lines.mapNotNull { it.box }, lines.flatMap { it.words }.mapNotNull { it.box })
         }
