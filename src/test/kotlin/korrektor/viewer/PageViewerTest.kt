@@ -34,7 +34,7 @@ class PageViewerTest {
     // --- the picture --------------------------------------------------------------------------------------
 
     @Test
-    fun theVisiblePartIsRequestedAtTheScaleThatFitsTheWidth() =
+    fun theWholePageIsRequestedAtTheScaleThatFitsTheWidth() =
         runComposeUiTest {
             val source = FakePageSource(PageSize(200.0, 300.0))
             val state = ViewerState(pageCount = 5).also { it.goTo(3) }
@@ -44,10 +44,10 @@ class PageViewerTest {
             val request = source.requests.first()
             assertEquals(3, request.page)
             assertEquals(0 to 0, request.x to request.y)
-            // The test window is 1024 pixels wide: 200 points become 1024 pixels; the page is taller than the viewport,
-            // so the picture is the viewport plus half a viewport of margin below.
+            // The test window is 1024 pixels wide: 200 points become 1024 pixels and 300 points 1536. The page is
+            // taller than the viewport but small enough to be rendered whole.
             assertEquals(1024, request.width)
-            assertEquals(state.viewportHeight * 3 / 2, request.height)
+            assertEquals(1536, request.height)
             assertEquals(1024 / 200.0, request.scale, 1e-9)
         }
 
@@ -251,13 +251,16 @@ class PageViewerTest {
             val state = ViewerState()
             setContent { PageViewer(source, state = state) }
             waitForPage(1)
+            runOnIdle { state.zoomTo(state.scale * 8, 0.0, 0.0) } // far above 16 million pixels: no whole page
+            waitUntil { source.requests.size >= 2 }
+            waitForIdle()
             val first = source.requests.size
 
             runOnIdle { state.scrollBy(0.0, 100.0) } // inside the margin
             waitForIdle()
             assertEquals(first, source.requests.size, "no new picture")
 
-            runOnIdle { state.scrollBy(0.0, 600.0) } // beyond it
+            runOnIdle { state.scrollBy(0.0, 3000.0) } // beyond it
             waitUntil { source.requests.size > first }
             val request = source.requests.last()
             assertTrue(request.y <= state.offsetY && request.y + request.height >= state.offsetY + state.viewportHeight)
@@ -386,5 +389,23 @@ class PageViewerTest {
 
             assertNotEquals(0.0, state.offsetX, "scrolled sideways")
             assertEquals(0.0, state.offsetY, 1e-9, "and not up or down")
+        }
+
+    @Test
+    fun scrollingToTheBottomOfAFitWidthPageNeverWaitsForAPicture() =
+        runComposeUiTest {
+            val source = FakePageSource()
+            val state = ViewerState()
+            setContent { PageViewer(source, state = state) }
+            waitForPage(1)
+            val first = source.requests.size
+
+            runOnIdle { state.scrollBy(0.0, 10_000.0) } // to the bottom of the page
+            waitForIdle()
+
+            assertEquals(first, source.requests.size, "the whole page is already there")
+            val request = source.requests.first()
+            assertEquals(1536, request.height, "the first picture was the whole page: 300 points at 5.12 pixels")
+            assertEquals(0, request.y)
         }
 }

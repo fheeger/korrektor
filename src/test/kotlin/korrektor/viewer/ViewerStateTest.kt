@@ -335,15 +335,15 @@ class ViewerStateTest {
     // --- what to render -----------------------------------------------------------------------------------
 
     @Test
-    fun aRequestCoversTheVisiblePartAndAMarginOfHalfAViewport() {
+    fun aLargePageIsRequestedAsTheVisiblePartAndAMarginOfOneViewport() {
         val state = state(100, 100)
         state.zoomTo(2.0, 0.0, 0.0) // 400 x 600
         state.scrollBy(150.0, 250.0) // visible x 150..250, y 250..350
 
-        val request = state.nextRequest(null)!!
+        val request = state.nextRequest(null, wholePageLimit = 0)!!
 
         assertEquals(2.0, request.scale, 1e-9)
-        assertEquals(PixelRegion(100, 200, 200, 200), request.region)
+        assertEquals(PixelRegion(50, 150, 300, 300), request.region, "100 pixels more on every side")
     }
 
     @Test
@@ -351,9 +351,9 @@ class ViewerStateTest {
         val state = state(100, 100)
         state.zoomTo(2.0, 0.0, 0.0)
 
-        assertEquals(PixelRegion(0, 0, 150, 150), state.nextRequest(null)!!.region)
+        assertEquals(PixelRegion(0, 0, 200, 200), state.nextRequest(null, wholePageLimit = 0)!!.region)
         state.scrollBy(1000.0, 1000.0)
-        assertEquals(PixelRegion(250, 450, 150, 150), state.nextRequest(null)!!.region)
+        assertEquals(PixelRegion(200, 400, 200, 200), state.nextRequest(null, wholePageLimit = 0)!!.region)
     }
 
     @Test
@@ -361,11 +361,11 @@ class ViewerStateTest {
         val state = state(100, 100)
         state.zoomTo(2.0, 0.0, 0.0)
         state.scrollBy(150.0, 250.0)
-        val have = state.nextRequest(null)
+        val have = state.nextRequest(null, wholePageLimit = 0) // x 50..350, y 150..450
 
-        state.scrollBy(40.0, -40.0) // visible x 190..290, y 210..310: inside x 100..300, y 200..400
+        state.scrollBy(90.0, -90.0) // visible x 240..340, y 160..260: inside
 
-        assertEquals(have, state.nextRequest(have))
+        assertEquals(have, state.nextRequest(have, wholePageLimit = 0))
     }
 
     @Test
@@ -373,15 +373,26 @@ class ViewerStateTest {
         val state = state(100, 100)
         state.zoomTo(2.0, 0.0, 0.0)
         state.scrollBy(150.0, 250.0)
-        val have = state.nextRequest(null)!!
+        val have = state.nextRequest(null, wholePageLimit = 0)!! // y 150..450
 
-        state.scrollBy(0.0, 60.0) // visible y 310..410 reaches beyond 400
-        val moved = state.nextRequest(have)!!
+        state.scrollBy(0.0, 120.0) // visible y 370..470 reaches beyond 450
+        val moved = state.nextRequest(have, wholePageLimit = 0)!!
         assertNotEquals(have, moved)
-        assertTrue(moved.region.y + moved.region.height >= 410)
+        assertTrue(moved.region.y + moved.region.height >= 470)
 
         state.zoomTo(3.0)
-        assertNotEquals(moved.scale, state.nextRequest(moved)!!.scale)
+        assertNotEquals(moved.scale, state.nextRequest(moved, wholePageLimit = 0)!!.scale)
+    }
+
+    @Test
+    fun aPageThatBecomesLargerThanTheLimitFallsBackToTheMarginRule() {
+        val state = state(100, 100)
+        state.zoomTo(1.0, 0.0, 0.0) // 200 x 300 = 60,000 pixels
+        assertEquals(PixelRegion(0, 0, 200, 300), state.nextRequest(null, wholePageLimit = 100_000)!!.region)
+
+        state.zoomTo(2.0, 0.0, 0.0) // 400 x 600 = 240,000 pixels: over the limit
+
+        assertEquals(PixelRegion(0, 0, 200, 200), state.nextRequest(null, wholePageLimit = 100_000)!!.region)
     }
 
     @Test
@@ -535,5 +546,22 @@ class ViewerStateTest {
         repeat(30) { state.zoomIn() }
 
         assertEquals(3200, state.percent)
+    }
+
+    // --- T036: smooth scrolling ------------------------------------------------------------------------------
+
+    @Test
+    fun aPageOfUpTo16MillionPixelsIsRequestedWholeAndScrollingAsksForNothingNew() {
+        val state = state(100, 100)
+        state.zoomTo(2.0, 0.0, 0.0) // 400 x 600 pixels
+
+        val first = state.nextRequest(null)!!
+
+        assertEquals(PixelRegion(0, 0, 400, 600), first.region, "the whole page, not just what is visible")
+        for ((dx, dy) in listOf(0.0 to 0.0, 300.0 to 0.0, 0.0 to 500.0, 300.0 to 500.0)) {
+            state.scrollBy(-1000.0, -1000.0)
+            state.scrollBy(dx, dy)
+            assertEquals(first, state.nextRequest(first), "at $dx, $dy")
+        }
     }
 }
