@@ -85,6 +85,7 @@ fun PageViewer(
     modifier: Modifier = Modifier,
     state: ViewerState = remember { ViewerState() },
     boxes: PageBoxSource = PageBoxSource { PageBoxes.NONE },
+    highlight: LineHighlight? = null,
 ) {
     Column(modifier.fillMaxSize()) {
         // The two groups of controls wrap onto a second line when the panel is narrow (next to the text panel).
@@ -96,7 +97,7 @@ fun PageViewer(
             NavigationBar(state)
             ZoomToolbar(state)
         }
-        PageArea(source, boxes, state, Modifier.weight(1f).fillMaxWidth())
+        PageArea(source, boxes, highlight, state, Modifier.weight(1f).fillMaxWidth())
     }
 }
 
@@ -207,6 +208,7 @@ private fun rememberPageLoad(
 private fun PageArea(
     source: PageSource,
     boxSource: PageBoxSource,
+    highlight: LineHighlight?,
     state: ViewerState,
     modifier: Modifier = Modifier,
 ) {
@@ -250,6 +252,7 @@ private fun PageArea(
             picture == null -> Text("Loading…", Modifier.align(Alignment.Center))
             else -> PageCanvas(picture, state, page)
         }
+        if (highlight != null && picture != null) HighlightOverlay(highlight, state)
         if (state.showWordBoxes && picture != null) BoxOverlay(boxes, state)
         Scrollbars(state)
     }

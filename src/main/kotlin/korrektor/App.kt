@@ -8,6 +8,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import korrektor.editor.TextPanel
+import korrektor.editor.highlightFor
 import korrektor.viewer.DefaultPageSourceFactory
 import korrektor.viewer.PageSourceFactory
 import korrektor.viewer.ProjectViewer
@@ -45,7 +46,9 @@ fun App(
                             model.layout,
                             { scope.launch(Dispatchers.IO) { model.layout.save() } },
                             left = {
-                                ProjectViewer(project, checkNotNull(model.viewer), Modifier.fillMaxSize(), pageSources)
+                                val viewer = checkNotNull(model.viewer)
+                                val highlight = model.editor?.highlightFor(viewer.page)
+                                ProjectViewer(project, viewer, Modifier.fillMaxSize(), pageSources, highlight)
                             },
                             modifier = room,
                             right = { TextPanel(checkNotNull(model.editor), Modifier.fillMaxSize()) },

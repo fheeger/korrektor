@@ -100,7 +100,7 @@ class PageViewerBoxesTest {
         }
 
     @Test
-    fun theBoxesAreThoseOfTheCorrectedLayerOfTheProject() {
+    fun theBoxesAreThoseOfTheOriginalLayerOfTheProjectNotOfTheCorrectedOne() {
         val dir = Files.createTempDirectory("boxesproject")
         try {
             val pdf = dir.resolve("book.pdf").also { Files.write(it, "%PDF-1.4\n".toByteArray()) }
@@ -139,7 +139,7 @@ class PageViewerBoxesTest {
                     ),
                 )
             project.writeOriginalPage(1, layer(words = 5))
-            project.writePage(1, layer(words = 2)) // the user corrected the line: two words
+            project.writePage(1, layer(words = 2)) // the user corrected it: two words
             runComposeUiTest {
                 val source = FakePageSource()
                 setContent { ProjectViewer(project, ViewerState(1), pageSources = { source }) }
@@ -147,7 +147,7 @@ class PageViewerBoxesTest {
 
                 onNodeWithText("Word boxes").performClick()
 
-                waitForText("Word boxes: 2, line boxes: 1")
+                waitForText("Word boxes: 5, line boxes: 1")
             }
         } finally {
             dir.toFile().walkBottomUp().forEach {
