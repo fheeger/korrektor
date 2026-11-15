@@ -14,13 +14,14 @@ import androidx.compose.ui.unit.dp
 import korrektor.format.Metadata
 import korrektor.format.Project
 
-/** The open project. For now it shows the project's metadata; the pages come with later stories. */
+/** The open project: its metadata and, for now, the [viewer] slot, which gets the room that is left. */
 @Composable
 fun ProjectScreen(
     project: Project,
     metadata: Metadata?,
     actions: ProjectActions,
     modifier: Modifier = Modifier,
+    viewer: @Composable (Modifier) -> Unit = {},
 ) {
     Column(modifier.fillMaxSize().padding(32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(displayTitle(project, metadata), style = MaterialTheme.typography.headlineMedium)
@@ -36,5 +37,7 @@ fun ProjectScreen(
             Button(onClick = actions.newProject) { Text("New project…") }
             Button(onClick = actions.openProject) { Text("Open another project…") }
         }
+        // A first page view; the side-by-side editor of S05 replaces this layout.
+        viewer(Modifier.weight(1f))
     }
 }

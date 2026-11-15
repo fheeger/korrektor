@@ -44,6 +44,11 @@ internal object PdfiumLib {
             "bitmapBuffer" to "FPDFBitmap_GetBuffer",
             "bitmapStride" to "FPDFBitmap_GetStride",
             "destroyBitmap" to "FPDFBitmap_Destroy",
+            "countObjects" to "FPDFPage_CountObjects",
+            "getObject" to "FPDFPage_GetObject",
+            "objectType" to "FPDFPageObj_GetType",
+            "objectBounds" to "FPDFPageObj_GetBounds",
+            "imagePixelSize" to "FPDFImageObj_GetImagePixelSize",
         )
 
     /** Loads the library (found through `jna.library.path`, see the build) and binds the functions. */
@@ -115,6 +120,29 @@ internal object PdfiumLib {
         right: Pointer,
         bottom: Pointer,
         top: Pointer,
+    ): Int
+
+    @JvmStatic external fun countObjects(page: Pointer): Int
+
+    @JvmStatic external fun getObject(
+        page: Pointer,
+        index: Int,
+    ): Pointer?
+
+    @JvmStatic external fun objectType(pageObject: Pointer): Int
+
+    @JvmStatic external fun objectBounds(
+        pageObject: Pointer,
+        left: Pointer,
+        bottom: Pointer,
+        right: Pointer,
+        top: Pointer,
+    ): Int
+
+    @JvmStatic external fun imagePixelSize(
+        imageObject: Pointer,
+        width: Pointer,
+        height: Pointer,
     ): Int
 
     @JvmStatic external fun createBitmap(

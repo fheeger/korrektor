@@ -14,7 +14,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [S01](stories/S01-project-format.md) | Project format | N5, N4 | done |
 | [S02](stories/S02-create-project.md) | Create a project with metadata | A1 | done |
 | [S03](stories/S03-import-pdf-with-ocr.md) | Import a PDF with OCR | A2 | done |
-| [S04](stories/S04-page-viewer.md) | Page viewer | C2, N1 | ready for development |
+| [S04](stories/S04-page-viewer.md) | Page viewer | C2, N1 | in review |
 | [S05](stories/S05-side-by-side-editor.md) | Scan and text side by side | C1 | ready for development |
 | [S06](stories/S06-keyboard-navigation.md) | Keyboard navigation | C2 | ready for development |
 | [S07](stories/S07-autosave.md) | Autosave | N4 | ready for development |
@@ -51,3 +51,14 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T023](tickets/T023-import-in-background.md) | Import in the background with progress and cancel | task | S03 | done |
 | [T024](tickets/T024-import-tests.md) | Import tests: sample PDF and generated PDFs | task | S03 | done |
 | [T025](tickets/T025-review-fixes.md) | Fixes from the S03 code review | task | S03 | done |
+| [T026](tickets/T026-render-region.md) | Render a page region and show a page in the project screen | task | S04 | done |
+| [T027](tickets/T027-zoom.md) | Zoom: fit width, fit page, steps, Ctrl+wheel, native resolution | task | S04 | done |
+| [T028](tickets/T028-pan.md) | Pan: dragging and scrollbars | task | S04 | done |
+| [T029](tickets/T029-navigation.md) | Navigation: previous/next, go to page, "page n of N" | task | S04 | done |
+| [T030](tickets/T030-cache.md) | Load pages on demand, with a cache of limited size | task | S04 | done |
+| [T031](tickets/T031-viewer-performance.md) | Performance test on a 1000-page PDF | task | S04 | done |
+| [T032](tickets/T032-remember-view.md) | Remember last page and zoom per project in the app settings | task | S04 | done |
+| [T033](tickets/T033-word-box-overlay.md) | Optional overlay: word boxes | task | S04 | done |
+| [T034](tickets/T034-review-fixes.md) | Fixes from the S04 code review | task | S04 | done |
+| [T035](tickets/T035-zoom-limit.md) | Zoom stops at the scan's resolution, and gets stuck on a coarse scan | bug | S04 | done |
+| [T036](tickets/T036-smooth-scrolling.md) | Scrolling down at fit width: the lower part appears late | bug | S04 | done |
