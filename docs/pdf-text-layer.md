@@ -60,6 +60,7 @@ Abhandlung has 193,598 characters in PDFium's list: 156,177 printable ASCII, 30,
 - `U+2013`, `U+2022` and `U+2192` once to three times.
 - **No** U+0000, no U+FFFD, no control characters, except the hyphen marker U+0002 (see 6), which PDFium makes up.
 - No characters outside the BMP and no combining marks in Abhandlung. The generated test PDFs of T016 show how they arrive: `ſ` and a combining `ͤ` as themselves, a character outside the BMP as two UTF-16 halves.
+- **Right-to-left letters come out reversed.** PDFium puts a run of Hebrew or Arabic letters into logical order, so a word drawn left to right comes out in the opposite order (found in T024 with a generated PDF; PDFBox keeps the order of the content stream). It only affects the foreign-script specks of the OCR, whose text is noise anyway; the letters are all there and the import keeps them as PDFium gives them. Real right-to-left text is not a goal of this project.
 - Clausewitz has `^` as a separate character where PDFBox, reading the same page, merges it with the next letter into `â`. PDFium leaves it as it is, which is what the text layer contains (V1).
 
 ## 6. Hyphens
