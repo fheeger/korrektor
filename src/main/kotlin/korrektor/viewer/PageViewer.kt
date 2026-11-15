@@ -6,6 +6,7 @@ import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -85,7 +86,7 @@ fun PageViewer(
     modifier: Modifier = Modifier,
     state: ViewerState = remember { ViewerState() },
     boxes: PageBoxSource = PageBoxSource { PageBoxes.NONE },
-    highlight: LineHighlight? = null,
+    links: ScanLinks = ScanLinks(),
 ) {
     Column(modifier.fillMaxSize()) {
         // The two groups of controls wrap onto a second line when the panel is narrow (next to the text panel).
@@ -97,7 +98,7 @@ fun PageViewer(
             NavigationBar(state)
             ZoomToolbar(state)
         }
-        PageArea(source, boxes, highlight, state, Modifier.weight(1f).fillMaxWidth())
+        PageArea(source, boxes, links, state, Modifier.weight(1f).fillMaxWidth())
     }
 }
 
@@ -208,7 +209,7 @@ private fun rememberPageLoad(
 private fun PageArea(
     source: PageSource,
     boxSource: PageBoxSource,
-    highlight: LineHighlight?,
+    links: ScanLinks,
     state: ViewerState,
     modifier: Modifier = Modifier,
 ) {
@@ -222,7 +223,10 @@ private fun PageArea(
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .onSizeChanged { state.setViewport(it.width, it.height) }
             .pointerHoverIcon(if (state.canPan) PointerIcon.Hand else PointerIcon.Default)
-            .pointerInput(state) {
+            // A click is a tap that did not turn into a drag; the drag below pans the page.
+            .pointerInput(state, links.onClick) {
+                detectTapGestures { tap -> links.onClick(state.pagePointAt(tap.x.toDouble(), tap.y.toDouble())) }
+            }.pointerInput(state) {
                 detectDragGestures { change, drag ->
                     state.scrollBy(-drag.x.toDouble(), -drag.y.toDouble())
                     change.consume()
@@ -252,7 +256,7 @@ private fun PageArea(
             picture == null -> Text("Loading…", Modifier.align(Alignment.Center))
             else -> PageCanvas(picture, state, page)
         }
-        if (highlight != null && picture != null) HighlightOverlay(highlight, state)
+        if (links.highlight != null && picture != null) HighlightOverlay(links.highlight, state)
         if (state.showWordBoxes && picture != null) BoxOverlay(boxes, state)
         Scrollbars(state)
     }
