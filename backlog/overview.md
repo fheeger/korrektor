@@ -63,7 +63,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T035](tickets/T035-zoom-limit.md) | Zoom stops at the scan's resolution, and gets stuck on a coarse scan | bug | S04 | done |
 | [T036](tickets/T036-smooth-scrolling.md) | Scrolling down at fit width: the lower part appears late | bug | S04 | done |
 | [T037](tickets/T037-line-operations.md) | Line operations on a page layer | task | S05 | done |
-| [T038](tickets/T038-book-editor.md) | The editor state: corrected pages in memory | task | S05 | ready for development |
+| [T038](tickets/T038-book-editor.md) | The editor state: corrected pages in memory | task | S05 | done |
 | [T039](tickets/T039-font.md) | A font for historical characters | task | S05 | ready for development |
 | [T040](tickets/T040-two-panel-layout.md) | Two panels with a divider you can drag | task | S05 | ready for development |
 | [T041](tickets/T041-text-panel.md) | The text panel shows the corrected lines | task | S05 | ready for development |
