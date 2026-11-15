@@ -1,6 +1,6 @@
 # S05 Scan and text side by side
 
-**Features:** C1 · **Status:** ready for development
+**Features:** C1 · **Status:** in progress
 
 As a reader of historical sources, I want to see the scan and the text next to each other, kept in sync line by line
 so that I can compare each line with the original and correct it right there.
@@ -25,12 +25,12 @@ Sync works at the line level. A line keeps its box when its text is edited. Matc
 - Sample PDF: on a few spot-check pages, highlighting and clicking land on the right line.
 
 ## Tasks
-- [ ] S05.1 Two-panel layout with a divider you can drag, remembered in the app settings
-- [ ] S05.2 Text panel: show the corrected lines of a page in reading order
-- [ ] S05.3 Edit a line and write the change to the corrected layer (in memory)
-- [ ] S05.4 Highlight the active line's box on the scan
-- [ ] S05.5 Click a line on the scan to put the cursor in that line of the text
-- [ ] S05.6 Pan the scan automatically to keep the active line visible
-- [ ] S05.7 Choose a font that covers historical characters and test it
-- [ ] S05.8 Tests with the sample PDF
-- [ ] S05.9 Split, join, add and delete lines; lines without a box
+- [ ] S05.1 Two-panel layout with a divider you can drag, remembered in the app settings → [T040](../tickets/T040-two-panel-layout.md)
+- [ ] S05.2 Text panel: show the corrected lines of a page in reading order → [T041](../tickets/T041-text-panel.md)
+- [ ] S05.3 Edit a line and write the change to the corrected layer (in memory) → [T037](../tickets/T037-line-operations.md), [T038](../tickets/T038-book-editor.md), [T042](../tickets/T042-edit-lines.md)
+- [ ] S05.4 Highlight the active line's box on the scan → [T044](../tickets/T044-highlight-active-line.md)
+- [ ] S05.5 Click a line on the scan to put the cursor in that line of the text → [T045](../tickets/T045-click-line-on-scan.md)
+- [ ] S05.6 Pan the scan automatically to keep the active line visible → [T046](../tickets/T046-auto-pan.md)
+- [ ] S05.7 Choose a font that covers historical characters and test it → [T039](../tickets/T039-font.md)
+- [ ] S05.8 Tests with the sample PDF → [T047](../tickets/T047-editor-tests.md)
+- [ ] S05.9 Split, join, add and delete lines; lines without a box → [T037](../tickets/T037-line-operations.md), [T043](../tickets/T043-line-operations-ui.md)
