@@ -18,7 +18,7 @@ so that I can read the original comfortably while correcting.
 
 ## Tasks
 - [x] S04.1 Draw a single page from the project's PDF copy → [T026](../tickets/T026-render-region.md)
-- [ ] S04.2 Zoom: fit width, fit page, zoom steps, Ctrl+wheel, full detail up to native resolution → [T027](../tickets/T027-zoom.md)
+- [x] S04.2 Zoom: fit width, fit page, zoom steps, Ctrl+wheel, full detail up to native resolution → [T027](../tickets/T027-zoom.md)
 - [ ] S04.3 Pan when zoomed in → [T028](../tickets/T028-pan.md)
 - [ ] S04.4 Navigation: previous/next, go to page, "page n of N" → [T029](../tickets/T029-navigation.md)
 - [ ] S04.5 Load pages on demand, with a cache of limited size → [T030](../tickets/T030-cache.md)

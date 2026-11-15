@@ -20,6 +20,12 @@ interface PageSource : AutoCloseable {
     suspend fun size(page: Int): PageSize
 
     /**
+     * The scale (screen pixels per point) at which one pixel of the page's scan is one screen pixel, or null if the
+     * page has no scan. Zooming in beyond it shows nothing new.
+     */
+    suspend fun nativeScale(page: Int): Double?
+
+    /**
      * The [region] of [page] in pixels, when the whole page is as wide as its size in points times [scale].
      */
     suspend fun render(

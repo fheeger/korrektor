@@ -1,0 +1,262 @@
+package korrektor.viewer
+
+import korrektor.pdf.PixelRegion
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+class ViewerStateTest {
+    private val actual = ViewerState.ACTUAL_SIZE
+
+    /** A page of 200 x 300 points in a viewport of [width] x [height] pixels. */
+    private fun state(
+        width: Int = 400,
+        height: Int = 300,
+        native: Double? = null,
+    ) = ViewerState().also {
+        it.setViewport(width, height)
+        it.setPage(PageSize(200.0, 300.0), native)
+    }
+
+    // --- fit modes ----------------------------------------------------------------------------------------
+
+    @Test
+    fun fitWidthMakesThePageAsWideAsTheViewport() {
+        val state = state(400, 300)
+        assertEquals(ZoomMode.FIT_WIDTH, state.mode, "the start mode")
+        assertEquals(2.0, state.scale, 1e-9)
+        assertEquals(400 to 600, state.contentWidth to state.contentHeight)
+    }
+
+    @Test
+    fun fitPageMakesTheWholePageVisibleAndTouchesTheLimitingSide() {
+        val state = state(400, 300)
+
+        state.fitPage()
+
+        assertEquals(1.0, state.scale, 1e-9, "the height limits: 300 points in 300 pixels")
+        assertEquals(200 to 300, state.contentWidth to state.contentHeight)
+        state.setViewport(300, 900)
+        assertEquals(1.5, state.scale, 1e-9, "the width limits now: 200 points in 300 pixels")
+    }
+
+    @Test
+    fun aFitModeFollowsTheViewportAndAFixedZoomStays() {
+        val state = state(400, 300)
+        state.setViewport(800, 300)
+        assertEquals(4.0, state.scale, 1e-9)
+
+        state.zoomTo(2.0)
+        state.setViewport(100, 100)
+
+        assertEquals(2.0, state.scale, 1e-9)
+        assertEquals(ZoomMode.FIXED, state.mode)
+    }
+
+    @Test
+    fun aFitModeFollowsThePage() {
+        val state = state(400, 300)
+        state.setPage(PageSize(100.0, 100.0), null)
+        assertEquals(4.0, state.scale, 1e-9)
+    }
+
+    // --- steps --------------------------------------------------------------------------------------------
+
+    @Test
+    fun zoomingInAndOutMovesAlongTheStepsOfActualSize() {
+        val state = state(400, 300) // fit width: 2.0 = 150 %
+        assertEquals(150, state.percent)
+
+        state.zoomIn()
+        assertEquals(200, state.percent)
+        assertEquals(2.0 * actual, state.scale, 1e-9)
+        state.zoomOut()
+        assertEquals(150, state.percent)
+        state.zoomOut()
+        assertEquals(125, state.percent)
+        state.zoomOut()
+        assertEquals(100, state.percent)
+        assertEquals(actual, state.scale, 1e-9)
+    }
+
+    @Test
+    fun zoomingOutStopsAtTheSmallestStep() {
+        val state = state(400, 300)
+
+        repeat(20) { state.zoomOut() }
+
+        assertEquals(25, state.percent)
+        assertEquals(0.25 * actual, state.scale, 1e-9)
+    }
+
+    @Test
+    fun zoomingInStopsAtTheResolutionOfTheScan() {
+        val state = state(400, 300, native = 5.0)
+
+        repeat(20) { state.zoomIn() }
+
+        assertEquals(5.0, state.scale, 1e-9, "one screen pixel per scan pixel")
+        state.zoomIn()
+        assertEquals(5.0, state.scale, 1e-9)
+    }
+
+    @Test
+    fun theResolutionOfTheScanIsTheLastStopEvenBetweenTwoSteps() {
+        val state = state(400, 300, native = 3.0) // 225 % of actual size, between 200 % and 300 %
+        state.zoomTo(2.0 * actual)
+        assertEquals(200, state.percent)
+
+        state.zoomIn()
+
+        assertEquals(3.0, state.scale, 1e-9)
+    }
+
+    @Test
+    fun aPageWithoutAScanCanBeZoomedToEightTimesActualSize() {
+        val state = state(400, 300, native = null)
+
+        repeat(20) { state.zoomIn() }
+
+        assertEquals(800, state.percent)
+    }
+
+    @Test
+    fun aCoarseScanCanStillBeShownAtActualSize() {
+        val state = state(400, 300, native = 0.5) // fewer scan pixels than screen pixels at actual size
+        state.zoomTo(0.25 * actual)
+
+        repeat(20) { state.zoomIn() }
+
+        assertEquals(actual, state.scale, 1e-9)
+    }
+
+    @Test
+    fun zoomingInFromAFitScaleAboveTheLimitDoesNotZoomOut() {
+        val state = state(2000, 300, native = 2.0) // fit width is 10, far above the scan's 2.0
+        assertEquals(10.0, state.scale, 1e-9)
+
+        state.zoomIn()
+        state.zoomBy(1.1, 0.0, 0.0)
+
+        assertEquals(10.0, state.scale, 1e-9, "the scale never goes up beyond the limit, and not down on zoom in")
+    }
+
+    // --- the anchor ---------------------------------------------------------------------------------------
+
+    @Test
+    fun zoomingAroundAnAnchorKeepsThePagePointUnderIt() {
+        val state = state(100, 100)
+        state.zoomTo(2.0, 0.0, 0.0)
+        state.scrollBy(50.0, 50.0)
+        assertEquals(50.0 to 50.0, state.offsetX to state.offsetY)
+        // Under the anchor (30, 40) is the page point ((50 + 30) / 2, (50 + 40) / 2) = (40, 45) points.
+
+        state.zoomBy(2.0, 30.0, 40.0)
+
+        assertEquals(4.0, state.scale, 1e-9)
+        assertEquals(40.0 * 4 - 30.0, state.offsetX, 1e-9)
+        assertEquals(45.0 * 4 - 40.0, state.offsetY, 1e-9)
+    }
+
+    @Test
+    fun zoomingOutAtAnEdgeStopsAtTheEdgeOfThePage() {
+        val state = state(100, 100)
+        state.zoomTo(2.0, 0.0, 0.0)
+        state.scrollBy(1000.0, 1000.0) // the far corner: 400 x 600 pixels in 100 x 100
+
+        state.zoomBy(0.5, 50.0, 50.0)
+
+        assertEquals(1.0, state.scale, 1e-9)
+        assertEquals(100.0, state.offsetX, 1e-9, "200 pixels wide: at most 100 pixels scrolled")
+        assertEquals(200.0, state.offsetY, 1e-9, "300 pixels high: at most 200 pixels scrolled")
+    }
+
+    @Test
+    fun aPageSmallerThanTheViewportIsCentred() {
+        val state = ViewerState()
+        state.setViewport(400, 400)
+        state.setPage(PageSize(100.0, 100.0), null)
+        state.zoomTo(1.0)
+
+        assertEquals(150.0, state.originX, 1e-9)
+        assertEquals(150.0, state.originY, 1e-9)
+        state.scrollBy(10.0, 10.0)
+        assertEquals(0.0 to 0.0, state.offsetX to state.offsetY, "it cannot be moved")
+
+        // The page point under the screen centre is (50, 50); after zooming to 2 it is still there.
+        state.zoomTo(2.0, 200.0, 200.0)
+        assertEquals(100.0, state.originX, 1e-9)
+        assertEquals(200.0, 100.0 + 50.0 * 2, 1e-9)
+    }
+
+    @Test
+    fun anAnchorOutsideThePageStillGivesAValidPosition() {
+        val state = state(100, 100)
+        state.zoomTo(1.0, 0.0, 0.0)
+        state.zoomBy(1.5, 99.0, 99.0)
+        assertTrue(state.offsetX in 0.0..(state.contentWidth - 100.0))
+        assertTrue(state.offsetY in 0.0..(state.contentHeight - 100.0))
+    }
+
+    // --- region and percentage ----------------------------------------------------------------------------
+
+    @Test
+    fun theVisibleRegionIsTheViewportPartOfThePageAtTheCurrentScale() {
+        val state = state(100, 100)
+        state.zoomTo(2.0, 0.0, 0.0)
+        state.scrollBy(30.0, 60.0)
+
+        assertEquals(PixelRegion(30, 60, 100, 100), state.visibleRegion)
+    }
+
+    @Test
+    fun aPageSmallerThanTheViewportHasAWholePageRegion() {
+        val state = ViewerState()
+        state.setViewport(400, 400)
+        state.setPage(PageSize(100.0, 100.0), null)
+        state.zoomTo(1.0)
+        assertEquals(PixelRegion(0, 0, 100, 100), state.visibleRegion)
+    }
+
+    @Test
+    fun withoutAPageOrAViewportThereIsNothingToShow() {
+        assertNull(ViewerState().visibleRegion)
+        val noViewport = ViewerState().also { it.setPage(PageSize(200.0, 300.0), null) }
+        assertNull(noViewport.visibleRegion)
+        // and nothing breaks when the buttons are used
+        noViewport.zoomIn()
+        noViewport.fitPage()
+    }
+
+    // --- the wheel ----------------------------------------------------------------------------------------
+
+    @Test
+    fun ctrlWheelZoomsByAboutTenPercentPerNotchAroundThePointer() {
+        val state = state(100, 100)
+        state.zoomTo(2.0, 0.0, 0.0)
+        state.scrollBy(50.0, 50.0)
+        // Under (30, 40) is the page point (40, 45), as in the anchor test.
+
+        state.wheel(-1.0, ctrl = true, x = 30.0, y = 40.0)
+
+        assertEquals(2.2, state.scale, 1e-9, "one notch up zooms in by 10 %")
+        assertEquals(40.0 * 2.2 - 30.0, state.offsetX, 1e-9)
+        assertEquals(45.0 * 2.2 - 40.0, state.offsetY, 1e-9)
+
+        state.wheel(1.0, ctrl = true, x = 30.0, y = 40.0)
+        assertEquals(2.0, state.scale, 1e-9, "and one notch down zooms out by the same factor")
+    }
+
+    @Test
+    fun theWheelWithoutCtrlScrollsAndDoesNotZoom() {
+        val state = state(100, 100)
+        state.zoomTo(2.0, 0.0, 0.0)
+
+        state.wheel(1.0, ctrl = false, x = 10.0, y = 10.0)
+
+        assertEquals(2.0, state.scale, 1e-9)
+        assertEquals(80.0, state.offsetY, 1e-9, "80 pixels per notch")
+        assertEquals(0.0, state.offsetX, 1e-9)
+    }
+}
