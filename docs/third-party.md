@@ -14,6 +14,13 @@ korrektor is released under the GPL-3.0. It uses the following components, all w
 - **What:** the library that lets Kotlin call PDFium (D04).
 - **License:** dual-licensed LGPL 2.1 or later, and Apache 2.0. korrektor uses it under the Apache 2.0 terms.
 
+## Junicode (font, bundled)
+
+- **What:** the font of the text panel (S05), made for historical texts: it has the long s `ſ`, `ꝛ`, the combining small letters such as the `e` over `uͤ`, the ligatures and the other characters of old German print. The default fonts of Windows, macOS and Linux differ in what they cover.
+- **Version and source:** Junicode 2.226 (`Junicode-Regular.ttf`, 1.0 MB, SHA-256 `1cf12039709603afe6aa2ae9d0910c11ed9b2b1bd975b38f04290a42d1821552`), from the release `v2.226` of [psb1558/Junicode-font](https://github.com/psb1558/Junicode-font). It is in this repository under `src/main/resources/fonts/`, so the build needs no download.
+- **License:** SIL Open Font License 1.1 (copyright 2025 Peter S. Baker), which allows bundling and redistributing the font with software under another license, as long as the font is not sold on its own and keeps its name and license. The license text is next to the font (`Junicode-OFL.txt`). A distributed app must ship it.
+- **Coverage:** every Latin letter, digit, punctuation mark and combining mark in the text layers of the two sample books has a glyph (`HistoricFontsTest`). What it lacks is OCR noise from other scripts (Cyrillic, Hebrew, Arabic, Devanagari, …) and a few symbols; the text engine draws these from a system font.
+
 ## For development only
 
 - **Apache PDFBox** (Apache 2.0): used by the tests to generate small PDFs and as an independent check of PDF contents. It is not part of the app.
