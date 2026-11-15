@@ -1,8 +1,11 @@
 package korrektor.viewer
 
 import korrektor.pdf.PixelRegion
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -258,5 +261,138 @@ class ViewerStateTest {
         assertEquals(2.0, state.scale, 1e-9)
         assertEquals(80.0, state.offsetY, 1e-9, "80 pixels per notch")
         assertEquals(0.0, state.offsetX, 1e-9)
+    }
+
+    @Test
+    fun shiftWheelScrollsSideways() {
+        val state = state(100, 100)
+        state.zoomTo(2.0, 0.0, 0.0)
+
+        state.wheel(1.0, ctrl = false, x = 10.0, y = 10.0, shift = true)
+
+        assertEquals(80.0, state.offsetX, 1e-9)
+        assertEquals(0.0, state.offsetY, 1e-9)
+    }
+
+    // --- panning ------------------------------------------------------------------------------------------
+
+    @Test
+    fun scrollingStopsAtTheEdgesOfThePage() {
+        val state = state(100, 100)
+        state.zoomTo(2.0, 0.0, 0.0) // 400 x 600 pixels in 100 x 100
+
+        state.scrollBy(-50.0, -50.0)
+        assertEquals(0.0 to 0.0, state.offsetX to state.offsetY, "not beyond the top left")
+
+        state.scrollBy(10_000.0, 10_000.0)
+        assertEquals(300.0 to 500.0, state.offsetX to state.offsetY, "not beyond the bottom right")
+    }
+
+    @Test
+    fun aPageSmallerThanTheViewportInOneDirectionCannotBeMovedThere() {
+        val state = ViewerState()
+        state.setViewport(100, 100)
+        state.setPage(PageSize(50.0, 300.0), null)
+        state.zoomTo(1.0) // 50 pixels wide, 300 high
+
+        state.scrollBy(40.0, 40.0)
+
+        assertEquals(0.0, state.offsetX, 1e-9, "centred sideways")
+        assertEquals(25.0, state.originX, 1e-9)
+        assertEquals(40.0, state.offsetY, 1e-9, "but it moves up and down")
+        assertTrue(state.canPan)
+    }
+
+    @Test
+    fun aPageThatFitsCannotBePanned() {
+        val state = ViewerState()
+        state.setViewport(400, 400)
+        state.setPage(PageSize(100.0, 100.0), null)
+        state.zoomTo(1.0)
+        assertFalse(state.canPan)
+    }
+
+    @Test
+    fun theScrollbarsShowAndMoveThePosition() {
+        val state = state(100, 100)
+        state.zoomTo(2.0, 0.0, 0.0) // 400 x 600
+        val vertical = ViewerScrollbarAdapter(state, vertical = true)
+        val horizontal = ViewerScrollbarAdapter(state, vertical = false)
+
+        assertEquals(600.0 to 100.0, vertical.contentSize to vertical.viewportSize)
+        assertEquals(400.0 to 100.0, horizontal.contentSize to horizontal.viewportSize)
+        runBlocking { vertical.scrollTo(250.0) }
+        runBlocking { horizontal.scrollTo(120.0) }
+
+        assertEquals(250.0, state.offsetY, 1e-9)
+        assertEquals(120.0, state.offsetX, 1e-9)
+        assertEquals(250.0, vertical.scrollOffset, 1e-9, "and the other way round")
+        runBlocking { vertical.scrollTo(100_000.0) }
+        assertEquals(500.0, state.offsetY, 1e-9, "dragging the scrollbar to the end stops at the end")
+    }
+
+    // --- what to render -----------------------------------------------------------------------------------
+
+    @Test
+    fun aRequestCoversTheVisiblePartAndAMarginOfHalfAViewport() {
+        val state = state(100, 100)
+        state.zoomTo(2.0, 0.0, 0.0) // 400 x 600
+        state.scrollBy(150.0, 250.0) // visible x 150..250, y 250..350
+
+        val request = state.nextRequest(null)!!
+
+        assertEquals(2.0, request.scale, 1e-9)
+        assertEquals(PixelRegion(100, 200, 200, 200), request.region)
+    }
+
+    @Test
+    fun theMarginStopsAtTheEdgesOfThePage() {
+        val state = state(100, 100)
+        state.zoomTo(2.0, 0.0, 0.0)
+
+        assertEquals(PixelRegion(0, 0, 150, 150), state.nextRequest(null)!!.region)
+        state.scrollBy(1000.0, 1000.0)
+        assertEquals(PixelRegion(250, 450, 150, 150), state.nextRequest(null)!!.region)
+    }
+
+    @Test
+    fun movingInsideTheRequestedRegionAsksForNothingNew() {
+        val state = state(100, 100)
+        state.zoomTo(2.0, 0.0, 0.0)
+        state.scrollBy(150.0, 250.0)
+        val have = state.nextRequest(null)
+
+        state.scrollBy(40.0, -40.0) // visible x 190..290, y 210..310: inside x 100..300, y 200..400
+
+        assertEquals(have, state.nextRequest(have))
+    }
+
+    @Test
+    fun leavingTheRequestedRegionOrChangingTheScaleAsksForANewPicture() {
+        val state = state(100, 100)
+        state.zoomTo(2.0, 0.0, 0.0)
+        state.scrollBy(150.0, 250.0)
+        val have = state.nextRequest(null)!!
+
+        state.scrollBy(0.0, 60.0) // visible y 310..410 reaches beyond 400
+        val moved = state.nextRequest(have)!!
+        assertNotEquals(have, moved)
+        assertTrue(moved.region.y + moved.region.height >= 410)
+
+        state.zoomTo(3.0)
+        assertNotEquals(moved.scale, state.nextRequest(moved)!!.scale)
+    }
+
+    @Test
+    fun aHugeViewportGetsASmallerMarginInsteadOfAnImageThatIsTooLarge() {
+        val state = ViewerState()
+        state.setViewport(7000, 4000)
+        state.setPage(PageSize(10_000.0, 10_000.0), null)
+        state.zoomTo(1.0)
+
+        val region = state.nextRequest(null)!!.region
+
+        assertTrue(region.width.toLong() * region.height <= 30_000_000L, "$region")
+        assertTrue(region.width >= 7000 && region.height >= 4000, "it still covers the viewport")
     }
 }
