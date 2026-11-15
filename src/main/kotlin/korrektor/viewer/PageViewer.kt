@@ -78,6 +78,7 @@ fun PageViewer(
     source: PageSource,
     modifier: Modifier = Modifier,
     state: ViewerState = remember { ViewerState() },
+    boxes: PageBoxSource = PageBoxSource { PageBoxes.NONE },
 ) {
     Column(modifier.fillMaxSize()) {
         Row(
@@ -88,7 +89,7 @@ fun PageViewer(
             NavigationBar(state)
             ZoomToolbar(state)
         }
-        PageArea(source, state.page, state, Modifier.weight(1f).fillMaxWidth())
+        PageArea(source, boxes, state, Modifier.weight(1f).fillMaxWidth())
     }
 }
 
@@ -136,6 +137,7 @@ private fun ZoomToolbar(state: ViewerState) {
         OutlinedButton(state::zoomOut, Modifier.semantics { contentDescription = "Zoom out" }) { Text("−") }
         OutlinedButton(state::zoomIn, Modifier.semantics { contentDescription = "Zoom in" }) { Text("+") }
         Text("${state.percent} %", Modifier.semantics { contentDescription = "Zoom" })
+        FilterChip(state.showWordBoxes, { state.showWordBoxes = !state.showWordBoxes }, { Text("Word boxes") })
     }
 }
 
@@ -188,11 +190,13 @@ private fun rememberPageLoad(
 @Composable
 private fun PageArea(
     source: PageSource,
-    page: Int,
+    boxSource: PageBoxSource,
     state: ViewerState,
     modifier: Modifier = Modifier,
 ) {
+    val page = state.page
     val load = rememberPageLoad(source, page, state)
+    val boxes = rememberBoxes(boxSource, page, state)
 
     Box(
         modifier
@@ -230,6 +234,7 @@ private fun PageArea(
             picture == null -> Text("Loading…", Modifier.align(Alignment.Center))
             else -> PageCanvas(picture, state, page)
         }
+        if (state.showWordBoxes && picture != null) BoxOverlay(boxes, state)
         Scrollbars(state)
     }
 }
@@ -279,7 +284,7 @@ private fun PageCanvas(
 }
 
 /** Runs [block]; a failure goes to [onFailure] (never a cancellation) and gives null. */
-private suspend fun <T> tryOrFail(
+internal suspend fun <T> tryOrFail(
     onFailure: (String) -> Unit,
     block: suspend () -> T,
 ): T? =
