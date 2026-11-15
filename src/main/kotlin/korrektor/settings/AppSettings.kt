@@ -1,16 +1,9 @@
 package korrektor.settings
 
-import korrektor.format.AtomicFile
 import korrektor.viewer.SavedView
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import java.io.IOException
-import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
-import kotlin.io.path.exists
-import kotlin.io.path.name
-import kotlin.io.path.readText
 
 /**
  * The settings of the app, as opposed to those of a project: for now the page and zoom last viewed in each project.
@@ -34,16 +27,12 @@ class AppSettings(
     private val maxProjects: Int = MAX_PROJECTS,
 ) {
     private val lock = Any()
+    private val store = SettingsFile(file)
     private val versionEntry = SettingsJson.VERSION to JsonPrimitive(SettingsJson.VERSION_NUMBER)
     private var root: JsonObject? = null
 
-    /** False if the file exists but cannot be read: then nothing is written, or other projects' views would go. */
-    private var readable = true
-
     /** How many times the file was written; tests use it to see that nothing is written for no change. */
-    @Volatile
-    var writeCount: Int = 0
-        private set
+    val writeCount: Int get() = store.writeCount
 
     /** The saved view of the project in [folder], or null if there is none or it is not valid. */
     fun viewOf(folder: Path): SavedView? =
@@ -65,60 +54,33 @@ class AppSettings(
             updated.remove(key)
             updated[key] = entry
             while (updated.size > maxProjects) updated.remove(updated.keys.first())
-            root =
-                JsonObject(current() + (SettingsJson.PROJECTS to JsonObject(updated)) + versionEntry)
-            write()
+            save(JsonObject(current() + (SettingsJson.PROJECTS to JsonObject(updated))))
         }
+    }
+
+    /** The saved position of the divider between scan and text (a fraction of the width), if it is a number. */
+    fun splitFraction(): Double? = synchronized(lock) { SettingsJson.readSplit(ui()) }
+
+    /** Remembers the position of the divider and writes the file (unless it is the same as before). */
+    fun rememberSplitFraction(fraction: Double) {
+        synchronized(lock) {
+            val updated = SettingsJson.writeSplit(ui(), fraction)
+            if (updated != ui()) save(JsonObject(current() + (SettingsJson.UI to updated)))
+        }
+    }
+
+    private fun ui(): JsonObject = current()[SettingsJson.UI] as? JsonObject ?: EMPTY
+
+    private fun save(settings: JsonObject) {
+        root = JsonObject(settings + versionEntry)
+        store.write(root!!)
     }
 
     private fun key(folder: Path): String = folder.toAbsolutePath().normalize().toString()
 
     private fun projects(): JsonObject = current()[SettingsJson.PROJECTS] as? JsonObject ?: EMPTY
 
-    private fun current(): JsonObject = root ?: load().also { root = it }
-
-    // --- the file -------------------------------------------------------------------------------------------
-
-    private fun load(): JsonObject {
-        val path = file
-        val text = path?.takeIf { it.exists() }?.let(::readText)
-        return when {
-            text == null || text.isBlank() -> EMPTY
-            else -> SettingsJson.parse(text) ?: EMPTY.also { setAside(path) }
-        }
-    }
-
-    private fun readText(path: Path): String? =
-        try {
-            path.readText()
-        } catch (e: IOException) {
-            warn("The settings in $path cannot be read, they are kept in memory only: ${e.message}")
-            readable = false
-            null
-        }
-
-    private fun write() {
-        val path = file?.takeIf { readable } ?: return
-        try {
-            Files.createDirectories(path.parent)
-            AtomicFile.write(path, SettingsJson.encode(current()).toByteArray(Charsets.UTF_8))
-            writeCount++
-        } catch (e: IOException) {
-            warn("The settings could not be saved to $path: ${e.message}")
-        }
-    }
-
-    private fun setAside(path: Path) {
-        val bad = path.resolveSibling("${path.name}.bad")
-        try {
-            Files.move(path, bad, StandardCopyOption.REPLACE_EXISTING)
-            warn("The settings in $path cannot be used and were moved to $bad")
-        } catch (e: IOException) {
-            warn("The settings in $path cannot be used and could not be moved aside: ${e.message}")
-        }
-    }
-
-    private fun warn(message: String) = System.err.println("korrektor: $message")
+    private fun current(): JsonObject = root ?: store.read().also { root = it }
 
     companion object {
         const val MAX_PROJECTS = 200

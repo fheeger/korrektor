@@ -18,11 +18,13 @@ import kotlinx.serialization.json.intOrNull
 internal object SettingsJson {
     const val VERSION = "version"
     const val PROJECTS = "projects"
+    const val UI = "ui"
     const val VERSION_NUMBER = 1
     private const val PAGE = "page"
     private const val ZOOM = "zoom"
     private const val MODE = "mode"
     private const val SCALE = "scale"
+    private const val SPLIT = "split"
     private val MODE_NAMES =
         mapOf(ZoomMode.FIT_WIDTH to "fitWidth", ZoomMode.FIT_PAGE to "fitPage", ZoomMode.FIXED to "fixed")
     private val PRETTY = Json { prettyPrint = true }
@@ -63,6 +65,15 @@ internal object SettingsJson {
             else -> SavedZoom(mode)
         }
     }
+
+    /** The position of the divider in the `ui` object, or null if it is not a number. */
+    fun readSplit(ui: JsonObject): Double? = number(ui[SPLIT])?.doubleOrNull?.takeIf { it.isFinite() }
+
+    /** The `ui` object with the divider at [fraction]; other fields in it stay. */
+    fun writeSplit(
+        ui: JsonObject,
+        fraction: Double,
+    ): JsonObject = JsonObject(ui + (SPLIT to JsonPrimitive(fraction)))
 
     /** A JSON number, as opposed to text that looks like one. */
     private fun number(element: JsonElement?): JsonPrimitive? = (element as? JsonPrimitive)?.takeIf { !it.isString }

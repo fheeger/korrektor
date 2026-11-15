@@ -23,6 +23,9 @@ class AppModel(
     /** Where the page and zoom of each project are remembered. In memory unless the app gives it a file. */
     val settings: AppSettings = AppSettings.inMemory(),
 ) {
+    /** The position of the divider between scan and text, the same for every project. */
+    val layout = LayoutState(settings)
+
     /** The open project, or null on the start screen. */
     var project: Project? by mutableStateOf(null)
         private set

@@ -4,22 +4,27 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.HorizontalScrollbar
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,6 +38,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -72,6 +78,7 @@ private class Shown(
  * arrives. The wheel scrolls, Ctrl+wheel zooms around the pointer. [state] holds the page, the zoom and the
  * position, so that the caller can keep them.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PageViewer(
     source: PageSource,
@@ -80,10 +87,11 @@ fun PageViewer(
     boxes: PageBoxSource = PageBoxSource { PageBoxes.NONE },
 ) {
     Column(modifier.fillMaxSize()) {
-        Row(
+        // The two groups of controls wrap onto a second line when the panel is narrow (next to the text panel).
+        FlowRow(
             Modifier.fillMaxWidth().padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             NavigationBar(state)
             ZoomToolbar(state)
@@ -108,12 +116,15 @@ private fun NavigationBar(state: ViewerState) {
         ) { Text("›") }
         Text("Page ${state.page} of ${state.pageCount}")
         var typed by remember(state.page) { mutableStateOf(state.page.toString()) }
-        OutlinedTextField(
+        // A plain field with a border: the Material text field is 56 dp high, too much for a toolbar.
+        BasicTextField(
             value = typed,
             onValueChange = { typed = it },
             modifier =
                 Modifier
                     .width(GO_TO_FIELD_WIDTH)
+                    .height(GO_TO_FIELD_HEIGHT)
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
                     .semantics { contentDescription = "Go to page" }
                     .onKeyEvent { event ->
                         val enter = event.key == Key.Enter && event.type == KeyEventType.KeyDown
@@ -121,11 +132,17 @@ private fun NavigationBar(state: ViewerState) {
                         enter
                     },
             singleLine = true,
+            textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            decorationBox = { field ->
+                Box(Modifier.padding(horizontal = 10.dp), contentAlignment = Alignment.CenterStart) { field() }
+            },
         )
     }
 }
 
-private val GO_TO_FIELD_WIDTH = 88.dp
+private val GO_TO_FIELD_WIDTH = 72.dp
+private val GO_TO_FIELD_HEIGHT = 36.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
