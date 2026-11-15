@@ -1,17 +1,22 @@
 package korrektor.viewer
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.v2.runComposeUiTest
 import kotlinx.coroutines.CompletableDeferred
 import kotlin.test.Test
@@ -31,8 +36,8 @@ class PageViewerTest {
     fun theVisiblePartIsRequestedAtTheScaleThatFitsTheWidth() =
         runComposeUiTest {
             val source = FakePageSource(PageSize(200.0, 300.0))
-            val state = ViewerState()
-            setContent { PageViewer(source, page = 3, state = state) }
+            val state = ViewerState(pageCount = 5).also { it.goTo(3) }
+            setContent { PageViewer(source, state = state) }
 
             waitForPage(3)
             val request = source.requests.first()
@@ -50,7 +55,7 @@ class PageViewerTest {
         runComposeUiTest {
             val gate = CompletableDeferred<Unit>()
             val source = FakePageSource(gate = gate)
-            setContent { PageViewer(source, page = 1) }
+            setContent { PageViewer(source) }
 
             waitUntil { source.requests.isNotEmpty() }
             onNodeWithText("Loading…").assertExists()
@@ -65,7 +70,7 @@ class PageViewerTest {
     fun aFailureIsShownAsAMessage() =
         runComposeUiTest {
             val source = FakePageSource(failure = IllegalStateException("the scan is damaged"))
-            setContent { PageViewer(source, page = 1) }
+            setContent { PageViewer(source) }
 
             val message = "The page cannot be shown: the scan is damaged"
             waitUntil { runCatching { onNodeWithText(message).assertExists() }.isSuccess }
@@ -76,11 +81,11 @@ class PageViewerTest {
     fun anotherPageIsRequestedWhenThePageChanges() =
         runComposeUiTest {
             val source = FakePageSource()
-            var page by mutableIntStateOf(1)
-            setContent { PageViewer(source, page) }
+            val state = ViewerState(pageCount = 2)
+            setContent { PageViewer(source, state = state) }
             waitUntil { source.requests.size == 1 }
 
-            page = 2
+            runOnIdle { state.goTo(2) }
 
             waitUntil { source.requests.size == 2 }
             assertEquals(listOf(1, 2), source.requests.map { it.page })
@@ -94,7 +99,7 @@ class PageViewerTest {
     fun theToolbarShowsTheZoomAndTheActiveFitMode() =
         runComposeUiTest {
             val source = FakePageSource(PageSize(200.0, 300.0))
-            setContent { PageViewer(source, page = 1) }
+            setContent { PageViewer(source) }
             waitForPage(1)
 
             // 1024 pixels for 200 points is 5.12 pixels per point; actual size is 1.333: 384 %.
@@ -112,7 +117,7 @@ class PageViewerTest {
         runComposeUiTest {
             val source = FakePageSource(PageSize(200.0, 300.0))
             val state = ViewerState()
-            setContent { PageViewer(source, page = 1, state = state) }
+            setContent { PageViewer(source, state = state) }
             waitForPage(1)
 
             onNodeWithContentDescription("Zoom in").performClick()
@@ -129,7 +134,7 @@ class PageViewerTest {
         runComposeUiTest {
             val source = FakePageSource(PageSize(200.0, 300.0))
             val state = ViewerState()
-            setContent { PageViewer(source, page = 1, state = state) }
+            setContent { PageViewer(source, state = state) }
             waitForPage(1)
 
             onNodeWithText("Fit page").performClick()
@@ -145,7 +150,7 @@ class PageViewerTest {
     fun theOldPictureStaysUntilTheNewOneIsThere() =
         runComposeUiTest {
             val source = FakePageSource()
-            setContent { PageViewer(source, page = 1) }
+            setContent { PageViewer(source) }
             waitForPage(1)
             source.gate = CompletableDeferred() // the next picture takes its time
 
@@ -161,7 +166,7 @@ class PageViewerTest {
         runComposeUiTest {
             val source = FakePageSource()
             val state = ViewerState()
-            setContent { PageViewer(source, page = 1, state = state) }
+            setContent { PageViewer(source, state = state) }
             waitForPage(1)
             val gate = CompletableDeferred<Unit>()
             source.gate = gate
@@ -186,7 +191,7 @@ class PageViewerTest {
         runComposeUiTest {
             val source = FakePageSource()
             val state = ViewerState()
-            setContent { PageViewer(source, page = 1, state = state) }
+            setContent { PageViewer(source, state = state) }
             waitForPage(1)
             val before = state.scale
 
@@ -207,7 +212,7 @@ class PageViewerTest {
         runComposeUiTest {
             val source = FakePageSource()
             val state = ViewerState()
-            setContent { PageViewer(source, page = 1, state = state) }
+            setContent { PageViewer(source, state = state) }
             waitForPage(1)
 
             onNodeWithContentDescription("Page 1").performMouseInput {
@@ -226,7 +231,7 @@ class PageViewerTest {
         runComposeUiTest {
             val source = FakePageSource()
             val state = ViewerState()
-            setContent { PageViewer(source, page = 1, state = state) }
+            setContent { PageViewer(source, state = state) }
             waitForPage(1)
 
             // Fit width: as wide as the viewport, much taller.
@@ -243,7 +248,7 @@ class PageViewerTest {
         runComposeUiTest {
             val source = FakePageSource()
             val state = ViewerState()
-            setContent { PageViewer(source, page = 1, state = state) }
+            setContent { PageViewer(source, state = state) }
             waitForPage(1)
             val first = source.requests.size
 
@@ -255,5 +260,110 @@ class PageViewerTest {
             waitUntil { source.requests.size > first }
             val request = source.requests.last()
             assertTrue(request.y <= state.offsetY && request.y + request.height >= state.offsetY + state.viewportHeight)
+        }
+
+    // --- navigation ---------------------------------------------------------------------------------------
+
+    @Test
+    fun theToolbarShowsThePageAndTheButtonsStopAtTheEnds() =
+        runComposeUiTest {
+            val source = FakePageSource()
+            val state = ViewerState(pageCount = 3)
+            setContent { PageViewer(source, state = state) }
+            waitForPage(1)
+
+            onNodeWithText("Page 1 of 3").assertExists()
+            onNodeWithContentDescription("Previous page").assertIsNotEnabled()
+            onNodeWithContentDescription("Next page").assertIsEnabled()
+
+            onNodeWithContentDescription("Next page").performClick()
+            waitForPage(2)
+            onNodeWithText("Page 2 of 3").assertExists()
+            onNodeWithContentDescription("Previous page").assertIsEnabled()
+
+            onNodeWithContentDescription("Next page").performClick()
+            waitForPage(3)
+            onNodeWithContentDescription("Next page").assertIsNotEnabled()
+            onNodeWithContentDescription("Previous page").performClick()
+            waitForPage(2)
+            assertEquals(2, state.page)
+        }
+
+    @Test
+    fun typingAPageNumberAndPressingEnterGoesThere() =
+        runComposeUiTest {
+            val source = FakePageSource()
+            val state = ViewerState(pageCount = 10)
+            setContent { PageViewer(source, state = state) }
+            waitForPage(1)
+
+            onNodeWithContentDescription("Go to page").performTextReplacement("7")
+            onNodeWithContentDescription("Go to page").performKeyInput { pressKey(Key.Enter) }
+
+            waitForPage(7)
+            assertEquals(7, state.page)
+            onNodeWithText("Page 7 of 10").assertExists()
+        }
+
+    @Test
+    fun aWrongPageNumberIsRejectedAndTheFieldShowsTheCurrentPageAgain() =
+        runComposeUiTest {
+            val source = FakePageSource()
+            val state = ViewerState(pageCount = 10)
+            setContent { PageViewer(source, state = state) }
+            waitForPage(1)
+
+            for (wrong in listOf("0", "11", "abc", "")) {
+                onNodeWithContentDescription("Go to page").performTextReplacement(wrong)
+                onNodeWithContentDescription("Go to page").performKeyInput { pressKey(Key.Enter) }
+                waitForIdle()
+                assertEquals(1, state.page, "'$wrong' is not a page")
+                onNodeWithContentDescription("Go to page").assert(hasText("1"))
+            }
+        }
+
+    @Test
+    fun aPageSwitchCancelsTheRenderOfTheOldPageAndAsksForTheNewOne() =
+        runComposeUiTest {
+            val source = FakePageSource()
+            val state = ViewerState(pageCount = 3)
+            setContent { PageViewer(source, state = state) }
+            waitForPage(1)
+            val gate = CompletableDeferred<Unit>()
+            source.gate = gate
+            source.completed.clear()
+            runOnIdle { state.goTo(2) }
+            waitUntil { source.requests.any { it.page == 2 } }
+
+            gate.complete(Unit)
+
+            waitUntil { source.completed.isNotEmpty() }
+            assertEquals(listOf(2), source.completed.map { it.page })
+        }
+
+    @Test
+    fun fitWidthFollowsTheNewPagesSizeAndAFixedZoomStaysWithThePageAtItsTop() =
+        runComposeUiTest {
+            val source = FakePageSource(sizes = mapOf(1 to PageSize(200.0, 300.0), 2 to PageSize(100.0, 400.0)))
+            val state = ViewerState(pageCount = 2)
+            setContent { PageViewer(source, state = state) }
+            waitForPage(1)
+            assertEquals(1024 / 200.0, state.scale, 1e-9)
+
+            runOnIdle { state.goTo(2) }
+            waitForPage(2)
+            waitUntil { source.requests.last().page == 2 }
+            assertEquals(1024 / 100.0, state.scale, 1e-9, "fit width: the new page fills the width too")
+            assertEquals(1024, source.requests.last().width)
+
+            runOnIdle {
+                state.zoomTo(2.0, 0.0, 0.0)
+                state.scrollBy(0.0, 100.0)
+                state.goTo(1)
+            }
+            waitForPage(1)
+            waitUntil { state.pageSize == PageSize(200.0, 300.0) }
+            assertEquals(2.0, state.scale, 1e-9, "a fixed zoom stays")
+            assertEquals(0.0, state.offsetY, 1e-9, "and the page starts at its top")
         }
 }

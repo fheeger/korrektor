@@ -1,0 +1,72 @@
+package korrektor.viewer
+
+import androidx.compose.foundation.v2.ScrollbarAdapter
+import korrektor.pdf.PixelRegion
+import kotlin.math.max
+import kotlin.math.min
+
+/** A picture to ask the source for: [region] of the page at [scale]. A new request replaces the old one. */
+data class PictureRequest(
+    val scale: Double,
+    val region: PixelRegion,
+)
+
+/**
+ * The picture to ask for next, or null if nothing is visible yet. [have] is the request that was made last: as long
+ * as it is for the same scale and still covers everything visible, it is returned unchanged, so panning inside the
+ * picture asks for nothing new. A new request covers the visible part plus a margin of half a viewport on every side
+ * (as far as the page goes), so that small movements do not need a new picture; the margin shrinks if the picture
+ * would otherwise be too large for one image.
+ */
+fun ViewerState.nextRequest(have: PictureRequest?): PictureRequest? {
+    val visible = visibleRegion
+    return when {
+        visible == null -> null
+        have != null && have.scale == scale && have.region.covers(visible) -> have
+        else -> requestAround(visible)
+    }
+}
+
+private fun ViewerState.requestAround(visible: PixelRegion): PictureRequest {
+    var marginX = viewportWidth / 2
+    var marginY = viewportHeight / 2
+    while (area(visible, marginX, marginY) > MAX_REQUEST_PIXELS) {
+        marginX /= 2
+        marginY /= 2
+    }
+    val left = max(0, visible.x - marginX)
+    val top = max(0, visible.y - marginY)
+    val right = min(contentWidth, visible.x + visible.width + marginX)
+    val bottom = min(contentHeight, visible.y + visible.height + marginY)
+    return PictureRequest(scale, PixelRegion(left, top, right - left, bottom - top))
+}
+
+private fun area(
+    visible: PixelRegion,
+    marginX: Int,
+    marginY: Int,
+): Long = (visible.width + 2L * marginX) * (visible.height + 2L * marginY)
+
+private fun PixelRegion.covers(other: PixelRegion) =
+    x <= other.x && y <= other.y && x + width >= other.x + other.width && y + height >= other.y + other.height
+
+/** A request is at most this many pixels (one image can have 36 million, the limit of `PdfPage`). */
+private const val MAX_REQUEST_PIXELS = 30_000_000L
+
+/**
+ * The bridge between a scrollbar and the position in the page, for one direction: the scrollbar's offset is the
+ * state's offset in that direction, the content is the zoomed page, and moving the scrollbar scrolls the page.
+ */
+class ViewerScrollbarAdapter(
+    private val state: ViewerState,
+    private val vertical: Boolean,
+) : ScrollbarAdapter {
+    override val scrollOffset: Double get() = if (vertical) state.offsetY else state.offsetX
+    override val contentSize: Double get() = (if (vertical) state.contentHeight else state.contentWidth).toDouble()
+    override val viewportSize: Double get() = (if (vertical) state.viewportHeight else state.viewportWidth).toDouble()
+
+    override suspend fun scrollTo(scrollOffset: Double) {
+        val delta = scrollOffset - this.scrollOffset
+        if (vertical) state.scrollBy(0.0, delta) else state.scrollBy(delta, 0.0)
+    }
+}

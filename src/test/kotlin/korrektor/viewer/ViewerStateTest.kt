@@ -395,4 +395,79 @@ class ViewerStateTest {
         assertTrue(region.width.toLong() * region.height <= 30_000_000L, "$region")
         assertTrue(region.width >= 7000 && region.height >= 4000, "it still covers the viewport")
     }
+
+    // --- pages --------------------------------------------------------------------------------------------
+
+    @Test
+    fun nextAndPreviousMoveByOnePageAndStopAtTheEnds() {
+        val state = ViewerState(pageCount = 3)
+        assertEquals(1, state.page)
+        assertFalse(state.hasPrevious)
+        assertFalse(state.previous(), "there is no page 0")
+        assertEquals(1, state.page)
+
+        assertTrue(state.next())
+        assertTrue(state.next())
+        assertEquals(3, state.page)
+        assertFalse(state.hasNext)
+        assertFalse(state.next(), "there is no page 4")
+        assertEquals(3, state.page)
+        assertTrue(state.previous())
+        assertEquals(2, state.page)
+    }
+
+    @Test
+    fun aPageNumberTypedByTheUserIsCheckedAgainstThePageCount() {
+        val state = ViewerState(pageCount = 165)
+
+        assertTrue(state.goToText(" 42 "))
+        assertEquals(42, state.page)
+        assertTrue(state.goToText("165"))
+        assertTrue(state.goToText("1"))
+        for (wrong in listOf("0", "-3", "166", "4.5", "abc", "", "  ", "1 2")) {
+            assertFalse(state.goToText(wrong), "'$wrong'")
+            assertEquals(1, state.page, "'$wrong' changes nothing")
+        }
+    }
+
+    @Test
+    fun aBookWithoutPagesStillHasAPageOne() {
+        val state = ViewerState(pageCount = 0)
+        assertEquals(1, state.pageCount)
+        assertFalse(state.hasNext)
+    }
+
+    @Test
+    fun changingThePageForgetsTheOldPagesSizeAndPositionButKeepsTheZoomMode() {
+        val state = state(100, 100)
+        state.zoomTo(2.0, 0.0, 0.0)
+        state.scrollBy(50.0, 50.0)
+        val bookState = ViewerState(pageCount = 2)
+        bookState.setViewport(400, 300)
+        bookState.setPage(PageSize(200.0, 300.0), 4.0)
+        bookState.fitPage()
+
+        bookState.goTo(2)
+
+        assertNull(bookState.pageSize, "nothing is drawn until the new page's size is known")
+        assertNull(bookState.visibleRegion)
+        assertEquals(ZoomMode.FIT_PAGE, bookState.mode)
+        assertEquals(0.0 to 0.0, bookState.offsetX to bookState.offsetY)
+        bookState.setPage(PageSize(100.0, 100.0), null)
+        assertEquals(3.0, bookState.scale, 1e-9, "fit page follows the new size: 300 pixels for 100 points")
+    }
+
+    @Test
+    fun goingToTheSamePageChangesNothing() {
+        val state = ViewerState(pageCount = 3)
+        state.setViewport(100, 100)
+        state.setPage(PageSize(200.0, 300.0), null)
+        state.zoomTo(2.0, 0.0, 0.0)
+        state.scrollBy(10.0, 10.0)
+
+        assertTrue(state.goTo(1))
+
+        assertEquals(10.0, state.offsetX, 1e-9)
+        assertEquals(PageSize(200.0, 300.0), state.pageSize)
+    }
 }

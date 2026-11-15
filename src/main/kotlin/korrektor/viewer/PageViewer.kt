@@ -14,10 +14,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +33,11 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isCtrlPressed
@@ -59,33 +66,71 @@ private class Shown(
 )
 
 /**
- * Shows [page] of the project's PDF: a toolbar with the zoom, and below it the page. The picture is always rendered
- * by [source] for the visible part at the current scale, one image pixel per screen pixel, so zooming in shows the
- * scan's detail instead of a magnified low-resolution picture. While a new picture is being made the previous one
- * stays, scaled to the new scale, and is replaced as soon as the new one arrives. The wheel scrolls, Ctrl+wheel
- * zooms around the pointer. [state] holds the zoom and the position, so that the caller can keep it.
+ * Shows the page [state] says of the project's PDF: a toolbar with the navigation and the zoom, and below it the
+ * page. The picture is always rendered by [source] for the visible part at the current scale, one image pixel per
+ * screen pixel, so zooming in shows the scan's detail instead of a magnified low-resolution picture. While a new
+ * picture is being made the previous one stays, scaled to the new scale, and is replaced as soon as the new one
+ * arrives. The wheel scrolls, Ctrl+wheel zooms around the pointer. [state] holds the page, the zoom and the
+ * position, so that the caller can keep them.
  */
 @Composable
 fun PageViewer(
     source: PageSource,
-    page: Int,
     modifier: Modifier = Modifier,
     state: ViewerState = remember { ViewerState() },
 ) {
     Column(modifier.fillMaxSize()) {
-        ZoomToolbar(state)
-        PageArea(source, page, state, Modifier.weight(1f).fillMaxWidth())
+        Row(
+            Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            NavigationBar(state)
+            ZoomToolbar(state)
+        }
+        PageArea(source, state.page, state, Modifier.weight(1f).fillMaxWidth())
     }
 }
+
+/** Previous and next page, "Page n of N", and a field to go to a page: Enter goes there, a wrong number is undone. */
+@Composable
+private fun NavigationBar(state: ViewerState) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        OutlinedButton(
+            { state.previous() },
+            Modifier.semantics { contentDescription = "Previous page" },
+            enabled = state.hasPrevious,
+        ) { Text("‹") }
+        OutlinedButton(
+            { state.next() },
+            Modifier.semantics { contentDescription = "Next page" },
+            enabled = state.hasNext,
+        ) { Text("›") }
+        Text("Page ${state.page} of ${state.pageCount}")
+        var typed by remember(state.page) { mutableStateOf(state.page.toString()) }
+        OutlinedTextField(
+            value = typed,
+            onValueChange = { typed = it },
+            modifier =
+                Modifier
+                    .width(GO_TO_FIELD_WIDTH)
+                    .semantics { contentDescription = "Go to page" }
+                    .onKeyEvent { event ->
+                        val enter = event.key == Key.Enter && event.type == KeyEventType.KeyDown
+                        if (enter && !state.goToText(typed)) typed = state.page.toString()
+                        enter
+                    },
+            singleLine = true,
+        )
+    }
+}
+
+private val GO_TO_FIELD_WIDTH = 88.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ZoomToolbar(state: ViewerState) {
-    Row(
-        Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         FilterChip(state.mode == ZoomMode.FIT_WIDTH, state::fitWidth, { Text("Fit width") })
         FilterChip(state.mode == ZoomMode.FIT_PAGE, state::fitPage, { Text("Fit page") })
         OutlinedButton(state::zoomOut, Modifier.semantics { contentDescription = "Zoom out" }) { Text("−") }
