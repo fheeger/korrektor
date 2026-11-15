@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import korrektor.pdf.PixelRegion
 import kotlinx.coroutines.CompletableDeferred
 import java.util.Collections
+import java.util.concurrent.atomic.AtomicInteger
 
 /** What the viewer asked a fake source for. */
 data class RenderRequest(
@@ -25,6 +26,7 @@ class FakePageSource(
     gate: CompletableDeferred<Unit> = CompletableDeferred<Unit>().also { it.complete(Unit) },
     private val failure: Exception? = null,
     private val native: Double? = null,
+    override val caches: Boolean = false,
 ) : PageSource {
     /** Requests wait for this; a test can replace it to hold the next ones back. */
     @Volatile
@@ -39,9 +41,23 @@ class FakePageSource(
     var closed = false
         private set
 
-    override suspend fun size(page: Int): PageSize = sizes[page] ?: size
+    /** How often the size of a page and its scan resolution were asked for. */
+    val sizeCalls = AtomicInteger()
+    val nativeCalls = AtomicInteger()
 
-    override suspend fun nativeScale(page: Int): Double? = native
+    /** If set, only renders of these pages wait for the [gate]; the others are answered at once. */
+    @Volatile
+    var onlyPages: Set<Int>? = null
+
+    override suspend fun size(page: Int): PageSize {
+        sizeCalls.incrementAndGet()
+        return sizes[page] ?: size
+    }
+
+    override suspend fun nativeScale(page: Int): Double? {
+        nativeCalls.incrementAndGet()
+        return native
+    }
 
     override suspend fun render(
         page: Int,
@@ -49,7 +65,7 @@ class FakePageSource(
         region: PixelRegion,
     ): ImageBitmap {
         requests += RenderRequest(page, scale, region.x, region.y, region.width, region.height)
-        gate.await()
+        if (onlyPages?.contains(page) != false) gate.await()
         failure?.let { throw it }
         completed += requests.last { it.page == page && it.width == region.width && it.scale == scale }
         return ImageBitmap(region.width, region.height)

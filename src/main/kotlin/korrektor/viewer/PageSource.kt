@@ -16,6 +16,12 @@ data class PageSize(
  * and never runs on the UI thread; a cancelled caller stops waiting for the result.
  */
 interface PageSource : AutoCloseable {
+    /**
+     * Whether this source remembers its pictures. Only then does the viewer render the neighbours of the page in
+     * the background: for a source without memory that work would be thrown away.
+     */
+    val caches: Boolean get() = false
+
     /** The size of [page] in points, after rotation and crop box. */
     suspend fun size(page: Int): PageSize
 

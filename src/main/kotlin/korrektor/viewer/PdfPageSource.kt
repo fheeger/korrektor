@@ -9,8 +9,8 @@ import kotlinx.coroutines.withContext
 import java.nio.file.Path
 import java.util.concurrent.Executors
 
-/** The real [PageSourceFactory]: the pages of the PDF, drawn by PDFium. */
-val DefaultPageSourceFactory = PageSourceFactory { PdfPageSource(it) }
+/** The real [PageSourceFactory]: the pages of the PDF, drawn by PDFium, with a cache of pictures. */
+val DefaultPageSourceFactory = PageSourceFactory { PageCache(PdfPageSource(it)) }
 
 /**
  * The pages of a PDF, drawn by PDFium on a thread of their own. PDFium runs one call at a time anyway (D02), so one
