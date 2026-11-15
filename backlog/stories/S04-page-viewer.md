@@ -38,11 +38,12 @@ so that I can read the original comfortably while correcting.
 - **Remembered view** (T032): page and zoom of each project in `%APPDATA%\korrektor\settings.json` (restored on open; saved after one second without change, when another project is opened and when the window closes). Nothing is written into the project.
 - **Word boxes** (T033): a toggle draws the boxes of the words and lines of the corrected layer over the scan with the same transform as the picture.
 - **Review fixes** (T034).
+- **After the user's first look** (the two things below were found by trying the app): **T035** removed the zoom limit at the scan's resolution (the Clausewitz book could not be zoomed beyond 208 %, and not back in after zooming out); **T036** renders a whole page when it has at most 16 million pixels at the current scale (so scrolling at fit width never waits for a picture) and uses a margin of one viewport for larger pages.
 
 ### Decisions
 All in the tickets under "Decisions". The ones that shape the product:
 - The viewer is built on a `PageSource` interface (`PageCache` wraps it); the project's page files are not needed to show a page. Page sizes come from PDFium (T029).
-- The upper zoom limit is the scan's resolution, but at least actual size; a page without a scan zooms to 8 × actual size (T027).
+- The zoom goes up to 3200 % of actual size whatever the scan; the scan's own resolution is only a stop on the way (T027, changed in T035 after the user's first look: the first version limited the zoom to the scan's resolution, which got stuck on the Clausewitz).
 - Prefetching lives in the viewer, because the neighbour's picture depends on the zoom mode and the window; `ViewerState.preview` gives the exact request, so the switch is a cache hit (T030).
 - App settings are a JSON file in the user's config folder, keyed by the project folder's path; a damaged file or one from a newer version is moved aside as `settings.json.bad` (T032).
 - `AppModel` owns the `ViewerState`; `ProjectScreen` takes a slot and `ProjectViewer` owns the page source (T032).
@@ -64,6 +65,8 @@ All in the tickets under "Decisions". The ones that shape the product:
 
 **Looked at by eye** (the real app rendered offscreen on the sample, with the real import): page 6 at fit width, with the word boxes, at fit page and at the maximum zoom (625 %). The boxes sit on the printed words and lines; the fit-page view centres the page; at the maximum zoom the scan shows its own pixels sharply (the sample's pages are bilevel).
 
+**After the first look (T035, T036):** the regression tests with the Clausewitz numbers (fit width 321 %, scan 208 %) and the test for scrolling to the bottom of a fit-width page failed before the changes. Page switching is as fast as before (median 46 ms generated, 71 ms sample, with whole pages).
+
 **Code review** (Opus 5.5, whole story): no blocker, but real bugs. Fixed in T034: a freeze when the viewer area has more than 30 million pixels (an 8K screen), Shift+wheel and sideways scrolling that did nothing in the real window (Compose reports a horizontal delta, the code read only the vertical one), a crash on very small pages (an empty `coerceIn` range), a debounced save of a view the user had already left, unreadable settings that the next save would have overwritten, an fsync on the UI thread, and docs. The new tests failed on the old code. Not fixed: see the known gaps. Areas the review found fine: the PDFium binding (struct offsets, native memory, the lock), the cache accounting, the page-source lifecycle, the effect keys and cancellation, zoom and anchor arithmetic, the overlay's transform, the unchanged project format.
 
 **Build:** `./gradlew build koverXmlReport` green (Detekt and ktlint without findings); the performance tests are skipped there and pass with the variable. Uncovered lines of the new code are small: an interface default and a lambda, and the warning paths of the settings.
@@ -75,9 +78,8 @@ All in the tickets under "Decisions". The ones that shape the product:
 - **Stray OCR specks** widen some line boxes in the overlay (seen on page 6 line 7, as in S03).
 - **The go-to field** is taller than the buttons (default text field height); a look-and-feel point for you.
 - **Settings are keyed by the absolute path** of the project folder: a moved project, or the same folder under another spelling (case on Windows), starts afresh. Two running instances of the app overwrite each other's settings (last writer wins).
-- **A restored or carried-over fixed zoom is not cut to the scan's resolution** of a coarser page; it stays usable.
 - **Page sizes come from PDFium**, not from the page files as the ticket text first said (T029).
-- **Pictures at a large zoom:** one request is at most 30 million pixels; a very large screen at a high zoom needs the memory of that picture (the cache counts it).
+- **Pictures at a large zoom:** one request is at most 30 million pixels; a very large screen at a high zoom needs the memory of that picture (the cache counts it). On a 4K screen a page at fit width is over the 16 million pixel limit for "whole page" and gets the margin rule instead.
 - **Hardware:** timings are from one machine (Ryzen 7 7700X); a slower machine and a real JPEG 2000 scan at a higher resolution may be slower. The sample's pages are bilevel JPEG 2000 and were measured.
 
 ### How to try it
