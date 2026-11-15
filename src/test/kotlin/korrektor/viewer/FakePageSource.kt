@@ -21,6 +21,7 @@ data class RenderRequest(
  */
 class FakePageSource(
     private val size: PageSize = PageSize(200.0, 300.0),
+    private val sizes: Map<Int, PageSize> = emptyMap(),
     gate: CompletableDeferred<Unit> = CompletableDeferred<Unit>().also { it.complete(Unit) },
     private val failure: Exception? = null,
     private val native: Double? = null,
@@ -38,7 +39,7 @@ class FakePageSource(
     var closed = false
         private set
 
-    override suspend fun size(page: Int): PageSize = size
+    override suspend fun size(page: Int): PageSize = sizes[page] ?: size
 
     override suspend fun nativeScale(page: Int): Double? = native
 

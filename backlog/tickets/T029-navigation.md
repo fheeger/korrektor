@@ -1,6 +1,6 @@
 # T029 Navigation: previous/next, go to page, "page n of N"
 
-**Type:** task · **Status:** ready for development · **Story:** S04 · **Task:** S04.4
+**Type:** task · **Status:** done · **Story:** S04 · **Task:** S04.4
 
 ## What needs doing
 - The viewer state has the current page (1-based). Toolbar buttons "Previous page" and "Next page" (disabled on the first and last page), a text field for the page number (Enter goes to it; an invalid number is rejected and the field returns to the current page), and the display "Page n of N".
@@ -24,7 +24,16 @@
 T026, T027 (the zoom modes).
 
 ## Decisions
-None yet.
+- **The current page is part of `ViewerState`** (`page`, `pageCount`, `goTo`); `PageViewer` no longer takes a page, `ProjectScreen` makes one state per project with the project's page count (a project without pages counts as one page, so the numbers are never empty). T032 restores the page with `goTo`.
+- **Page sizes come from the `PageSource`** (PDFium, when the page is loaded), not from the page files as the ticket text said: the source already has the page open, reading a page file would add a second source of the same number, and the viewer must not depend on the page files being read. The size is known before the picture is rendered, which was the point.
+- **A page change clears the size** (and the position and the scan resolution) at once, so that no picture is asked for with the old page's scale, and the old picture is dropped (the picture of a page is kept only for that page). The zoom mode stays; a fit mode recomputes when the new size arrives. T030's cache will supply pictures at once for neighbours.
+- **A page switch cancels the old page's render** because the effects that render are keyed on the page (checked with a fake source that holds its answers back).
+- **The page field** is a one-line text field with the description "Go to page"; Enter goes to the page, anything else than a whole number in range leaves the page as it is and puts the current number back. `ViewerState.goToText` does the check, so it is tested without UI.
+- **Buttons** are "‹" and "›" with the descriptions "Previous page" and "Next page", disabled at the ends. Keyboard shortcuts come with S06.
+- **The state is split into files** (Detekt allows ten functions per file): `ViewerState.kt` (the class), `ViewerActions.kt`, `PictureRequests.kt` and `ViewerGeometry.kt`; no behaviour changed in the split.
+- **Sample:** the sizes of pages 1 and 2 of the sample (612 × 792 and about 300 × 490) are not tested with the real file here; the same switch between two different sizes is tested with a generated source. To check by hand.
 
 ## Progress
-Not started.
+Done. Navigation in `ViewerState`, the toolbar part, the project screen uses one state per project. Tests: 5 more in `ViewerStateTest` (previous and next, typed numbers, a book without pages, what a page change forgets and keeps, going to the same page), 5 more in `PageViewerTest` (buttons and the display, typing a number with Enter, wrong numbers undone, a switch cancels the old render, fit width follows the new page and a fixed zoom stays with the page at its top). `./gradlew build` is green.
+
+Not checked by me (story report): how the toolbar looks and feels, and the switch between sample pages 1 and 2 in the real window.

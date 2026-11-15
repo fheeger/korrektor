@@ -1,6 +1,5 @@
 package korrektor.viewer
 
-import androidx.compose.foundation.v2.ScrollbarAdapter
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -9,7 +8,6 @@ import androidx.compose.runtime.setValue
 import korrektor.pdf.PixelRegion
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.pow
 import kotlin.math.roundToInt
 
 /** How the scale of the viewer is chosen. */
@@ -32,7 +30,16 @@ enum class ZoomMode {
  * A page that is smaller than the viewport in one direction is centred in it and cannot be moved in that direction.
  * At most [maxScale], the scale shows the scan's own pixels: beyond that a zoom would show nothing new.
  */
-class ViewerState {
+class ViewerState(
+    pageCount: Int = 1,
+) {
+    /** The number of pages of the book; at least 1, so that the page numbers are never empty. */
+    val pageCount: Int = maxOf(1, pageCount)
+
+    /** The page shown, from 1 to [pageCount]. Changed with [goTo], [next] and [previous]. */
+    var page: Int by mutableIntStateOf(1)
+        private set
+
     /** The size of the current page in points, or null until it is known. */
     var pageSize: PageSize? by mutableStateOf(null)
         private set
@@ -133,11 +140,25 @@ class ViewerState {
         offsetY = 0.0
     }
 
-    fun fitWidth() = switchMode(ZoomMode.FIT_WIDTH)
+    /**
+     * Shows page [number] if there is such a page (and says whether there is). The zoom mode stays: a fit mode
+     * follows the new page once its size is known (`setPage`), a fixed scale stays. Until the size arrives there is
+     * nothing to draw, so no picture is asked for with the size of the old page, and the view is at the top left.
+     */
+    fun goTo(number: Int): Boolean {
+        if (number !in 1..pageCount) return false
+        if (number != page) {
+            page = number
+            pageSize = null
+            nativeScale = null
+            offsetX = 0.0
+            offsetY = 0.0
+        }
+        return true
+    }
 
-    fun fitPage() = switchMode(ZoomMode.FIT_PAGE)
-
-    private fun switchMode(newMode: ZoomMode) {
+    /** Selects a zoom mode; the page point at the top left of the viewport stays there. */
+    fun useMode(newMode: ZoomMode) {
         val old = scale
         mode = newMode
         keepAnchor(old, 0.0, 0.0)
@@ -219,112 +240,3 @@ class ViewerState {
         private const val EPSILON = 1e-9
     }
 }
-
-/** Zooms by [factor] around an anchor (the wheel): the page point under the pointer stays under it. */
-fun ViewerState.zoomBy(
-    factor: Double,
-    anchorX: Double,
-    anchorY: Double,
-) = zoomTo(scale * factor, anchorX, anchorY)
-
-/**
- * One turn of the mouse wheel by [notches] (positive: down, like a scroll delta) at ([x], [y]): with Ctrl it zooms
- * by about 10 % per notch around the pointer, up for negative notches; with Shift it scrolls sideways; otherwise it
- * scrolls the page up and down.
- */
-fun ViewerState.wheel(
-    notches: Double,
-    ctrl: Boolean,
-    x: Double,
-    y: Double,
-    shift: Boolean = false,
-) {
-    when {
-        ctrl -> zoomBy(WHEEL_ZOOM_FACTOR.pow(-notches), x, y)
-        shift -> scrollBy(notches * WHEEL_SCROLL_PIXELS, 0.0)
-        else -> scrollBy(0.0, notches * WHEEL_SCROLL_PIXELS)
-    }
-}
-
-/** A picture to ask the source for: [region] of the page at [scale]. A new request replaces the old one. */
-data class PictureRequest(
-    val scale: Double,
-    val region: PixelRegion,
-)
-
-/**
- * The picture to ask for next, or null if nothing is visible yet. [have] is the request that was made last: as long
- * as it is for the same scale and still covers everything visible, it is returned unchanged, so panning inside the
- * picture asks for nothing new. A new request covers the visible part plus a margin of half a viewport on every side
- * (as far as the page goes), so that small movements do not need a new picture; the margin shrinks if the picture
- * would otherwise be too large for one image.
- */
-fun ViewerState.nextRequest(have: PictureRequest?): PictureRequest? {
-    val visible = visibleRegion
-    return when {
-        visible == null -> null
-        have != null && have.scale == scale && have.region.covers(visible) -> have
-        else -> requestAround(visible)
-    }
-}
-
-private fun ViewerState.requestAround(visible: PixelRegion): PictureRequest {
-    var marginX = viewportWidth / 2
-    var marginY = viewportHeight / 2
-    while (area(visible, marginX, marginY) > MAX_REQUEST_PIXELS) {
-        marginX /= 2
-        marginY /= 2
-    }
-    val left = max(0, visible.x - marginX)
-    val top = max(0, visible.y - marginY)
-    val right = min(contentWidth, visible.x + visible.width + marginX)
-    val bottom = min(contentHeight, visible.y + visible.height + marginY)
-    return PictureRequest(scale, PixelRegion(left, top, right - left, bottom - top))
-}
-
-private fun area(
-    visible: PixelRegion,
-    marginX: Int,
-    marginY: Int,
-): Long = (visible.width + 2L * marginX) * (visible.height + 2L * marginY)
-
-private fun PixelRegion.covers(other: PixelRegion) =
-    x <= other.x && y <= other.y && x + width >= other.x + other.width && y + height >= other.y + other.height
-
-/**
- * The bridge between a scrollbar and the position in the page, for one direction: the scrollbar's offset is the
- * state's offset in that direction, the content is the zoomed page, and moving the scrollbar scrolls the page.
- */
-class ViewerScrollbarAdapter(
-    private val state: ViewerState,
-    private val vertical: Boolean,
-) : ScrollbarAdapter {
-    override val scrollOffset: Double get() = if (vertical) state.offsetY else state.offsetX
-    override val contentSize: Double get() = (if (vertical) state.contentHeight else state.contentWidth).toDouble()
-    override val viewportSize: Double get() = (if (vertical) state.viewportHeight else state.viewportWidth).toDouble()
-
-    override suspend fun scrollTo(scrollOffset: Double) {
-        val delta = scrollOffset - this.scrollOffset
-        if (vertical) state.scrollBy(0.0, delta) else state.scrollBy(delta, 0.0)
-    }
-}
-
-/** The screen position of the page's edge: negative when scrolled, positive when the page is centred. */
-private fun origin(
-    content: Int,
-    viewport: Int,
-    offset: Double,
-): Double = if (content < viewport) (viewport - content) / 2.0 else -offset
-
-private fun clamp(
-    offset: Double,
-    content: Int,
-    viewport: Int,
-): Double = if (content <= viewport) 0.0 else offset.coerceIn(0.0, (content - viewport).toDouble())
-
-/** One notch of the Ctrl+wheel zooms by this factor; one notch of the plain wheel scrolls this many pixels. */
-private const val WHEEL_ZOOM_FACTOR = 1.1
-private const val WHEEL_SCROLL_PIXELS = 80.0
-
-/** A request is at most this many pixels (one image can have 36 million, the limit of `PdfPage`). */
-private const val MAX_REQUEST_PIXELS = 30_000_000L

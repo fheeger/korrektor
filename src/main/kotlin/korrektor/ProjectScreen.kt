@@ -18,6 +18,7 @@ import korrektor.format.Project
 import korrektor.viewer.DefaultPageSourceFactory
 import korrektor.viewer.PageSourceFactory
 import korrektor.viewer.PageViewer
+import korrektor.viewer.ViewerState
 
 /** The open project: its metadata and, for now, the first page of the scan. */
 @Composable
@@ -31,6 +32,7 @@ fun ProjectScreen(
     // One source per open project; closing it closes the PDF, so the project folder is not held open.
     val source = remember(project) { pageSources.open(project.sourcePdf) }
     DisposableEffect(source) { onDispose { source.close() } }
+    val viewer = remember(project) { ViewerState(project.pages.size) }
     Column(modifier.fillMaxSize().padding(32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(displayTitle(project, metadata), style = MaterialTheme.typography.headlineMedium)
         if (metadata != null) {
@@ -46,6 +48,6 @@ fun ProjectScreen(
             Button(onClick = actions.openProject) { Text("Open another project…") }
         }
         // A first page view; the side-by-side editor of S05 replaces this layout.
-        PageViewer(source, page = 1, modifier = Modifier.weight(1f))
+        PageViewer(source, Modifier.weight(1f), viewer)
     }
 }
