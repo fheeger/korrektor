@@ -60,3 +60,5 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T032](tickets/T032-remember-view.md) | Remember last page and zoom per project in the app settings | task | S04 | done |
 | [T033](tickets/T033-word-box-overlay.md) | Optional overlay: word boxes | task | S04 | done |
 | [T034](tickets/T034-review-fixes.md) | Fixes from the S04 code review | task | S04 | done |
+| [T035](tickets/T035-zoom-limit.md) | Zoom stops at the scan's resolution, and gets stuck on a coarse scan | bug | S04 | done |
+| [T036](tickets/T036-smooth-scrolling.md) | Scrolling down at fit width: the lower part appears late | bug | S04 | ready for development |

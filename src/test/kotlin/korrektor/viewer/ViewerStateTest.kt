@@ -97,55 +97,53 @@ class ViewerStateTest {
     }
 
     @Test
-    fun zoomingInStopsAtTheResolutionOfTheScan() {
-        val state = state(400, 300, native = 5.0)
+    fun theResolutionOfTheScanIsAStopOnTheWayAndNotTheEnd() {
+        val state = state(400, 300, native = 5.0) // 375 % of actual size, between 300 % and 400 %
+        state.zoomTo(3.0 * actual)
+        assertEquals(300, state.percent)
 
-        repeat(20) { state.zoomIn() }
-
+        state.zoomIn()
         assertEquals(5.0, state.scale, 1e-9, "one screen pixel per scan pixel")
         state.zoomIn()
-        assertEquals(5.0, state.scale, 1e-9)
+        assertEquals(400, state.percent, "and it goes on")
+        state.zoomOut()
+        state.zoomOut()
+        assertEquals(300, state.percent)
     }
 
     @Test
-    fun theResolutionOfTheScanIsTheLastStopEvenBetweenTwoSteps() {
-        val state = state(400, 300, native = 3.0) // 225 % of actual size, between 200 % and 300 %
-        state.zoomTo(2.0 * actual)
-        assertEquals(200, state.percent)
-
-        state.zoomIn()
-
-        assertEquals(3.0, state.scale, 1e-9)
-    }
-
-    @Test
-    fun aPageWithoutAScanCanBeZoomedToEightTimesActualSize() {
+    fun aPageWithoutAScanHasNoSuchStop() {
         val state = state(400, 300, native = null)
-
-        repeat(20) { state.zoomIn() }
-
-        assertEquals(800, state.percent)
-    }
-
-    @Test
-    fun aCoarseScanCanStillBeShownAtActualSize() {
-        val state = state(400, 300, native = 0.5) // fewer scan pixels than screen pixels at actual size
-        state.zoomTo(0.25 * actual)
-
-        repeat(20) { state.zoomIn() }
-
-        assertEquals(actual, state.scale, 1e-9)
-    }
-
-    @Test
-    fun zoomingInFromAFitScaleAboveTheLimitDoesNotZoomOut() {
-        val state = state(2000, 300, native = 2.0) // fit width is 10, far above the scan's 2.0
-        assertEquals(10.0, state.scale, 1e-9)
+        state.zoomTo(2.0 * actual)
 
         state.zoomIn()
-        state.zoomBy(1.1, 0.0, 0.0)
 
-        assertEquals(10.0, state.scale, 1e-9, "the scale never goes up beyond the limit, and not down on zoom in")
+        assertEquals(300, state.percent)
+    }
+
+    @Test
+    fun theHighestZoomIs3200PercentWhateverTheScan() {
+        for (native in listOf(null, 0.5, 5.0, 100.0)) {
+            val state = state(400, 300, native = native)
+
+            repeat(40) { state.zoomIn() }
+
+            assertEquals(3200, state.percent, "native $native")
+            assertEquals(32.0 * actual, state.scale, 1e-9)
+            state.zoomBy(10.0, 0.0, 0.0)
+            assertEquals(3200, state.percent, "also not with the wheel")
+        }
+    }
+
+    @Test
+    fun zoomingInFromAFitScaleBetweenTwoStepsGoesToTheNextStepAbove() {
+        val state = state(2000, 300, native = 2.0) // fit width is 10 pixels per point: 750 %
+        assertEquals(750, state.percent)
+
+        state.zoomIn()
+        assertEquals(800, state.percent)
+        state.zoomOut()
+        assertEquals(600, state.percent)
     }
 
     // --- the anchor ---------------------------------------------------------------------------------------
@@ -503,5 +501,39 @@ class ViewerStateTest {
         state.zoomIn()
         state.zoomOut()
         assertTrue(state.scale >= state.minScale)
+    }
+
+    // --- T035: the limit was the scan's resolution -----------------------------------------------------------
+
+    /** Clausewitz: the scan is 2.77 pixels per point (208 % of actual size) and fit width gives 321 %. */
+    private fun clausewitz(): ViewerState {
+        val width = 233.6 // points
+        return ViewerState(pageCount = 99).also {
+            it.setViewport((4.2844 * width).toInt() + 1, 800) // 321 % of actual size is 4.284 pixels per point
+            it.setPage(PageSize(width, 360.0), 2.7733)
+        }
+    }
+
+    @Test
+    fun aCoarseScanCanBeZoomedInBeyondItsResolutionFromFitWidth() {
+        val state = clausewitz()
+        assertTrue(state.percent in 320..322, "fit width: ${state.percent} %")
+
+        state.zoomIn()
+        assertEquals(400, state.percent)
+        repeat(30) { state.zoomIn() }
+
+        assertEquals(3200, state.percent, "up to the limit, not stuck at the scan's 208 %")
+    }
+
+    @Test
+    fun afterZoomingOutTheZoomCanGoBackInPastTheScansResolution() {
+        val state = clausewitz()
+        repeat(3) { state.zoomOut() }
+        assertTrue(state.percent < 208, "zoomed out: ${state.percent} %")
+
+        repeat(30) { state.zoomIn() }
+
+        assertEquals(3200, state.percent)
     }
 }

@@ -28,7 +28,7 @@ enum class ZoomMode {
  * corner). Plain Kotlin on Compose state, no UI, so the arithmetic is tested with exact numbers.
  *
  * A page that is smaller than the viewport in one direction is centred in it and cannot be moved in that direction.
- * At most [maxScale], the scale shows the scan's own pixels: beyond that a zoom would show nothing new.
+ * The user can zoom up to [maxScale]. The scan's resolution (`nativeScale`) is only a stop on the way, not a limit.
  */
 class ViewerState(
     pageCount: Int = 1,
@@ -90,8 +90,8 @@ class ViewerState(
     val originX: Double get() = origin(contentWidth, viewportWidth, offsetX)
     val originY: Double get() = origin(contentHeight, viewportHeight, offsetY)
 
-    /** The largest scale the user can zoom to: the scan's own resolution, but at least actual size. */
-    val maxScale: Double get() = max(nativeScale ?: (MAX_ZOOM_WITHOUT_SCAN * ACTUAL_SIZE), ACTUAL_SIZE)
+    /** The largest scale the user can zoom to: 3200 % of actual size, whatever the scan's resolution. */
+    val maxScale: Double get() = MAX_ZOOM * ACTUAL_SIZE
 
     /** The smallest scale: a tenth of the scale at which the whole page is visible. */
     val minScale: Double
@@ -216,15 +216,15 @@ class ViewerState(
         offsetY = clamp(offsetY + dy, contentHeight, viewportHeight)
     }
 
-    /** The scales the buttons move along: the fixed steps below the maximum, and the maximum itself. */
+    /**
+     * The scales the buttons move along: the fixed steps up to the limit, and the scan's own resolution (one scan
+     * pixel per screen pixel) as an extra stop between two of them, if the page has a scan.
+     */
     private val steps: List<Double>
         get() =
-            (
-                STEPS
-                    .map {
-                        it * ACTUAL_SIZE
-                    }.filter { it < maxScale - EPSILON } + maxScale
-            ).filter { it >= minScale - EPSILON }
+            (STEPS.map { it * ACTUAL_SIZE } + listOfNotNull(nativeScale))
+                .filter { it >= minScale - EPSILON && it <= maxScale + EPSILON }
+                .sorted()
 
     /**
      * After the scale changed from [oldScale]: the page point that was at ([anchorX], [anchorY]) in the viewport is
@@ -252,10 +252,10 @@ class ViewerState(
         const val ACTUAL_SIZE = 96.0 / 72.0
 
         /** The zoom steps, as factors of actual size. */
-        val STEPS = listOf(0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0)
+        val STEPS = listOf(0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0, 12.0, 16.0, 24.0, 32.0)
 
-        /** The limit for a page without a scan, as a factor of actual size. */
-        private const val MAX_ZOOM_WITHOUT_SCAN = 8.0
+        /** The highest zoom, as a factor of actual size: enough to look at a single pixel of any scan. */
+        private const val MAX_ZOOM = 32.0
         private const val FLOOR_OF_FIT_PAGE = 0.1
         private const val MIN_FLOOR = 0.01
         private const val PERCENT = 100.0
