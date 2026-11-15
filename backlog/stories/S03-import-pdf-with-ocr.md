@@ -1,6 +1,6 @@
 # S03 Import a PDF with OCR
 
-**Features:** A2 · **Status:** in review
+**Features:** A2 · **Status:** done
 
 As a reader of historical sources, I want to import a PDF that already has OCR, with its page images and the text with positions
 so that I can start correcting without running OCR myself.
