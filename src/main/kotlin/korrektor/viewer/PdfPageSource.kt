@@ -29,6 +29,9 @@ class PdfPageSource(
     override suspend fun size(page: Int): PageSize =
         withContext(dispatcher) { document.page(page - 1).use { PageSize(it.width, it.height) } }
 
+    override suspend fun nativeScale(page: Int): Double? =
+        withContext(dispatcher) { document.page(page - 1).use { it.largestImageDensity() } }
+
     override suspend fun render(
         page: Int,
         scale: Double,

@@ -41,6 +41,18 @@ class TestRect(
 )
 
 /**
+ * A picture on a generated page, like a scan: [pixels] x [pixels] image pixels in a black and white checkerboard of
+ * single pixels, drawn on the rectangle at ([x], [y]) of [width] x [height] points (PDF coordinates).
+ */
+class TestPicture(
+    val x: Float,
+    val y: Float,
+    val width: Float,
+    val height: Float,
+    val pixels: Int,
+)
+
+/**
  * Where a generated page's boxes are. [originX] and [originY] are the lower-left corner of the media box (text
  * positions are in the page's own coordinates, so they include it). [cropBox] is left, bottom, right, top in the
  * same coordinates, if the visible area is smaller than the media box.
@@ -64,6 +76,7 @@ class TestPage(
     val toUnicode: Map<Int, String> = emptyMap(),
     val area: TestArea = TestArea(),
     val rects: List<TestRect> = emptyList(),
+    val pictures: List<TestPicture> = emptyList(),
 )
 
 /** Small PDFs for tests, made with PDFBox. */
@@ -96,6 +109,31 @@ object TestPdfs {
             doc.save(path.toFile())
         }
     }
+
+    /** Black and white pixels like a chessboard with one pixel per square; the pixel (0, 0) is black. */
+    private fun checkerboard(
+        doc: PDDocument,
+        pixels: Int,
+    ) = LosslessFactory.createFromImage(
+        doc,
+        BufferedImage(pixels, pixels, BufferedImage.TYPE_INT_RGB).also { image ->
+            for (y in 0 until pixels) {
+                for (x in 0 until pixels) {
+                    image.setRGB(
+                        x,
+                        y,
+                        if ((x + y) % 2 ==
+                            0
+                        ) {
+                            0x000000
+                        } else {
+                            0xFFFFFF
+                        },
+                    )
+                }
+            }
+        },
+    )
 
     /** A grey square, as the scan of a page would be. */
     private fun drawPicture(
@@ -137,6 +175,15 @@ object TestPdfs {
         val plain: PDFont = PDType1Font(Standard14Fonts.FontName.HELVETICA)
         val exotic = if (spec.toUnicode.isEmpty()) null else fontWithToUnicode(doc, spec.toUnicode)
         PDPageContentStream(doc, page).use { content ->
+            for (picture in spec.pictures) {
+                content.drawImage(
+                    checkerboard(doc, picture.pixels),
+                    picture.x,
+                    picture.y,
+                    picture.width,
+                    picture.height,
+                )
+            }
             for (rect in spec.rects) {
                 content.setNonStrokingColor(rect.color)
                 content.addRect(rect.x, rect.y, rect.width, rect.height)

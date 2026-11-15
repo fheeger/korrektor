@@ -6,6 +6,7 @@ import com.sun.jna.Pointer
 import java.awt.image.BufferedImage
 import kotlin.math.max
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 /** A rectangle in PDF coordinates: points, origin at the bottom-left of the page, y upwards. */
 data class PdfRect(
@@ -40,6 +41,10 @@ private const val RECT_LEFT = 0L
 private const val RECT_TOP = 4L
 private const val RECT_RIGHT = 8L
 private const val RECT_BOTTOM = 12L
+private const val BOUNDS_LEFT = 0L
+private const val BOUNDS_BOTTOM = 4L
+private const val BOUNDS_RIGHT = 8L
+private const val BOUNDS_TOP = 12L
 
 /** One page of a [PdfDocument]. Close it when done: that also closes its text page. */
 class PdfPage internal constructor(
@@ -111,6 +116,56 @@ class PdfPage internal constructor(
         val heightPixels = max(1, (widthPixels * height / width).roundToInt())
         return renderInto(PixelRegion(0, 0, widthPixels, heightPixels), widthPixels, heightPixels)
     }
+
+    /**
+     * How many pixels of the page's largest picture (the scan) lie on one point of the page, or null if the page
+     * has no picture. The square root of the pixel area over the point area, so it does not matter whether the
+     * picture is turned. One screen pixel per scan pixel is a scale of this many screen pixels per point, and
+     * zooming in beyond it shows nothing new. Only pictures drawn directly on the page are looked at.
+     */
+    fun largestImageDensity(): Double? =
+        Pdfium.call {
+            val page = live()
+            (0 until PdfiumLib.countObjects(page))
+                .mapNotNull { PdfiumLib.getObject(page, it) }
+                .filter { PdfiumLib.objectType(it) == IMAGE_OBJECT }
+                .mapNotNull { imageDensity(it) }
+                .maxByOrNull { it.pixels }
+                ?.density
+        }
+
+    private class ImageDensity(
+        val pixels: Long,
+        val density: Double,
+    )
+
+    private fun imageDensity(image: Pointer): ImageDensity? =
+        Memory((RECT_FLOATS * Float.SIZE_BYTES).toLong()).use { bounds ->
+            Memory((2 * Int.SIZE_BYTES).toLong()).use { size ->
+                val sizeOk = PdfiumLib.imagePixelSize(image, size, size.share(Int.SIZE_BYTES.toLong())) != 0
+                // The four numbers are written one after the other: left, bottom, right, top.
+                val boundsOk =
+                    PdfiumLib.objectBounds(
+                        image,
+                        bounds.share(BOUNDS_LEFT),
+                        bounds.share(BOUNDS_BOTTOM),
+                        bounds.share(BOUNDS_RIGHT),
+                        bounds.share(BOUNDS_TOP),
+                    ) != 0
+                if (!sizeOk || !boundsOk) return@use null
+                val pixels = size.getInt(0).toLong() * size.getInt(Int.SIZE_BYTES.toLong()).toLong()
+                val width = (bounds.getFloat(BOUNDS_RIGHT) - bounds.getFloat(BOUNDS_LEFT)).toDouble()
+                val height = (bounds.getFloat(BOUNDS_TOP) - bounds.getFloat(BOUNDS_BOTTOM)).toDouble()
+                if (pixels <= 0 ||
+                    width <= 0.0 ||
+                    height <= 0.0
+                ) {
+                    null
+                } else {
+                    ImageDensity(pixels, sqrt(pixels / (width * height)))
+                }
+            }
+        }
 
     /**
      * A part of the page as an image. The whole page, as the user sees it (rotation and crop box applied), is
@@ -190,5 +245,6 @@ class PdfPage internal constructor(
 
     private companion object {
         const val QUARTER_TURN = 90
+        const val IMAGE_OBJECT = 3 // FPDF_PAGEOBJ_IMAGE
     }
 }

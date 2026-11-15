@@ -52,7 +52,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T024](tickets/T024-import-tests.md) | Import tests: sample PDF and generated PDFs | task | S03 | done |
 | [T025](tickets/T025-review-fixes.md) | Fixes from the S03 code review | task | S03 | done |
 | [T026](tickets/T026-render-region.md) | Render a page region and show a page in the project screen | task | S04 | done |
-| [T027](tickets/T027-zoom.md) | Zoom: fit width, fit page, steps, Ctrl+wheel, native resolution | task | S04 | ready for development |
+| [T027](tickets/T027-zoom.md) | Zoom: fit width, fit page, steps, Ctrl+wheel, native resolution | task | S04 | done |
 | [T028](tickets/T028-pan.md) | Pan: dragging and scrollbars | task | S04 | ready for development |
 | [T029](tickets/T029-navigation.md) | Navigation: previous/next, go to page, "page n of N" | task | S04 | ready for development |
 | [T030](tickets/T030-cache.md) | Load pages on demand, with a cache of limited size | task | S04 | ready for development |

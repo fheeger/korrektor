@@ -21,16 +21,26 @@ data class RenderRequest(
  */
 class FakePageSource(
     private val size: PageSize = PageSize(200.0, 300.0),
-    val gate: CompletableDeferred<Unit> = CompletableDeferred<Unit>().also { it.complete(Unit) },
+    gate: CompletableDeferred<Unit> = CompletableDeferred<Unit>().also { it.complete(Unit) },
     private val failure: Exception? = null,
+    private val native: Double? = null,
 ) : PageSource {
+    /** Requests wait for this; a test can replace it to hold the next ones back. */
+    @Volatile
+    var gate: CompletableDeferred<Unit> = gate
+
     val requests: MutableList<RenderRequest> = Collections.synchronizedList(mutableListOf())
+
+    /** The requests that were answered, not cancelled while waiting for the [gate]. */
+    val completed: MutableList<RenderRequest> = Collections.synchronizedList(mutableListOf())
 
     @Volatile
     var closed = false
         private set
 
     override suspend fun size(page: Int): PageSize = size
+
+    override suspend fun nativeScale(page: Int): Double? = native
 
     override suspend fun render(
         page: Int,
@@ -40,6 +50,7 @@ class FakePageSource(
         requests += RenderRequest(page, scale, region.x, region.y, region.width, region.height)
         gate.await()
         failure?.let { throw it }
+        completed += requests.last { it.page == page && it.width == region.width && it.scale == scale }
         return ImageBitmap(region.width, region.height)
     }
 
