@@ -1,6 +1,6 @@
 # T041 The text panel shows the corrected lines
 
-**Type:** task · **Status:** ready for development · **Story:** S05 · **Task:** S05.2
+**Type:** task · **Status:** done · **Story:** S05 · **Task:** S05.2
 
 ## What needs doing
 - **`TextPanel(editor, modifier)`** in `korrektor.editor`: a scrolling list with one row per line of the shown page in reading order (`editor.lines`), the line number in a narrow column on the left, then the text of the line, in the font of T039. For now the rows are read only.
@@ -26,7 +26,13 @@
 T038, T039, T040.
 
 ## Decisions
-None yet.
+- **The rows have test tags** (`line row <id>`, `line text <id>`); a clickable row merges the semantics of its children, so tests read the text through the unmerged tree.
+- **A long line is one row that scrolls sideways** (`horizontalScroll`, `softWrap = false`, `maxLines = 1`), not wrapped: a row is a line of the book, and wrapping would break the one-to-one picture between rows and lines that clicking on the scan (T045) relies on.
+- **The list follows the active line** only if it is not in view (`scrollToItem(index - 1)`, so that the line above is visible too); a line in view does not move the list.
+- **Row numbers** are the position in reading order (1, 2, …), not the line ids, which are stable names and not numbers; the column is as wide as the largest number needs.
+- **The selected state** of a row is exposed for accessibility and tests (`selected`), besides the stronger background colour.
+- **What the screenshots show** (pages 2, 6 and 50 of the Abhandlung, in the whole window): the rows are the lines of the scan in order. On page 2 the last line is a CJK character the OCR read from a handwritten note under the imprint; it is drawn from a system font (Junicode has no glyph for it). On page 6 a few words are run together in the text layer itself (`seinenOf`, `seinemFürsten`, `unsereSchuldigkeit`, `derFriede`): the OCR text pieces had no space between them in the PDF, which S03 imports as they are (V1); they are corrections for the user to make. The stray `ı` at the end of line 7 is the speck of page 6.
+- The loading and error messages are in the panel, not in a dialog.
 
 ## Progress
-Not started.
+Done. `TextPanel`, the panel in the window instead of the placeholder. Tests (`TextPanelTest`, 9): one row per line in reading order with their numbers (regions stored in the wrong order), the text exactly as stored (`ſ ꝛ uͤ`, `=`, a trailing `-`, double and surrounding spaces, a 600 character line), loading and then the lines, an error instead of the lines, a page without lines shows its note (or "No lines on this page."), going to another page changes the rows, a click makes the row active and marks it, the list scrolls to an active line that is out of view (80 lines in a short panel), and in the whole app the panel shows the lines of the page the viewer is on and changes with it. `./gradlew build` is green.
