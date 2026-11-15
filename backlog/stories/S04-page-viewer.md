@@ -22,6 +22,6 @@ so that I can read the original comfortably while correcting.
 - [x] S04.3 Pan when zoomed in → [T028](../tickets/T028-pan.md)
 - [x] S04.4 Navigation: previous/next, go to page, "page n of N" → [T029](../tickets/T029-navigation.md)
 - [x] S04.5 Load pages on demand, with a cache of limited size → [T030](../tickets/T030-cache.md)
-- [ ] S04.6 Performance test on a 1000-page PDF (<0.5 s, target 0.3 s) → [T031](../tickets/T031-viewer-performance.md)
+- [x] S04.6 Performance test on a 1000-page PDF (<0.5 s, target 0.3 s) → [T031](../tickets/T031-viewer-performance.md)
 - [ ] S04.7 Remember last page and zoom per project in the app settings → [T032](../tickets/T032-remember-view.md)
 - [ ] S04.8 Optional: overlay showing word boxes → [T033](../tickets/T033-word-box-overlay.md)

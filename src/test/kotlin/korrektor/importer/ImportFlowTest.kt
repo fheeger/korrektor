@@ -15,12 +15,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.apache.pdfbox.pdmodel.PDDocument
-import org.apache.pdfbox.pdmodel.PDPage
-import org.apache.pdfbox.pdmodel.PDPageContentStream
-import org.apache.pdfbox.pdmodel.common.PDRectangle
-import org.apache.pdfbox.pdmodel.font.PDType1Font
-import org.apache.pdfbox.pdmodel.font.Standard14Fonts
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import java.nio.file.Files
 import java.nio.file.Path
@@ -180,32 +174,6 @@ class ImportFlowTest {
 
     // --- 1000 pages ---------------------------------------------------------------------------------------
 
-    /** A book of [count] pages, one small text each, every seventh page blank. Made fresh in a temp folder. */
-    private fun bigBook(
-        path: Path,
-        count: Int,
-    ) {
-        PDDocument().use { doc ->
-            val font = PDType1Font(Standard14Fonts.FontName.HELVETICA)
-            repeat(count) { i ->
-                val page = PDPage(PDRectangle(300f, 480f))
-                doc.addPage(page)
-                if (i % BLANK_EVERY != 0) {
-                    PDPageContentStream(doc, page).use { content ->
-                        content.beginText()
-                        content.setFont(font, 11f)
-                        content.newLineAtOffset(40f, 400f)
-                        content.showText("Page ${i + 1} of the long book, first line")
-                        content.newLineAtOffset(0f, -14f)
-                        content.showText("second line with some more words on it")
-                        content.endText()
-                    }
-                }
-            }
-            doc.save(path.toFile())
-        }
-    }
-
     private fun usedMegabytes(): Long {
         // The test measures what stays in memory, which needs a collection first.
         @Suppress("ExplicitGarbageCollectionCall")
@@ -220,7 +188,7 @@ class ImportFlowTest {
         assumeTrue(System.getenv("KORREKTOR_PERF_TESTS") != null, "set KORREKTOR_PERF_TESTS=1 to run")
         withDir { dir ->
             val source = dir.resolve("big.pdf")
-            bigBook(source, PAGES)
+            TestPdfs.book(source, PAGES, blankEvery = BLANK_EVERY)
             val project =
                 NewProject.create(
                     dir.resolve("projects").also { Files.createDirectories(it) },
