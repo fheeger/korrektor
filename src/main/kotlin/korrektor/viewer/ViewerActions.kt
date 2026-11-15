@@ -10,21 +10,25 @@ fun ViewerState.zoomBy(
 ) = zoomTo(scale * factor, anchorX, anchorY)
 
 /**
- * One turn of the mouse wheel by [notches] (positive: down, like a scroll delta) at ([x], [y]): with Ctrl it zooms
- * by about 10 % per notch around the pointer, up for negative notches; with Shift it scrolls sideways; otherwise it
- * scrolls the page up and down.
+ * One turn of the mouse wheel at ([x], [y]), as the scroll delta Compose reports it in notches: [deltaY] is positive
+ * for down, [deltaX] positive for right (Compose turns Shift+wheel into a sideways delta, and a tilt wheel or a
+ * touchpad swipe gives one too). With Ctrl it zooms by about 10 % per notch of [deltaY] around the pointer, up for
+ * negative notches; otherwise it scrolls the page by [WHEEL_SCROLL_PIXELS] per notch.
  */
 fun ViewerState.wheel(
-    notches: Double,
     ctrl: Boolean,
     x: Double,
     y: Double,
-    shift: Boolean = false,
+    deltaX: Double = 0.0,
+    deltaY: Double = 0.0,
 ) {
-    when {
-        ctrl -> zoomBy(WHEEL_ZOOM_FACTOR.pow(-notches), x, y)
-        shift -> scrollBy(notches * WHEEL_SCROLL_PIXELS, 0.0)
-        else -> scrollBy(0.0, notches * WHEEL_SCROLL_PIXELS)
+    if (ctrl) {
+        zoomBy(WHEEL_ZOOM_FACTOR.pow(-deltaY), x, y)
+    } else {
+        scrollBy(
+            deltaX * WHEEL_SCROLL_PIXELS,
+            deltaY * WHEEL_SCROLL_PIXELS,
+        )
     }
 }
 

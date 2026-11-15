@@ -59,3 +59,4 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T031](tickets/T031-viewer-performance.md) | Performance test on a 1000-page PDF | task | S04 | done |
 | [T032](tickets/T032-remember-view.md) | Remember last page and zoom per project in the app settings | task | S04 | done |
 | [T033](tickets/T033-word-box-overlay.md) | Optional overlay: word boxes | task | S04 | done |
+| [T034](tickets/T034-review-fixes.md) | Fixes from the S04 code review | task | S04 | done |

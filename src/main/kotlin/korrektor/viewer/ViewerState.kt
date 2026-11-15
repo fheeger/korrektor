@@ -78,7 +78,7 @@ class ViewerState(
             return when (mode) {
                 ZoomMode.FIT_WIDTH -> fitWidth
                 ZoomMode.FIT_PAGE -> min(fitWidth, viewportHeight / page.height)
-                ZoomMode.FIXED -> fixedScale.coerceIn(minScale, max(maxScale, fixedScale))
+                ZoomMode.FIXED -> max(minScale, fixedScale)
             }
         }
 
@@ -196,7 +196,8 @@ class ViewerState(
     ) {
         val old = scale
         mode = ZoomMode.FIXED
-        fixedScale = target.coerceIn(minScale, max(maxScale, old))
+        // Not coerceIn: on a tiny page the floor can be above the limit, and an empty range would throw.
+        fixedScale = max(minScale, min(target, max(maxScale, old)))
         keepAnchor(old, anchorX, anchorY)
     }
 

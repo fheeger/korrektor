@@ -19,7 +19,8 @@ fun ViewerState.saved(): SavedView = SavedView(page, SavedZoom(mode, if (mode ==
 /**
  * Brings the viewer back to a saved view. A page beyond the book (the project changed since) becomes the last page,
  * and one below 1 the first. This works before the viewer knows its window or the page: a fixed scale is kept as it
- * is and limited to what the page allows once that is known.
+ * is, with the lower limit of the page applied once that is known. The upper limit (the scan's resolution) only holds
+ * for what the user zooms to next: a restored or carried-over scale is not cut down.
  */
 fun ViewerState.restore(view: SavedView) {
     goTo(view.page.coerceIn(1, pageCount))

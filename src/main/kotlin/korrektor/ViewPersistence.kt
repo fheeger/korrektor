@@ -2,9 +2,11 @@ package korrektor
 
 import androidx.compose.runtime.snapshotFlow
 import korrektor.viewer.saved
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.withContext
 
 /** How long the view must stay as it is before it is saved. */
 const val VIEW_SAVE_DELAY_MS = 1_000L
@@ -22,16 +24,19 @@ fun AppModel.saveView() {
 /**
  * Saves the view of the open project whenever page or zoom change, once [delayMs] have passed without another
  * change, so that a stream of changes (the wheel, a drag) is written once. A project that was only opened, with its
- * view as it was, causes no write. Does not return: run it from an effect that is cancelled when the viewer changes.
+ * view as it was, causes no write. The write happens on the IO threads. Does not return: run it from an effect
+ * that is cancelled when the viewer changes.
  */
 suspend fun AppModel.keepViewSaved(delayMs: Long = VIEW_SAVE_DELAY_MS) {
     val open = project ?: return
     val view = viewer ?: return
-    val initial = view.saved()
+    // The first value is the view as it is now. Dropping it (not filtering equal values) means that a change and a
+    // return to the starting view within the delay writes the starting view, not the change between.
     snapshotFlow { view.saved() }
-        .filter { it != initial }
+        .drop(1)
         .collectLatest {
             delay(delayMs)
-            settings.rememberView(open.folder, it)
+            // The write waits for the disk (an fsync), so it is not done on the UI thread.
+            withContext(Dispatchers.IO) { settings.rememberView(open.folder, it) }
         }
 }

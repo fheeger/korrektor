@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.ScrollWheel
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -365,5 +366,25 @@ class PageViewerTest {
             waitUntil { state.pageSize == PageSize(200.0, 300.0) }
             assertEquals(2.0, state.scale, 1e-9, "a fixed zoom stays")
             assertEquals(0.0, state.offsetY, 1e-9, "and the page starts at its top")
+        }
+
+    @Test
+    fun aSidewaysWheelDeltaScrollsTheZoomedPageSideways() =
+        runComposeUiTest {
+            val source = FakePageSource()
+            val state = ViewerState()
+            setContent { PageViewer(source, state = state) }
+            waitForPage(1)
+            runOnIdle { state.zoomTo(state.scale * 2, 0.0, 0.0) } // wider than the window now
+
+            // Compose Desktop reports Shift+wheel, a tilt wheel and a touchpad swipe as a horizontal delta.
+            onNodeWithContentDescription("Page 1").performMouseInput {
+                moveTo(center)
+                scroll(1f, ScrollWheel.Horizontal)
+            }
+            waitForIdle()
+
+            assertNotEquals(0.0, state.offsetX, "scrolled sideways")
+            assertEquals(0.0, state.offsetY, 1e-9, "and not up or down")
         }
 }
