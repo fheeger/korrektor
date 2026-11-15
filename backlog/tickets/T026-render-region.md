@@ -1,6 +1,6 @@
 # T026 Render a page region and show a page in the project screen
 
-**Type:** task · **Status:** ready for development · **Story:** S04 · **Task:** S04.1
+**Type:** task · **Status:** done · **Story:** S04 · **Task:** S04.1
 
 The viewer needs pictures of a page at any scale, and of any part of it, drawn from the project's own copy of the PDF. This ticket adds that, and shows one page (fit to the window width) in the project screen. Zoom, pan and navigation come in the next tickets.
 
@@ -29,7 +29,15 @@ The viewer needs pictures of a page at any scale, and of any part of it, drawn f
 None (S03 is done).
 
 ## Decisions
-None yet.
+- **`PixelRegion(x, y, width, height)`** carries a region through `renderRegion(scale, region)` and `PageSource.render(page, scale, region)` (Detekt allows six parameters, and the four numbers belong together). It lives in `korrektor.pdf` and is used by the viewer package too.
+- **Limits:** one image is at most 36 million pixels (`MAX_BITMAP_PIXELS`), and the whole page at the chosen scale at most 1,000,000 pixels on a side (`MAX_FULL_SIZE`); beyond that `renderRegion` refuses with a message. The second limit is far above the native resolution of any scan (T027 caps the scale), it only protects PDFium's 32-bit coordinates.
+- **Everything is drawn by one thread** (`PdfPageSource`): PDFium takes one lock anyway (D02). The PDF is opened on the first request and a page is loaded per request and closed again (the cache of T030 stores pictures, not native pages).
+- **Interim display:** the whole page is rendered at fit width (the height is capped at 8000 pixels) and shown in a vertical scroll. T027 and T028 replace this by the visible part at the right scale.
+- **Page number:** `ProjectScreen` shows page 1; T029 adds the current page.
+- **The viewer package** is `korrektor.viewer`; `ProjectScreen` and `App` take a `PageSourceFactory` (default `DefaultPageSourceFactory`), so UI tests use a `FakePageSource`.
+- **Failures** (a PDF that cannot be read, a page that cannot be drawn) show "The page cannot be shown: …" in the viewer instead of crashing; the existing app-shell tests, whose projects hold a stand-in PDF, show this message and pass unchanged.
 
 ## Progress
-Not started.
+Done. `PdfPage.renderRegion`, `PixelRegion`, `korrektor.viewer` (`PageSource`, `PdfPageSource`, `PageViewer`), the viewer in `ProjectScreen`. Tests: 7 in `RenderRegionTest` (whole page equals `render`, a part equals the cut-out of the whole page, white beyond the page, another scale, a rotated page and a crop box against `PageGeometry`, invalid arguments), 4 in `PageViewerTest`, 3 in `PdfPageSourceTest`, 3 in `ProjectScreenViewerTest` (first page from the project's own copy, source closed when the screen leaves, the real PDF is released so the file can be deleted; checked by removing the close: two tests fail). `./gradlew build` is green.
+
+Not checked by me (story report): how the page looks in the real window.

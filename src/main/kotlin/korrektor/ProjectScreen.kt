@@ -9,19 +9,28 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import korrektor.format.Metadata
 import korrektor.format.Project
+import korrektor.viewer.DefaultPageSourceFactory
+import korrektor.viewer.PageSourceFactory
+import korrektor.viewer.PageViewer
 
-/** The open project. For now it shows the project's metadata; the pages come with later stories. */
+/** The open project: its metadata and, for now, the first page of the scan. */
 @Composable
 fun ProjectScreen(
     project: Project,
     metadata: Metadata?,
     actions: ProjectActions,
     modifier: Modifier = Modifier,
+    pageSources: PageSourceFactory = DefaultPageSourceFactory,
 ) {
+    // One source per open project; closing it closes the PDF, so the project folder is not held open.
+    val source = remember(project) { pageSources.open(project.sourcePdf) }
+    DisposableEffect(source) { onDispose { source.close() } }
     Column(modifier.fillMaxSize().padding(32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(displayTitle(project, metadata), style = MaterialTheme.typography.headlineMedium)
         if (metadata != null) {
@@ -36,5 +45,7 @@ fun ProjectScreen(
             Button(onClick = actions.newProject) { Text("New project…") }
             Button(onClick = actions.openProject) { Text("Open another project…") }
         }
+        // A first page view; the side-by-side editor of S05 replaces this layout.
+        PageViewer(source, page = 1, modifier = Modifier.weight(1f))
     }
 }

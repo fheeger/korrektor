@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import korrektor.viewer.DefaultPageSourceFactory
+import korrektor.viewer.PageSourceFactory
 
 /** The whole window: an error banner when needed, the start screen or the open project, and the dialog. */
 @Composable
@@ -13,6 +15,7 @@ fun App(
     folderPicker: FolderPicker,
     pdfPicker: PdfPicker,
     modifier: Modifier = Modifier,
+    pageSources: PageSourceFactory = DefaultPageSourceFactory,
 ) {
     val openProject = { folderPicker.pick()?.let(model::openProject) ?: Unit }
     KorrektorTheme {
@@ -25,7 +28,7 @@ fun App(
                     StartScreen(onOpenProject = openProject, onNewProject = model::openNewProject)
                 } else {
                     val actions = ProjectActions(model::openNewProject, openProject, model::openEditMetadata)
-                    ProjectScreen(project = project, metadata = model.metadata, actions = actions)
+                    ProjectScreen(project, model.metadata, actions, pageSources = pageSources)
                 }
             }
             if (model.newProjectOpen) NewProjectDialog(model, pdfPicker, folderPicker)

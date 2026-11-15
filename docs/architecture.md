@@ -15,11 +15,15 @@ An overview of the code structure. Every ticket that changes the structure updat
   - `PdfPicker.kt`: the interface for choosing a PDF, and `AwtPdfPicker` (the system file dialog). Tests replace it.
   - `FolderPicker.kt`: the interface for choosing a folder, and `SwingFolderPicker` (a `JFileChooser` in folder mode, because the AWT dialog cannot choose folders on Windows). Tests replace it.
   - `NewProject.kt`: the logic behind "New project": suggests a title from the PDF's file name, makes a safe folder name (`<title>.korrektur`), checks the PDF (a file with `%PDF-` near its start; pages are read at import, S03) and the target, and creates the project through `Project.create`.
+- `korrektor.viewer`: showing the scan of a page (S04).
+  - `PageSource.kt`: the interface the viewer gets its pictures from (`size(page)`, `render(page, scale, x, y, width, height)`, both suspending, pages from 1), and `PageSourceFactory`. Tests put a fake in its place.
+  - `PdfPageSource.kt`: the real source: PDFium on a thread of its own, so the UI thread never waits for a render; the PDF is opened on the first request, a page is loaded for each request and closed again, and `close()` closes the PDF. `DefaultPageSourceFactory` makes it.
+  - `PageViewer.kt`: the composable: fits the page to the width of its area, asks the source for a picture of exactly that size (one image pixel per screen pixel), and shows "Loading…", the picture or the reason it failed. `ProjectScreen` creates one source per open project and closes it when the screen goes away.
 - `korrektor.pdf`: PDFium for Kotlin (T016, D04). Nothing outside this package touches the native library.
   - `PdfiumLib.kt`: the C functions of PDFium that are used, bound with JNA direct mapping (internal).
   - `Pdfium.kt`: loads and initialises the library on first use, and the one lock every call runs under. Also `PdfException`, the error with a message for the user.
   - `PdfDocument.kt`: an open PDF (`PdfDocument.open(path)`): page count, pages. If opening fails, the reason (not a PDF, needs a password, damaged) comes from looking at the file.
-  - `PdfPage.kt`: a page: size after rotation, rotation, the visible area (`bounds`), `text()`, and `render(width)` to an image. Also `PdfRect`.
+  - `PdfPage.kt`: a page: size after rotation, rotation, the visible area (`bounds`), `text()`, `render(width)` to an image of the whole page and `renderRegion(scale, x, y, width, height)` to an image of a part of it at a scale (only the part is allocated; the scale and the size of the whole page are limited, see the constants in `PdfPage.kt`). Also `PdfRect`.
   - `PdfTextPage.kt`: the characters of a page's text layer with their boxes, as PDFium reports them (`PdfChar`).
   - Documents, pages and text pages close their children; a closed object fails with a clear error instead of crashing the JVM.
 - `korrektor.importer`: reading the text of a PDF into the project's page layers (S03). The rules are in [pdf-text-layer.md](pdf-text-layer.md).

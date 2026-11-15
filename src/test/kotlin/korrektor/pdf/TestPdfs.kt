@@ -31,6 +31,15 @@ class TestText(
     val codes: List<Int>? = null,
 )
 
+/** A filled rectangle on a generated page, in PDF coordinates (origin bottom-left), with an RGB colour. */
+class TestRect(
+    val x: Float,
+    val y: Float,
+    val width: Float,
+    val height: Float,
+    val color: Color,
+)
+
 /**
  * Where a generated page's boxes are. [originX] and [originY] are the lower-left corner of the media box (text
  * positions are in the page's own coordinates, so they include it). [cropBox] is left, bottom, right, top in the
@@ -42,7 +51,11 @@ class TestArea(
     val cropBox: List<Float>? = null,
 )
 
-/** A generated page. [toUnicode] maps single-byte codes to the text PDF readers extract for them. */
+/**
+ * A generated page. [toUnicode] maps single-byte codes to the text PDF readers extract for them.
+ * A test fixture: every property is an independent option of the page, so the list is long on purpose.
+ */
+@Suppress("LongParameterList")
 class TestPage(
     val width: Float = 200f,
     val height: Float = 300f,
@@ -50,6 +63,7 @@ class TestPage(
     val texts: List<TestText> = emptyList(),
     val toUnicode: Map<Int, String> = emptyMap(),
     val area: TestArea = TestArea(),
+    val rects: List<TestRect> = emptyList(),
 )
 
 /** Small PDFs for tests, made with PDFBox. */
@@ -123,6 +137,11 @@ object TestPdfs {
         val plain: PDFont = PDType1Font(Standard14Fonts.FontName.HELVETICA)
         val exotic = if (spec.toUnicode.isEmpty()) null else fontWithToUnicode(doc, spec.toUnicode)
         PDPageContentStream(doc, page).use { content ->
+            for (rect in spec.rects) {
+                content.setNonStrokingColor(rect.color)
+                content.addRect(rect.x, rect.y, rect.width, rect.height)
+                content.fill()
+            }
             for (text in spec.texts) {
                 content.beginText()
                 content.setFont(if (text.codes != null) exotic ?: plain else plain, text.size)
