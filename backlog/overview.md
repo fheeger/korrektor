@@ -84,7 +84,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T056](tickets/T056-review-fixes.md) | Fixes from the S06 code review | task | S06 | done |
 | [T057](tickets/T057-unsaved-pages.md) | Keep track of which pages have unsaved changes | task | S07 | done |
 | [T058](tickets/T058-page-saver.md) | The saver: write the unsaved pages in the background | task | S07 | done |
-| [T059](tickets/T059-save-triggers.md) | Save triggers: after 1 s without typing, at least every 10 s, on page switch | task | S07 | ready for development |
+| [T059](tickets/T059-save-triggers.md) | Save triggers: after 1 s without typing, at least every 10 s, on page switch | task | S07 | done |
 | [T060](tickets/T060-failed-saves.md) | Failed saves: a warning, and saving is retried | task | S07 | ready for development |
 | [T061](tickets/T061-save-indicator.md) | The save status indicator | task | S07 | ready for development |
 | [T062](tickets/T062-closing-and-switching.md) | Closing the app or the project: save first, and a way out when saving fails | task | S07 | ready for development |

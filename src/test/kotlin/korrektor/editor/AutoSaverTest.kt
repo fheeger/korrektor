@@ -57,7 +57,7 @@ class AutoSaverTest {
         write: (Int, PageLayer) -> Unit = project::writePage,
     ): Pair<BookEditor, AutoSaver> {
         val editor = BookEditor(project::readPage, Dispatchers.IO)
-        return editor to AutoSaver(editor, Dispatchers.IO, write)
+        return editor to AutoSaver(editor, Dispatchers.IO, write = write)
     }
 
     private fun Project.firstText(page: Int) = PageEdits.readingOrder(readPage(page)).first().text
