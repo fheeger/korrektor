@@ -1,6 +1,6 @@
 # T049 The shortcut set and one place that handles it
 
-**Type:** task · **Status:** ready for development · **Story:** S06 · **Task:** S06.1
+**Type:** task · **Status:** done · **Story:** S06 · **Task:** S06.1
 
 ## What needs doing
 - **`Shortcuts`** (package `korrektor`): one table of all actions the keyboard can trigger: an id, a menu label, the key with its modifiers, and a short description. The table is the single source for the key handler, the menus (T054) and the F1 list (T054).
@@ -24,7 +24,20 @@
 None (the actions themselves are in T050 to T054).
 
 ## Decisions
-(filled in while building: the conflict check)
+- **Conflict check** (what each key does in a single-line text field or in Windows, and what is done):
+  - Up, Down: nothing in a single-line field. Taken over. Shift+Up/Down (selection) are not matched and stay with the field.
+  - Ctrl+Home, Ctrl+End: the field would jump to the start/end of the text. Taken over on purpose (the story asks for first/last line). Home and End alone still do that job.
+  - Ctrl+Up, Ctrl+Down: nothing in a single-line field. (On macOS the system uses them; decided with N3.)
+  - Ctrl+G: nothing in the field; "find next" in some apps, not here.
+  - Ctrl+0, Ctrl+1, Ctrl+Plus, Ctrl+Minus, Ctrl+=: nothing in the field, nothing in Windows itself (browsers use them for zoom, so they are familiar).
+  - F1: Windows' conventional help key.
+  - **AltGr** is Ctrl+Alt on Windows (German layout: `@`, `€`, `{`, `[`). Alt is never accepted, so these characters are never taken for a shortcut. Tested.
+  - Ctrl+Shift+Up/Down and Ctrl+Shift+Home/End (select to the start/end) are not matched (the modifiers must be exactly Ctrl), so selecting still works. The one exception is Ctrl+Shift+= for zoom in (the plus of a US layout).
+  - Ctrl+C/V/X/Z/A and the other standard editing keys are not in the table and stay with the field.
+- **The handler sits on the project's root column** (`Modifier.shortcutKeys` in `App`), only while a project is open: the start screen and the dialogs have no shortcuts. A key goes through it before the focused element (preview phase), so it works from a row, from the go-to field and from a button; a shortcut is used up, whether or not it did anything.
+- **`KeyActions` is a one-method interface** (`perform(action)`), `App` takes it as a parameter (default: nothing happens) and T050 to T054 give the actions their effect. Tests pass a recording implementation.
+- **Zoom in has four combinations** (Ctrl+Plus, Ctrl+=, Ctrl+Shift+=, Ctrl+NumPad+), zoom out two, fit page and fit width two each (the number row and the numpad).
+- **Found while testing: a key reaches the handler only if some element has the focus.** With no focus owner the event goes nowhere. So the app must make sure that something is focused after a page change (T050 puts the cursor into a line of the new page; for a page without lines it needs another target). To be handled in T050 and T051.
 
 ## Progress
-Not started.
+Done. `Shortcuts.kt` (table, `resolve`, `KeyActions`, `Modifier.shortcutKeys`), wired into `App`. Tests: `ShortcutsTest` (7: no duplicates, every action has a shortcut, every combination resolves, the story keys, other modifiers, key up, unlisted keys, the shown text) and `ShortcutsUiTest` (5: once from a row, the go-to field and a button, used up, non-shortcuts left to the field).
