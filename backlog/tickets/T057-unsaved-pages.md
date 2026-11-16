@@ -1,6 +1,6 @@
 # T057 Keep track of which pages have unsaved changes
 
-**Type:** task · **Status:** ready for development · **Story:** S07 · **Task:** S07.1
+**Type:** task · **Status:** done · **Story:** S07 · **Task:** S07.1
 
 ## What needs doing
 - **`BookEditor` knows the unsaved pages exactly.** Today `changedPages` is a set of page numbers that is never emptied. It becomes the set of pages whose corrected layer differs from what is on disk, and the editor gives the saver what it needs:
@@ -26,7 +26,12 @@
 None.
 
 ## Decisions
-(filled in while building)
+- **`changedPages` keeps its name** and now means "pages with changes that are not on disk": it shrinks when the saver says a page is saved (`markSaved`). The panel text and the existing tests that use it are unchanged.
+- **Identity, not counters:** `markSaved(page, layer)` clears a page only if its current layer is the same object. Layers are immutable and every edit makes a new one, so this is exact and needs no revision numbers.
+- **Thread safety:** the saver runs on the IO threads while the user types on the UI thread. `changed` (the latest layer of every page changed in this session) is a `ConcurrentHashMap`, and the two places that change `changedPages` (an edit and `markSaved`) take one lock, so a page that was edited at the moment another was marked saved cannot drop out of the set (which would have been lost work).
+- **`unsaved()` and `markSaved` are extensions** in `UnsavedPages.kt`: `BookEditor` is at the function limit of Detekt. They need `changed`, `changedLock` and the setter of `changedPages`, which are `internal`.
+- **The callback is a plain property** (`onUnsaved`), not a Flow: the saver (T059) needs only "something changed", and a plain call is the same on any thread and in tests.
+- A saved page stays in `changed` (and in memory), as before, so going back to a page costs no read.
 
 ## Progress
-Not started.
+Done. `BookEditor` (`changed`, `changedLock`, `onUnsaved`, `changedPages`), `UnsavedPages.kt`. Tests: `UnsavedPagesTest` (10: new editor, no-op edit, current layers, markSaved, a page edited while written, markSaved of a page that is not unsaved, changed-saved-changed, a saved page stays in memory, the callback for every kind of edit, no callback for show/activate/moves). All other editor tests pass unchanged.

@@ -22,7 +22,7 @@ S07 decides when and how changes from S05, S06 and later S09 (page status) are s
 - The same project can't be open twice at the same time, whether in two app windows or two instances. A second attempt gets a clear message. A lock left behind by a crash doesn't block opening the project.
 
 ## Tasks
-- [ ] S07.1 Keep track of which pages have unsaved changes → [T057](../tickets/T057-unsaved-pages.md)
+- [x] S07.1 Keep track of which pages have unsaved changes → [T057](../tickets/T057-unsaved-pages.md)
 - [ ] S07.2 Save triggers: 1 s pause in typing, at least every 10 s, page switch, closing → [T059](../tickets/T059-save-triggers.md), [T062](../tickets/T062-closing-and-switching.md)
 - [ ] S07.3 Save in the background, using the crash-safe writing from S01.6 → [T058](../tickets/T058-page-saver.md)
 - [ ] S07.4 Save status indicator → [T061](../tickets/T061-save-indicator.md)
