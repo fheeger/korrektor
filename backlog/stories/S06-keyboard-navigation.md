@@ -1,6 +1,6 @@
 # S06 Keyboard navigation
 
-**Features:** C2 · **Status:** ready for development
+**Features:** C2 · **Status:** in progress
 
 As a reader of historical sources, I want to move between lines and pages with the keyboard
 so that I can correct quickly without reaching for the mouse.
@@ -25,10 +25,10 @@ Everything in S04 and S05 can be done with the keyboard alone. Customizable shor
 Note: on macOS (N3) Ctrl+Up/Down belongs to the system, so the page shortcuts will use a different modifier there. That is decided when the macOS version is built.
 
 ## Tasks
-- [ ] S06.1 Define the shortcut set and check it for conflicts with standard Windows and text-editing keys
-- [ ] S06.2 Move between lines, including into the next and previous page
-- [ ] S06.3 Page shortcuts: next/previous page (Ctrl+Down/Up) and go to page (Ctrl+G)
-- [ ] S06.4 Split, join, add and delete lines with the usual editor keys
-- [ ] S06.5 Zoom shortcuts
-- [ ] S06.6 Show shortcuts in the menus, plus a list opened with F1
-- [ ] S06.7 Test: correct several pages of the sample PDF using only the keyboard
+- [ ] S06.1 Define the shortcut set and check it for conflicts with standard Windows and text-editing keys → [T049](../tickets/T049-shortcut-set.md)
+- [ ] S06.2 Move between lines, including into the next and previous page → [T050](../tickets/T050-line-navigation.md)
+- [ ] S06.3 Page shortcuts: next/previous page (Ctrl+Down/Up) and go to page (Ctrl+G) → [T051](../tickets/T051-page-shortcuts.md)
+- [ ] S06.4 Split, join, add and delete lines with the usual editor keys → [T052](../tickets/T052-line-edit-keys.md)
+- [ ] S06.5 Zoom shortcuts → [T053](../tickets/T053-zoom-shortcuts.md)
+- [ ] S06.6 Show shortcuts in the menus, plus a list opened with F1 → [T054](../tickets/T054-menus-and-shortcut-list.md)
+- [ ] S06.7 Test: correct several pages of the sample PDF using only the keyboard → [T055](../tickets/T055-keyboard-only-tests.md)

@@ -16,7 +16,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [S03](stories/S03-import-pdf-with-ocr.md) | Import a PDF with OCR | A2 | done |
 | [S04](stories/S04-page-viewer.md) | Page viewer | C2, N1 | done |
 | [S05](stories/S05-side-by-side-editor.md) | Scan and text side by side | C1 | in review |
-| [S06](stories/S06-keyboard-navigation.md) | Keyboard navigation | C2 | ready for development |
+| [S06](stories/S06-keyboard-navigation.md) | Keyboard navigation | C2 | in progress |
 | [S07](stories/S07-autosave.md) | Autosave | N4 | ready for development |
 | [S08](stories/S08-undo-redo.md) | Undo/redo | F1 | ready for development |
 | [S09](stories/S09-page-status.md) | Page status | C5 | ready for development |
@@ -74,3 +74,10 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T046](tickets/T046-auto-pan.md) | Keep the active line visible by panning | task | S05 | done |
 | [T047](tickets/T047-editor-tests.md) | Tests with the sample, and typing speed | task | S05 | done |
 | [T048](tickets/T048-review-fixes.md) | Fixes from the S05 code review | task | S05 | done |
+| [T049](tickets/T049-shortcut-set.md) | The shortcut set and one place that handles it | task | S06 | ready for development |
+| [T050](tickets/T050-line-navigation.md) | Move between lines, also into the next and previous page | task | S06 | ready for development |
+| [T051](tickets/T051-page-shortcuts.md) | Page shortcuts: next, previous and go to page | task | S06 | ready for development |
+| [T052](tickets/T052-line-edit-keys.md) | Editing keys: Backspace on an empty line, and the full set by keyboard | task | S06 | ready for development |
+| [T053](tickets/T053-zoom-shortcuts.md) | Zoom shortcuts | task | S06 | ready for development |
+| [T054](tickets/T054-menus-and-shortcut-list.md) | Menus with the shortcuts, and the list on F1 | task | S06 | ready for development |
+| [T055](tickets/T055-keyboard-only-tests.md) | Keyboard-only work on the sample, and holding Down through many pages | task | S06 | ready for development |
