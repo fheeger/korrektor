@@ -25,7 +25,7 @@ Everything in S04 and S05 can be done with the keyboard alone. Customizable shor
 Note: on macOS (N3) Ctrl+Up/Down belongs to the system, so the page shortcuts will use a different modifier there. That is decided when the macOS version is built.
 
 ## Tasks
-- [ ] S06.1 Define the shortcut set and check it for conflicts with standard Windows and text-editing keys → [T049](../tickets/T049-shortcut-set.md)
+- [x] S06.1 Define the shortcut set and check it for conflicts with standard Windows and text-editing keys → [T049](../tickets/T049-shortcut-set.md)
 - [ ] S06.2 Move between lines, including into the next and previous page → [T050](../tickets/T050-line-navigation.md)
 - [ ] S06.3 Page shortcuts: next/previous page (Ctrl+Down/Up) and go to page (Ctrl+G) → [T051](../tickets/T051-page-shortcuts.md)
 - [ ] S06.4 Split, join, add and delete lines with the usual editor keys → [T052](../tickets/T052-line-edit-keys.md)

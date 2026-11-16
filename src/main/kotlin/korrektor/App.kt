@@ -15,7 +15,6 @@ import korrektor.editor.clickOnScan
 import korrektor.editor.highlightFor
 import korrektor.viewer.DefaultPageSourceFactory
 import korrektor.viewer.PagePoint
-import korrektor.viewer.PageSourceFactory
 import korrektor.viewer.ProjectViewer
 import korrektor.viewer.ScanLinks
 import korrektor.viewer.reveal
@@ -29,7 +28,8 @@ fun App(
     folderPicker: FolderPicker,
     pdfPicker: PdfPicker,
     modifier: Modifier = Modifier,
-    pageSources: PageSourceFactory = DefaultPageSourceFactory,
+    // What the shortcuts do is wired in with the tickets that give them an effect (T050 to T054).
+    keyActions: KeyActions = KeyActions {},
 ) {
     val openProject = { folderPicker.pick()?.let(model::openProject) ?: Unit }
     LaunchedEffect(model.viewer) { model.keepViewSaved() }
@@ -39,7 +39,7 @@ fun App(
     LaunchedEffect(editor, shownPage) { if (editor != null && shownPage != null) editor.show(shownPage) }
     KorrektorTheme {
         Surface(modifier.fillMaxSize()) {
-            Column {
+            Column(if (model.project != null) Modifier.shortcutKeys(keyActions) else Modifier) {
                 model.error?.let { ErrorBanner(message = it, onDismiss = model::dismissError) }
                 model.notice?.let { NoticeBanner(message = it, onDismiss = model::dismissNotice) }
                 val project = model.project
@@ -69,7 +69,7 @@ fun App(
                                 val links = ScanLinks(highlight, onClick)
                                 // The scan follows the cursor: a line that is out of view is brought into it.
                                 LaunchedEffect(links.highlight) { links.highlight?.let { viewer.reveal(it.box) } }
-                                ProjectViewer(project, viewer, Modifier.fillMaxSize(), pageSources, links)
+                                ProjectViewer(project, viewer, Modifier.fillMaxSize(), DefaultPageSourceFactory, links)
                             },
                             modifier = room,
                             right = { TextPanel(checkNotNull(model.editor), Modifier.fillMaxSize()) },
