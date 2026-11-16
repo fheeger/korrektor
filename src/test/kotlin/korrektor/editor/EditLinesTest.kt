@@ -336,20 +336,12 @@ class EditLinesTest {
         }
 
     @Test
-    fun thePanelSaysHowManyPagesAreChangedAndNotSaved() =
+    fun thePanelWithoutASaverShowsNoSaveIndicator() =
         runComposeUiTest {
             val editor = editor()
             runBlocking { editor.show(1) }
             setContent { TextPanel(editor) }
-            onNode(hasTestTag("unsaved")).assertDoesNotExist()
-
             field("l2").performTextReplacement("rung iſt nützlich")
-            onNodeWithText("1 page changed, not saved yet").assertExists()
-
-            runBlocking { editor.show(2) }
-            waitForIdle()
-            runOnIdle { editor.addLineAfter("l1") }
-            waitForIdle()
-            onNodeWithText("2 pages changed, not saved yet").assertExists()
+            onNode(hasTestTag("save status")).assertDoesNotExist()
         }
 }

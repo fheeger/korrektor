@@ -71,6 +71,7 @@ private const val NUMBER_PADDING = 12
 fun TextPanel(
     editor: BookEditor,
     modifier: Modifier = Modifier,
+    saver: AutoSaver? = null,
 ) {
     val layer = editor.layer
     val lines = editor.lines
@@ -87,7 +88,7 @@ fun TextPanel(
             .focusable()
             .testTag("text list"),
     ) {
-        LineCommands(editor)
+        LineCommands(editor, saver)
         Box(Modifier.fillMaxSize()) {
             when {
                 editor.error != null ->
@@ -109,7 +110,10 @@ fun TextPanel(
  * and Delete in a row do the same and more (split and join); these two are for the mouse.
  */
 @Composable
-private fun LineCommands(editor: BookEditor) {
+private fun LineCommands(
+    editor: BookEditor,
+    saver: AutoSaver?,
+) {
     val ready = editor.layer != null
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
@@ -119,16 +123,7 @@ private fun LineCommands(editor: BookEditor) {
         OutlinedButton({
             editor.activeLineId?.let(editor::deleteLine)
         }, enabled = ready && editor.activeLineId != null) { Text("Delete line") }
-        // Until saving exists (S07) the corrections live in memory only: say so, so that nobody loses work unaware.
-        val unsaved = editor.changedPages.size
-        if (unsaved > 0) {
-            val pages = if (unsaved == 1) "1 page" else "$unsaved pages"
-            Text(
-                "$pages changed, not saved yet",
-                Modifier.align(Alignment.CenterVertically).testTag("unsaved"),
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
+        if (saver != null) SaveIndicator(saver, Modifier.align(Alignment.CenterVertically))
     }
 }
 
