@@ -52,10 +52,11 @@ class SaveTriggersUiTest {
         withOpenProject { model, project ->
             runOnIdle { model.editor!!.setLineText("l1", "Erste Zeile korrigiert") }
             assertEquals("Erste Zeile", project.firstText(1), "not written at once")
-            // The test's clock runs the second of the timer; the write itself then takes real time.
-            mainClock.advanceTimeBy(1_100)
-            waitUntil(timeoutMillis = 5_000) { project.firstText(1) == "Erste Zeile korrigiert" }
-            waitUntil(timeoutMillis = 5_000) { model.editor!!.changedPages.isEmpty() }
+            // The timer runs on its own thread, in real time (`KeepSaving`): the test's clock does not drive it.
+            val deadline = System.nanoTime() + 10_000_000_000L
+            while (model.editor!!.changedPages.isNotEmpty() && System.nanoTime() < deadline) Thread.sleep(20)
+            assertEquals("Erste Zeile korrigiert", project.firstText(1))
+            assertEquals(emptySet(), model.editor!!.changedPages)
         }
 
     @Test
@@ -64,8 +65,16 @@ class SaveTriggersUiTest {
             runOnIdle { model.editor!!.setLineText("l1", "vor dem Umblättern") }
             runOnIdle { model.viewer!!.goTo(2) }
             // The timer would take a second; the page switch does not wait for it.
-            waitUntil(timeoutMillis = 700) { project.firstText(1) == "vor dem Umblättern" }
-            waitUntil(timeoutMillis = 5_000) { model.editor!!.changedPages.isEmpty() }
+            // Real time, as the timer is (`KeepSaving`): the page is on disk well before the second is over.
+            val deadline = System.nanoTime() + 800_000_000L
+            while (project.firstText(1) != "vor dem Umblättern" && System.nanoTime() < deadline) {
+                waitForIdle() // frames: the page change reaches `KeepSaving`
+                Thread.sleep(10)
+            }
+            assertEquals("vor dem Umblättern", project.firstText(1))
+            val later = System.nanoTime() + 10_000_000_000L
+            while (model.editor!!.changedPages.isNotEmpty() && System.nanoTime() < later) Thread.sleep(10)
+            assertEquals(emptySet(), model.editor!!.changedPages)
         }
 
     @Test

@@ -5,6 +5,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import korrektor.editor.AutoSaver
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Keeps the corrections saved while a project is open (S07): runs the timer of [saver] (after a pause, regularly while
@@ -15,7 +17,9 @@ fun KeepSaving(
     saver: AutoSaver?,
     shownPage: Int?,
 ) {
-    LaunchedEffect(saver) { saver?.run() }
+    // Not on the UI thread: opening another project waits there for a running save (`flushBeforeSwitch`), and a save
+    // that has to come back to the UI thread to finish would be waiting for that wait.
+    LaunchedEffect(saver) { saver?.let { withContext(Dispatchers.Default) { it.run() } } }
     LaunchedEffect(saver, shownPage) { saver?.requestFlush() }
 }
 

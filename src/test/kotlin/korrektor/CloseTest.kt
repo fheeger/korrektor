@@ -1,5 +1,7 @@
 package korrektor
 
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.v2.runComposeUiTest
 import korrektor.editor.PageEdits
 import korrektor.format.Metadata
 import korrektor.format.PageLayer
@@ -9,11 +11,17 @@ import korrektor.pdf.TestPage
 import korrektor.pdf.TestPdfs
 import korrektor.pdf.TestText
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Assertions.assertTimeoutPreemptively
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Duration
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -21,7 +29,8 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** Closing the app, opening another project and saving somewhere else (T062). */
+/** Closing the app, opening another project and saving somewhere else (T062, T066). */
+@OptIn(ExperimentalTestApi::class)
 class CloseTest {
     private class Rig(
         val dir: Path,
@@ -30,7 +39,11 @@ class CloseTest {
     ) {
         var failing = false
         var exits = 0
-        val written = mutableListOf<Int>()
+        val written = CopyOnWriteArrayList<Int>()
+
+        /** While set, every page write waits for it. */
+        @Volatile
+        var gate: CountDownLatch? = null
     }
 
     private fun withRig(block: (Rig) -> Unit) {
@@ -44,6 +57,7 @@ class CloseTest {
             val writer: (Project) -> (Int, PageLayer) -> Unit = { opened ->
                 { page, layer ->
                     rig.written += page
+                    rig.gate?.await()
                     if (rig.failing) throw IOException("disk full")
                     opened.writePage(page, layer)
                 }
@@ -242,5 +256,74 @@ class CloseTest {
             assertEquals(emptyList(), parent.toFile().list()!!.toList(), "nothing is left at the target")
             assertEquals(setOf(1), rig.model.editor!!.changedPages, "the changes are still in memory")
             assertEquals(rig.folder, rig.model.project!!.folder)
+        }
+
+    private fun waitUntil(condition: () -> Boolean) {
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(20)
+        while (!condition()) {
+            check(System.nanoTime() < deadline) { "timed out" }
+            Thread.sleep(5)
+        }
+    }
+
+    @Test
+    fun whatIsTypedWhileTheSaveOfAClosingAppRunsIsSavedToo() =
+        withRig { rig ->
+            rig.gate = CountDownLatch(1)
+            rig.model.editor!!.setLineText("l1", "eins")
+            runBlocking {
+                val closing = async(Dispatchers.Default) { rig.model.requestClose() }
+                waitUntil { rig.written.isNotEmpty() } // the save is running, held at the gate
+                rig.model.editor!!.setLineText("l1", "zwei") // typed during the save
+                rig.gate!!.countDown()
+                assertTrue(closing.await())
+            }
+            assertEquals(1, rig.exits)
+            assertEquals("zwei", Project.open(rig.folder).firstText(1))
+            assertEquals(emptySet(), rig.model.editor!!.changedPages)
+        }
+
+    @Test
+    fun openingAnotherProjectWhileASaveIsRunningDoesNotFreezeTheWindow() =
+        withRig { rig ->
+            val other = otherProject(rig)
+            assertTimeoutPreemptively(Duration.ofSeconds(60)) {
+                runComposeUiTest {
+                    setContent { KeepSaving(rig.model.saver, null) }
+                    rig.gate = CountDownLatch(1)
+                    runOnIdle { rig.model.editor!!.setLineText("l1", "neu") }
+                    waitUntil(timeoutMillis = 10_000) { rig.written.isNotEmpty() } // the timer save, held at the gate
+                    Thread {
+                        // the disk answers a moment later
+                        Thread.sleep(500)
+                        rig.gate!!.countDown()
+                    }.start()
+                    // On the UI thread, as the menu does it: waits for the save, which must be able to finish.
+                    runOnUiThread { rig.model.openProject(other) }
+                    runOnIdle { assertNull(rig.model.error, rig.model.error) }
+                    assertEquals(other, rig.model.project!!.folder)
+                }
+            }
+            assertEquals("neu", Project.open(rig.folder).firstText(1))
+        }
+
+    @Test
+    fun savingIntoTheProjectFolderItselfIsRefused() =
+        withRig { rig ->
+            rig.model.editor!!.setLineText("l1", "x")
+            val inside = Files.createDirectory(rig.folder.resolve("elsewhere"))
+            assertFalse(runBlocking { rig.model.saveElsewhere(inside) })
+            assertTrue(rig.model.closeProblem!!.contains("into itself"), rig.model.closeProblem)
+            assertEquals(rig.folder, rig.model.project!!.folder, "nothing changed")
+            assertEquals(emptyList(), Files.list(inside).use { it.toList() }, "nothing was copied into it")
+        }
+
+    @Test
+    fun aSecondSaveElsewhereWhileOneIsWorkingDoesNothing() =
+        withRig { rig ->
+            rig.model.copying = true
+            val parent = Files.createDirectory(rig.dir.resolve("parent"))
+            assertFalse(runBlocking { rig.model.saveElsewhere(parent) })
+            assertEquals(emptyList(), Files.list(parent).use { it.toList() })
         }
 }

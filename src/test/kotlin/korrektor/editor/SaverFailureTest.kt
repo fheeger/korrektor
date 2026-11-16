@@ -67,6 +67,27 @@ class SaverFailureTest {
     }
 
     @Test
+    fun aPageThatCannotBeWrittenDoesNotHoldBackTheOthers() =
+        runTest {
+            val editor = BookEditor({ layer(it) }, StandardTestDispatcher(testScheduler))
+            val written = mutableListOf<Int>()
+            val saver =
+                AutoSaver(editor, StandardTestDispatcher(testScheduler), now = { currentTime }) { page, _ ->
+                    if (page == 2) throw IOException("read-only")
+                    written += page
+                }
+            editor.onUnsaved = saver::changed
+            for (page in 1..3) {
+                editor.show(page)
+                editor.setLineText("l1", "neu $page")
+            }
+            val outcome = saver.saveNow()
+            assertEquals(2, (outcome as SaveOutcome.Failed).page)
+            assertEquals(listOf(1, 3), written, "pages 1 and 3 are written although page 2 failed")
+            assertEquals(setOf(2), editor.changedPages)
+        }
+
+    @Test
     fun aFailedSaveKeepsTheChangesAndSetsTheWarning() =
         runTest {
             val rig = rig()
