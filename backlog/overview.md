@@ -82,7 +82,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T054](tickets/T054-menus-and-shortcut-list.md) | Menus with the shortcuts, and the list on F1 | task | S06 | done |
 | [T055](tickets/T055-keyboard-only-tests.md) | Keyboard-only work on the sample, and holding Down through many pages | task | S06 | done |
 | [T056](tickets/T056-review-fixes.md) | Fixes from the S06 code review | task | S06 | done |
-| [T057](tickets/T057-unsaved-pages.md) | Keep track of which pages have unsaved changes | task | S07 | ready for development |
+| [T057](tickets/T057-unsaved-pages.md) | Keep track of which pages have unsaved changes | task | S07 | done |
 | [T058](tickets/T058-page-saver.md) | The saver: write the unsaved pages in the background | task | S07 | ready for development |
 | [T059](tickets/T059-save-triggers.md) | Save triggers: after 1 s without typing, at least every 10 s, on page switch | task | S07 | ready for development |
 | [T060](tickets/T060-failed-saves.md) | Failed saves: a warning, and saving is retried | task | S07 | ready for development |

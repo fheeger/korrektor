@@ -9,6 +9,7 @@ import korrektor.format.PageLayer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import java.util.concurrent.CancellationException
+import java.util.concurrent.ConcurrentHashMap
 
 /** A request to put the cursor at [focus]. A new request has a new [serial], also if the place is the same. */
 class FocusRequest(
@@ -26,7 +27,7 @@ enum class LineMove { MOVED, PREVIOUS_PAGE, NEXT_PAGE, NOTHING }
  * The corrected text of the book while it is being worked on, shared by the scan and the text panel (S05). It holds
  * the corrected layer of the page shown, and keeps every page that was changed in this session, so that going to
  * another page and back does not lose a correction. It does not write anything: saving is autosave (S07), which will
- * write [changedPages]. The original OCR layer is never touched.
+ * write what `unsaved()` says. The original OCR layer is never touched.
  *
  * Compose state, all of it changed from the UI thread, except that [show] reads a page file on [io].
  *
@@ -36,7 +37,14 @@ class BookEditor(
     private val readPage: (Int) -> PageLayer,
     private val io: CoroutineDispatcher,
 ) {
-    private val changed = mutableMapOf<Int, PageLayer>()
+    // Every page changed in this session with its latest layer. Written on the UI thread only, read by the saver too.
+    internal val changed = ConcurrentHashMap<Int, PageLayer>()
+
+    // Guards the changes of [changedPages], which the UI thread (an edit) and the saver (markSaved) both make.
+    internal val changedLock = Any()
+
+    /** Called after every edit that changed a layer (the saver starts its timer here); not by [show]. */
+    var onUnsaved: (() -> Unit)? = null
     private var serial = 0L
 
     /** The page the cursor is wanted on when it is shown, and where on it (see [arriveAt]). */
@@ -71,9 +79,9 @@ class BookEditor(
     var focusRequest: FocusRequest? by mutableStateOf(null)
         private set
 
-    /** The pages with corrections that are not saved: the pages S07 has to write. */
+    /** The pages with corrections that are not saved yet: the pages the saver has to write (see `unsaved()`). */
     var changedPages: Set<Int> by mutableStateOf(emptySet())
-        private set
+        internal set
 
     /** The lines of the page shown in reading order. */
     val lines: List<Line> get() = layer?.let(PageEdits::readingOrder) ?: emptyList()
@@ -159,8 +167,11 @@ class BookEditor(
         val result = change(current)
         if (result.layer !== current) {
             layer = result.layer
-            changed[page] = result.layer
-            changedPages = changedPages + page
+            synchronized(changedLock) {
+                changed[page] = result.layer
+                changedPages = changedPages + page
+            }
+            onUnsaved?.invoke()
         }
         val focus = result.focus
         when {
