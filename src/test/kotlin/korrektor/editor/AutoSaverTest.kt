@@ -243,6 +243,25 @@ class AutoSaverTest {
         }
 
     @Test
+    fun theCorrectionIsSavedOnceTheFolderIsBackAfterARealFailure() =
+        withProject { project ->
+            val (editor, saver) = editorAndSaver(project)
+            val pages = project.folder.resolve(Project.PAGES_DIR)
+            val moved = project.folder.resolveSibling("pages-away")
+            runBlocking {
+                editor.show(1)
+                editor.setLineText("l1", "gerettet")
+                Files.move(pages, moved) // the folder is gone, as if the disk were removed
+                assertIs<SaveOutcome.Failed>(saver.saveNow())
+                assertEquals(setOf(1), editor.changedPages)
+                Files.move(moved, pages) // and back
+                assertEquals(SaveOutcome.Done, saver.saveNow())
+            }
+            assertEquals("gerettet", project.firstText(1))
+            assertEquals(emptySet(), editor.changedPages)
+        }
+
+    @Test
     fun savingIsTrueWhileTheWriterRuns() =
         withProject { project ->
             val entered = CompletableDeferred<Unit>()
