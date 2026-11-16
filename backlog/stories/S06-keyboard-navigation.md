@@ -32,3 +32,4 @@ Note: on macOS (N3) Ctrl+Up/Down belongs to the system, so the page shortcuts wi
 - [x] S06.5 Zoom shortcuts → [T053](../tickets/T053-zoom-shortcuts.md)
 - [x] S06.6 Show shortcuts in the menus, plus a list opened with F1 → [T054](../tickets/T054-menus-and-shortcut-list.md)
 - [x] S06.7 Test: correct several pages of the sample PDF using only the keyboard → [T055](../tickets/T055-keyboard-only-tests.md)
+- [x] S06.8 Fixes from the code review → [T056](../tickets/T056-review-fixes.md)

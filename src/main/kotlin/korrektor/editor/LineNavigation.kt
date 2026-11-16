@@ -24,18 +24,23 @@ fun BookEditor.moveLine(delta: Int): LineMove {
             target > list.lastIndex -> LineMove.NEXT_PAGE
             else -> LineMove.MOVED
         }
-    if (move == LineMove.MOVED) requestFocus(list[target].id, caret)
+    if (move == LineMove.MOVED) requestFocus(list[target].id, caret, keepColumn = true)
     return move
 }
 
 /** Puts the cursor in the first line of the page, in the same column where it is long enough. */
 fun BookEditor.firstLine() {
-    lines.firstOrNull()?.let { requestFocus(it.id, caret) }
+    lines.firstOrNull()?.let { requestFocus(it.id, caret, keepColumn = true) }
 }
 
 /** Puts the cursor in the last line of the page, in the same column where it is long enough. */
 fun BookEditor.lastLine() {
-    lines.lastOrNull()?.let { requestFocus(it.id, caret) }
+    lines.lastOrNull()?.let { requestFocus(it.id, caret, keepColumn = true) }
+}
+
+/** Gives the text panel itself the focus: for when there is no line to put the cursor in (a page without lines). */
+fun BookEditor.focusPanel() {
+    panelFocusRequests++
 }
 
 /**
@@ -55,5 +60,5 @@ internal fun BookEditor.applyArrival(number: Int) {
     if (target != number) return
     arriving = null
     val line = if (arrival == Arrival.LAST) lines.lastOrNull() else lines.firstOrNull()
-    if (arrival != Arrival.NONE && line != null) requestFocus(line.id, 0)
+    if (line != null) requestFocus(line.id, 0)
 }

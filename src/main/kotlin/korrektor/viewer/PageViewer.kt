@@ -174,7 +174,7 @@ private fun pageFieldKey(
     reset: (String) -> Unit,
 ): Boolean {
     val down = event.type == KeyEventType.KeyDown
-    val page = typed.trim().toIntOrNull()?.takeIf { it in 1..state.pageCount }
+    val page = state.pageOf(typed)
     return when {
         down && event.key == Key.Enter -> {
             when {

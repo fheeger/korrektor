@@ -81,3 +81,4 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T053](tickets/T053-zoom-shortcuts.md) | Zoom shortcuts | task | S06 | done |
 | [T054](tickets/T054-menus-and-shortcut-list.md) | Menus with the shortcuts, and the list on F1 | task | S06 | done |
 | [T055](tickets/T055-keyboard-only-tests.md) | Keyboard-only work on the sample, and holding Down through many pages | task | S06 | done |
+| [T056](tickets/T056-review-fixes.md) | Fixes from the S06 code review | task | S06 | done |

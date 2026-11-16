@@ -16,8 +16,8 @@ class FocusRequest(
     val serial: Long,
 )
 
-/** Where the cursor goes when a page is opened by the keyboard: its first line, its last line, or nowhere. */
-enum class Arrival { NONE, FIRST, LAST }
+/** Where the cursor goes when a page is opened by the keyboard: its first line or its last line. */
+enum class Arrival { FIRST, LAST }
 
 /** What a move to another line came to: it moved, it needs another page, or there was nothing to move to. */
 enum class LineMove { MOVED, PREVIOUS_PAGE, NEXT_PAGE, NOTHING }
@@ -42,9 +42,12 @@ class BookEditor(
     /** The page the cursor is wanted on when it is shown, and where on it (see [arriveAt]). */
     internal var arriving: Pair<Int, Arrival>? = null
 
+    /** Counts the requests to give the text panel itself the focus (no line to put the cursor in). */
+    internal var panelFocusRequests: Int by mutableIntStateOf(0)
+
     /**
-     * Where the cursor is in the line it is in, as a character index. Not state: nothing draws it, the rows report it
-     * so that a move to the line above or below can keep the column.
+     * The column of the cursor, as a character index: where it was last put or moved by the user. Not state: nothing
+     * draws it. The rows report it, and moving to the line above or below keeps it (also over a short line).
      */
     var caret: Int = 0
 
@@ -80,6 +83,8 @@ class BookEditor(
      * empty while it is read. If the caller is cancelled (the next page was asked for), the result is not used.
      */
     suspend fun show(number: Int) {
+        // A wish for the cursor on another page is stale (the page it was for was never shown): drop it.
+        if (arriving?.first != number) arriving = null
         page = number
         layer = null
         error = null
@@ -134,11 +139,17 @@ class BookEditor(
 
     fun deleteLine(lineId: String) = edit { PageEdits.deleteLine(it, lineId) }
 
-    /** Asks the panel to put the cursor at [index] of the line [lineId], also without an edit (a click on the scan). */
+    /**
+     * Asks the panel to put the cursor at [index] of the line [lineId], also without an edit (a click on the scan). The
+     * column ([caret]) becomes [index], unless [keepColumn]: a move to the line above or below keeps the column it
+     * started from, even over a line that is too short for it.
+     */
     fun requestFocus(
         lineId: String,
         index: Int,
+        keepColumn: Boolean = false,
     ) {
+        if (!keepColumn) caret = index
         activate(lineId)
         focusRequest = FocusRequest(Focus(lineId, index), ++serial)
     }
