@@ -1,6 +1,6 @@
 # T064 Lock the project so that it cannot be opened twice
 
-**Type:** task · **Status:** ready for development · **Story:** S07 · **Task:** S07.7
+**Type:** task · **Status:** done · **Story:** S07 · **Task:** S07.7
 
 ## What needs doing
 - **`ProjectLock`** (format package): `acquire(folder)` takes the lock of a project, `close()` gives it back.
@@ -29,7 +29,14 @@
 None.
 
 ## Decisions
-(filled in while building)
+- **An operating system file lock, not a "lock file with a pid":** the lock is `FileChannel.tryLock` on `.lock`, held while the project is open. When the process ends, however it ends, the system releases it, so a crash can never leave a lock that blocks. A scheme with a pid in the file needs a check "is that process alive?", which can be wrong (pid reuse, another user, another machine). The line in the file (process and time) is only for a human.
+- **The file is never deleted.** Deleting it on close could remove the file under a process that just took the lock on it, and a third process would then lock a new file: two holders. A file that stays is harmless (documented in `docs/project-format.md`). The lock is held on the file's content region by the channel, not by the file's existence.
+- **Same JVM and other processes both covered:** `tryLock` returns null for another process and throws `OverlappingFileLockException` for another channel of the same JVM (two windows, or the same project twice); both are "already open". Tested with real second processes (a child JVM from the test classpath, also killed with `destroyForcibly`, as a crash).
+- **The app locks, the format layer does not:** `Project.open` stays free of locks (many tests and tools read projects), `AppModel` takes the lock when it opens or creates a project, and gives it back when another is opened (after the new one is open, so that a failed open changes nothing). A new `AppModel.closeProject()` (extension in `ProjectClosing.kt`) closes the project and gives the lock back; T062 uses it for closing with a flush first.
+- **Lock only a project folder:** the lock is taken only if the folder has a `project.json`, so choosing any other folder does not leave a `.lock` file in it (tested); the usual error comes from `Project.open`.
+- **A folder that cannot be written to is refused,** with the reason ("cannot be opened for writing: access denied"), because it could not be saved to either. Tested with a read-only `.lock` file (skipped where the file system does not support read-only files).
+- **Tests that opened one project in several `AppModel`s in turn** (to simulate sessions) now close the earlier model first (`closeProject`), or leave out `.lock` when they compare the folder byte for byte. The lock is the point of the story.
+- **After a kill the system may need a moment** to give the handles back: the test of the killed process tries for up to ten seconds. A real restart after a crash is never that fast.
 
 ## Progress
-Not started.
+Done. `ProjectLock` (`acquire`, `close`, `ProjectLockedException`), `AppModel` (lock on open and create, released on switching), `closeProject`, docs (`project-format.md`, `decisions.md`, `architecture.md`, README). Tests: `ProjectLockTest` (10: same JVM, closing twice, different folders, a file left behind, other content, the line in the file, a read-only lock file, another process holds the lock, a killed process leaves a file that does not block), `LockHolder` (the child process), `AppModelLockTest` (7: second window gets "already open" with the folder name, same window twice, the open project stays, switching gives the first back, a new project is locked, no lock file in a non-project folder, a failed open releases the lock).

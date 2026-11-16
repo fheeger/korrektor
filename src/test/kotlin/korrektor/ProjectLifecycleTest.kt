@@ -129,10 +129,12 @@ class ProjectLifecycleTest {
             val parent = parentIn(dir)
             val created = AppModel()
             created.openCreated(NewProject.create(parent, pdfIn(dir), Metadata("First title", "Someone")))
+            val folder = created.project!!.folder
+            created.closeProject() // the first window is closed, so that the project is free for the next session
 
             // A new session opens the project and edits it.
             val session = AppModel()
-            session.openProject(created.project!!.folder)
+            session.openProject(folder)
             assertEquals("First title – korrektor", windowTitle(session.project, session.metadata))
             val edit = EditMetadataModel(session, session.metadata)
             edit.updateTitle("Second title")
@@ -140,9 +142,11 @@ class ProjectLifecycleTest {
             edit.save()
             assertEquals("Second title – korrektor", windowTitle(session.project, session.metadata))
 
+            session.closeProject()
+
             // And a third one sees the result.
             val later = AppModel()
-            later.openProject(created.project!!.folder)
+            later.openProject(folder)
             assertEquals(Metadata("Second title", "Someone", "", "a link"), later.metadata)
             assertEquals(
                 listOf("First title.korrektur"),
