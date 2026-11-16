@@ -12,7 +12,7 @@ import korrektor.viewer.focusPageField
 
 /**
  * What the shortcuts do in the open project: they move the cursor in the editor and the page in the viewer. The
- * actions of the lines (T050), the pages (T051) and the zoom (T053) are here; the list on F1 comes with the menus.
+ * actions of the lines (T050), the pages (T051) and the zoom (T053) are here; F1 shows the list.
  */
 class ProjectKeys(
     private val model: AppModel,
@@ -31,7 +31,11 @@ class ProjectKeys(
             AppAction.ZOOM_OUT to { model.viewer?.zoomOut() },
             AppAction.FIT_PAGE to { model.viewer?.fitPage() },
             AppAction.FIT_WIDTH to { model.viewer?.fitWidth() },
+            AppAction.SHOW_SHORTCUTS to { model.shortcutsOpen = !model.shortcutsOpen },
         )
+
+    /** The actions that do something: all of them, which a test checks, so that no key or menu entry is dead. */
+    val handledActions: Set<AppAction> get() = handlers.keys
 
     override fun perform(action: AppAction) {
         handlers[action]?.invoke()

@@ -142,6 +142,17 @@ object Shortcuts {
             Shortcut(AppAction.SHOW_SHORTCUTS, "Keyboard shortcuts", "Shows this list", listOf(KeyCombo(Key.F1))),
         )
 
+    /**
+     * The keys of the text field in a line that change the lines: what the user types, with what they do. They are
+     * not shortcuts (the line handles them, see `lineKey`) but the list on F1 shows them with the others.
+     */
+    val editorKeys: List<Pair<String, String>> =
+        listOf(
+            "Enter" to "Splits the line at the cursor; at the end of a line it adds an empty line below",
+            "Backspace" to "At the start of a line: joins it with the line above (an empty line is deleted)",
+            "Delete" to "At the end of a line: joins the line below into it",
+        )
+
     /** Every shortcut, in the order of menus and list. */
     val all: List<Shortcut> get() = table
 
