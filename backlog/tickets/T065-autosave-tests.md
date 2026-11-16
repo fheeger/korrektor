@@ -1,6 +1,6 @@
 # T065 Crash tests, failed saves and speed
 
-**Type:** task · **Status:** ready for development · **Story:** S07 · **Task:** S07.8
+**Type:** task · **Status:** done · **Story:** S07 · **Task:** S07.8
 
 Tests that cover several tickets of S07 together.
 
@@ -26,7 +26,15 @@ Tests that cover several tickets of S07 together.
 T057 to T064.
 
 ## Decisions
-(filled in while building)
+- **Crash tests run in CI in a short form** (3 kills each, about 12 s in all); `KORREKTOR_PERF_TESTS=1` makes it 10 kills each, including one 12 s run of continuous typing. The child JVM is `AutosaveChild.kt` (real `AutoSaver`, real clock, prints `<counter> <time>`).
+- **Failed-save and window-flow tests** (`AutosaveFlowTest`) run in CI. The "unusable folder" is the `pages` folder moved away and back, which works on every platform (no need for read-only permissions).
+- **Speed tests** (`AutosavePerformanceTest`) run on request only. The typing test saves 500 changed pages, not 50, because a save of 50 pages takes only about 50 ms, too short to type during it.
+- The first version of the typing test hung: its `async` ran on the thread that the measuring loop kept busy. The save now runs on `Dispatchers.Default`. This was a test bug, not an app bug.
 
 ## Progress
-Not started.
+Done. Measured (1000-page book, this machine):
+- Typing kills: the loss was 0.56 to 2.6 s; in the 12 s run of continuous typing about 2 s after the ten-second save. The limit is 10 s.
+- Saving kills: 8 of 10 left a `*.tmp` file, so the kills did land in the middle of a write. Opening the project removed them, and every page decoded with one whole state.
+- Save of 1 changed page: 7 to 9 ms. Save of 50 changed pages: 47 to 52 ms (about 1 ms a page).
+- Typing (`setLineText`): 95th percentile 21 µs without a save, 33 µs during a save of 500 pages (236 edits), limit +20 ms.
+- Only the changed page is written: looking at pages and saving with nothing changed write nothing; one edit writes one page of 1000.
