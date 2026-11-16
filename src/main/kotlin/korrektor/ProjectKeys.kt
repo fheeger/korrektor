@@ -4,6 +4,7 @@ import korrektor.editor.Arrival
 import korrektor.editor.LineMove
 import korrektor.editor.arriveAt
 import korrektor.editor.firstLine
+import korrektor.editor.focusPanel
 import korrektor.editor.lastLine
 import korrektor.editor.moveLine
 import korrektor.viewer.fitPage
@@ -48,7 +49,10 @@ class ProjectKeys(
     fun goToPage(page: Int) {
         val viewer = model.viewer ?: return
         if (page == viewer.page) {
-            model.editor?.let { editor -> editor.lines.firstOrNull()?.let { editor.requestFocus(it.id, 0) } }
+            model.editor?.let { editor ->
+                editor.lines.firstOrNull()?.let { editor.requestFocus(it.id, 0) }
+                    ?: editor.focusPanel()
+            }
         } else {
             openPage(page, Arrival.FIRST)
         }
@@ -58,14 +62,16 @@ class ProjectKeys(
     fun leavePageField() {
         val editor = model.editor ?: return
         val line = editor.lines.firstOrNull { it.id == editor.activeLineId } ?: editor.lines.firstOrNull()
-        line?.let { editor.requestFocus(it.id, editor.caret) }
+        if (line != null) editor.requestFocus(line.id, editor.caret, keepColumn = true) else editor.focusPanel()
     }
 
     /** Down on the last line goes to the first line of the next page, Up on the first to the last of the one before. */
     private fun moveLine(delta: Int) {
         val editor = model.editor
         val viewer = model.viewer
-        if (editor != null && viewer != null) {
+        // The editor follows the viewer a moment after it changed the page. In that moment the lines are those of the
+        // page before: a key then would work out its move from the old page and open the wrong one, so it is dropped.
+        if (editor != null && viewer != null && editor.page == viewer.page) {
             when (editor.moveLine(delta)) {
                 LineMove.NEXT_PAGE -> openPage(viewer.page + 1, Arrival.FIRST)
                 LineMove.PREVIOUS_PAGE -> openPage(viewer.page - 1, Arrival.LAST)

@@ -79,7 +79,7 @@ fun TextPanel(
     // and for good on a page without lines.
     val panelFocus = remember { FocusRequester() }
     // Also when the last line of the page is deleted: the row that had the focus is gone.
-    LaunchedEffect(editor.page, lines.isEmpty()) { panelFocus.requestFocus() }
+    LaunchedEffect(editor.page, lines.isEmpty(), editor.panelFocusRequests) { panelFocus.requestFocus() }
     Column(
         modifier
             .fillMaxSize()
@@ -236,7 +236,6 @@ private fun LineRow(
         val wish = state.wish
         if (wish != null) {
             field = field.copy(selection = TextRange(wish.coerceIn(0, field.text.length)))
-            actions.editor.caret = field.selection.end
             focus.requestFocus()
             actions.wishDone(line.id)
         }

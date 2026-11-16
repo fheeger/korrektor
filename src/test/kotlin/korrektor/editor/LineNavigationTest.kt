@@ -127,13 +127,38 @@ class LineNavigationTest {
     fun anArrivalBelongsToItsPageAndIsUsedOnce() {
         val editor = editor()
         editor.arriveAt(3, Arrival.FIRST)
-        runBlocking { editor.show(2) }
-        assertNull(editor.activeLineId, "another page does not take it")
         runBlocking { editor.show(3) }
         assertEquals("l1", editor.activeLineId)
         runBlocking { editor.show(1) }
         runBlocking { editor.show(3) }
         assertNull(editor.activeLineId, "used up")
+    }
+
+    @Test
+    fun anArrivalForAPageThatWasNeverShownIsDropped() {
+        // Ctrl+Down to page 3, and before it is read the user goes to page 2 with the mouse; later page 3 by the mouse.
+        val editor = editor()
+        editor.arriveAt(3, Arrival.FIRST)
+        runBlocking { editor.show(2) }
+        assertNull(editor.activeLineId)
+        runBlocking { editor.show(3) }
+        assertNull(editor.activeLineId, "the cursor does not jump into a page that was opened with the mouse")
+    }
+
+    @Test
+    fun theColumnIsKeptOverAShortLine() {
+        val pages = mapOf(1 to layer(1, "abcdefghij", "ab", "abcdefghij"))
+        val editor = BookEditor({ pages.getValue(it) }, Dispatchers.Unconfined)
+        runBlocking { editor.show(1) }
+        editor.requestFocus("l1", 8)
+        editor.moveLine(1)
+        assertEquals("l2", editor.activeLineId)
+        assertEquals(8, editor.caret, "the short line did not take the column away")
+        editor.moveLine(1)
+        assertEquals("l3", editor.activeLineId)
+        assertEquals(8, editor.wanted()?.index)
+        editor.requestFocus("l2", 1) // a click or a split sets a new column
+        assertEquals(1, editor.caret)
     }
 
     @Test

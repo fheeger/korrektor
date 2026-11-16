@@ -192,8 +192,12 @@ class LineNavigationUiTest {
             key(Key.DirectionUp)
             assertEquals(3, model.viewer!!.page)
             assertNull(model.editor!!.activeLineId)
-            // The page before can still be reached from here once T051 has its shortcut; now by a click.
-            onNodeWithContentDescription("Previous page").performClick()
+            // The page before is reached from here with Ctrl+Up.
+            onRoot().performKeyInput {
+                keyDown(Key.CtrlLeft)
+                pressKey(Key.DirectionUp)
+                keyUp(Key.CtrlLeft)
+            }
             waitForPage(model, 2)
             runOnIdle { model.editor!!.requestFocus("l1", 0) }
             waitForIdle()

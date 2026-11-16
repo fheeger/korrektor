@@ -52,8 +52,8 @@ fun ViewerState.focusPageField() {
     pageFieldRequests++
 }
 
-/** Goes to the page the user typed: whole numbers from 1 to the page count, spaces around are fine. */
-fun ViewerState.goToText(text: String): Boolean = text.trim().toIntOrNull()?.let(::goTo) ?: false
+/** The page number in [text] (whole numbers from 1 to the page count, spaces around are fine), or null. */
+fun ViewerState.pageOf(text: String): Int? = text.trim().toIntOrNull()?.takeIf { it in 1..pageCount }
 
 /** One notch of the Ctrl+wheel zooms by this factor; one notch of the plain wheel scrolls this many pixels. */
 private const val WHEEL_ZOOM_FACTOR = 1.1

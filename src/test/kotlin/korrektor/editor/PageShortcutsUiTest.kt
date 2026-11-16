@@ -213,6 +213,37 @@ class PageShortcutsUiTest {
         }
 
     @Test
+    fun escapeAndEnterInThePageFieldOnAPageWithoutLinesGiveTheFocusBackToThePanel() =
+        withOpenProject { model ->
+            runOnIdle { model.viewer!!.goTo(3) }
+            waitForPage(model, 3)
+            ctrl(Key.G)
+            pageField().assertIsFocused()
+            key(Key.Escape)
+            onNode(hasTestTag("text list")).assertIsFocused()
+            ctrl(Key.G)
+            key(Key.Enter) // the number of the page shown
+            onNode(hasTestTag("text list")).assertIsFocused()
+            ctrl(Key.DirectionUp) // the shortcuts still work from there
+            waitForPage(model, 2)
+        }
+
+    @Test
+    fun aKeyInTheMomentAfterAPageChangeIsDroppedInsteadOfWorkedOutOnThePageBefore() =
+        withOpenProject { model ->
+            val keys = korrektor.ProjectKeys(model)
+            runOnIdle { model.editor!!.requestFocus("l2", 0) }
+            waitForIdle()
+            runOnIdle {
+                // The viewer is on page 2 now, the editor still on page 1 with its last line active.
+                model.viewer!!.goTo(2)
+                keys.perform(korrektor.AppAction.NEXT_LINE)
+            }
+            waitForPage(model, 2)
+            assertEquals(2, model.viewer!!.page, "page 3 was not opened on top of it")
+        }
+
+    @Test
     fun thePageShortcutsWorkFromThePageFieldToo() =
         withOpenProject { model ->
             startOnFirstLine(model)

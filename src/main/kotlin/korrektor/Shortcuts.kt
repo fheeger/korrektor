@@ -167,7 +167,7 @@ object Shortcuts {
      * combination: Alt and Meta are never accepted (see the note above on AltGr), Shift only where the table says so.
      */
     fun resolve(event: KeyEvent): AppAction? =
-        if (event.type != KeyEventType.KeyDown || event.isAltPressed || event.isMetaPressed) {
+        if (event.type != KeyEventType.KeyDown || event.makesACharacter()) {
             null
         } else {
             byCombo[KeyCombo(event.key, event.isCtrlPressed, event.isShiftPressed)]
@@ -192,6 +192,14 @@ private val KEY_NAMES =
         Key.G to "G",
         Key.F1 to "F1",
     )
+
+/**
+ * Whether Alt, Meta or AltGr is held: none of them is part of a shortcut. On Windows the JDK may report AltGr as Ctrl
+ * plus the AltGraph modifier, without Alt, so that AltGr+0 (`}` on a German keyboard) would look like Ctrl+0; such a
+ * key is a character, never a shortcut.
+ */
+private fun KeyEvent.makesACharacter(): Boolean =
+    isAltPressed || isMetaPressed || (nativeKeyEvent as? java.awt.event.KeyEvent)?.isAltGraphDown == true
 
 /**
  * What the shortcuts do. A key that is a shortcut is used up whether or not there is something to do (Ctrl+Down on
