@@ -19,6 +19,9 @@ import java.nio.file.Path
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
 
+/** How long saving waits before it tries again after a failure. */
+const val RETRY_DELAY_MS = 5_000L
+
 /** How long the user must stop typing before the corrections are saved. */
 const val SAVE_DELAY_MS = 1_000L
 
@@ -73,6 +76,14 @@ class AutoSaver(
     var error: String? by mutableStateOf(null)
         private set
 
+    private var warningDismissed: Boolean by mutableStateOf(false)
+
+    /**
+     * What to tell the user while saving fails: the reason, once however often saving is tried, until it works again
+     * or the user has dismissed it (it comes back after a save that worked and failed again).
+     */
+    val warning: String? get() = error.takeUnless { warningDismissed }
+
     /** Something was changed: the timer starts or starts again. Called by the editor (`onUnsaved`) on every edit. */
     fun changed() {
         val t = now()
@@ -99,9 +110,24 @@ class AutoSaver(
         while (true) {
             wake.receive()
             awaitDeadline()
-            synchronized(timing) { firstUnsaved = null }
-            saveNow()
+            var outcome = saveAfterWaiting()
+            // A failed save is tried again, as long as the pages are unsaved. The changes stay in memory meanwhile.
+            while (outcome is SaveOutcome.Failed) {
+                // A change in the meantime takes the normal way: the timer of a second, then the save.
+                if (withTimeoutOrNull(RETRY_DELAY_MS) { wake.receive() } != null) awaitDeadline()
+                outcome = saveAfterWaiting()
+            }
         }
+    }
+
+    private suspend fun saveAfterWaiting(): SaveOutcome {
+        synchronized(timing) { firstUnsaved = null }
+        return saveNow()
+    }
+
+    /** Hides the warning about a failed save until saving has worked and failed again. Saving goes on as before. */
+    fun dismissWarning() {
+        warningDismissed = true
     }
 
     /** Returns when it is time to save: the deadline has come, or a flush was asked for. A new change moves it. */
@@ -130,12 +156,14 @@ class AutoSaver(
         val snapshot = editor.unsaved()
         if (snapshot.isEmpty()) {
             error = null
+            warningDismissed = false
             return SaveOutcome.Done
         }
         saving = true
         try {
             val outcome = withContext(io) { writeAll(snapshot) { ensureActive() } }
             error = (outcome as? SaveOutcome.Failed)?.reason
+            if (error == null) warningDismissed = false
             return outcome
         } finally {
             saving = false

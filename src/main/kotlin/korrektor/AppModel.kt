@@ -7,6 +7,7 @@ import korrektor.editor.AutoSaver
 import korrektor.editor.BookEditor
 import korrektor.format.FormatException
 import korrektor.format.Metadata
+import korrektor.format.PageLayer
 import korrektor.format.Project
 import korrektor.settings.AppSettings
 import korrektor.viewer.ViewerState
@@ -23,6 +24,8 @@ class AppModel(
     val projectFactory: ProjectFactory = DefaultProjectFactory,
     /** Where the page and zoom of each project are remembered. In memory unless the app gives it a file. */
     val settings: AppSettings = AppSettings.inMemory(),
+    /** How the corrections of a project are written; tests put a failing one in its place. */
+    private val pageWriter: (Project) -> (Int, PageLayer) -> Unit = { it::writePage },
 ) {
     /** The position of the divider between scan and text, the same for every project. */
     val layout = LayoutState(settings)
@@ -137,7 +140,7 @@ class AppModel(
         project = opened
         viewer = ViewerState(opened.pages.size).also { state -> settings.viewOf(opened.folder)?.let(state::restore) }
         val newEditor = BookEditor(opened::readPage, Dispatchers.IO)
-        val newSaver = AutoSaver(newEditor, Dispatchers.IO, write = opened::writePage)
+        val newSaver = AutoSaver(newEditor, Dispatchers.IO, write = pageWriter(opened))
         newEditor.onUnsaved = newSaver::changed
         editor = newEditor
         saver = newSaver

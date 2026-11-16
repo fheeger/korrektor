@@ -1,6 +1,6 @@
 # T060 Failed saves: a warning, and saving is retried
 
-**Type:** task · **Status:** ready for development · **Story:** S07 · **Task:** S07.5 (first part)
+**Type:** task · **Status:** done · **Story:** S07 · **Task:** S07.5 (first part)
 
 ## What needs doing
 - **Retry:** after a failed save, `AutoSaver.run()` tries again after `RETRY_DELAY_MS = 5000` (and sooner when the user changes something: the normal timer applies). It keeps trying as long as pages are unsaved. The changes stay in memory the whole time; nothing is dropped.
@@ -24,7 +24,12 @@
 T058, T059.
 
 ## Decisions
-(filled in while building)
+- **The retry lives in `run()`:** after a failed save the loop waits `RETRY_DELAY_MS` (5 s), or less if the user changes something (then the normal timer of a second applies, then the save), or flushes (at once); then it saves again, and again, as long as it fails. It stops retrying only when a save works (or nothing is unsaved any more).
+- **One warning:** `AutoSaver.warning` is the reason while saving fails, however many retries fail (tested over 26 s, six attempts, one banner). It is gone as soon as a save works, by itself. Dismissing (`dismissWarning`) hides it; it stays hidden for the retries that follow and comes back only when a save has worked and then failed again.
+- **The banner** is the existing `ErrorBanner` below the other banners, with the text "Your changes could not be saved: <reason>. They are kept, and saving is tried again." (test tag `save warning`). The reason comes from T058 (`disk full`, `<file>: access denied`, ...).
+- **A change during a failing save** is kept like everything else and written with the rest once saving works; because it starts the normal timer, the retry for it comes after a second, not five.
+- **`AppModel` takes a `pageWriter`** (default `Project::writePage`) so that a UI test can make writing fail, as `projectFactory` does for the import. `AutoSaver` and `run()` need nothing else for tests.
+- **The reason on a real folder:** a test moves the `pages` folder away (as if the disk had gone) and back: the first save fails with the changes kept, the next works.
 
 ## Progress
-Not started.
+Done. `AutoSaver` (retry loop, `warning`, `dismissWarning`, `RETRY_DELAY_MS`), `AppModel.pageWriter`, the banner in `App`. Tests: `SaverFailureTest` (6, virtual time: kept and warned; retry after 5 s and success; one warning for six retries; a change during failure; dismiss and come back; flush after failure), `SaveWarningUiTest` (1, the whole window with a failing writer: banner with the reason, correction kept, dismiss, saved when it works again), and one more in `AutoSaverTest` (the folder gone and back).
