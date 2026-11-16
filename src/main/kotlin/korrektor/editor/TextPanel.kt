@@ -2,6 +2,7 @@ package korrektor.editor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,7 +74,19 @@ fun TextPanel(
 ) {
     val layer = editor.layer
     val lines = editor.lines
-    Column(modifier.fillMaxSize().testTag("text list")) {
+    // Keys only reach the shortcuts if something has the focus. When the page changes the focused row is gone, so the
+    // panel takes the focus until a row asks for it (the cursor arriving on the new page): while the page is read,
+    // and for good on a page without lines.
+    val panelFocus = remember { FocusRequester() }
+    // Also when the last line of the page is deleted: the row that had the focus is gone.
+    LaunchedEffect(editor.page, lines.isEmpty(), editor.panelFocusRequests) { panelFocus.requestFocus() }
+    Column(
+        modifier
+            .fillMaxSize()
+            .focusRequester(panelFocus)
+            .focusable()
+            .testTag("text list"),
+    ) {
         LineCommands(editor)
         Box(Modifier.fillMaxSize()) {
             when {
@@ -243,6 +256,7 @@ private fun LineRow(
             onValueChange = { typed ->
                 val clean = typed.text.replace('\n', ' ').replace('\r', ' ')
                 field = if (clean == typed.text) typed else typed.copy(text = clean)
+                actions.editor.caret = field.selection.end
                 // Always passed on: `line` may be one keystroke behind, and the editor ignores a text it already has.
                 actions.changeText(line.id, clean)
             },
@@ -267,9 +281,9 @@ private fun LineRow(
 
 /**
  * The keys that change the lines. Enter splits the line at the cursor (a selection is replaced by the break, so the
- * selected text goes); Backspace at the start joins the line with the previous one; Delete at the end joins the next
- * one into it. Anything else, also these keys with Ctrl, Alt or Meta, is left to the text field. Returns whether the
- * key was used.
+ * selected text goes); Backspace at the start joins the line with the previous one (an empty line is deleted);
+ * Delete at the end joins the next one into it. Anything else, also these keys with Ctrl, Alt or Meta, is left to the
+ * text field. Returns whether the key was used.
  */
 private fun lineKey(
     event: KeyEvent,
@@ -285,13 +299,12 @@ private fun lineKey(
             editor.splitLine(lineId, selection.min)
             true
         }
-        event.key == Key.Backspace && selection.collapsed && selection.start == 0 ->
-            editor
-                .joinWithPrevious(
-                    lineId,
-                ).let {
-                    true
-                }
+        event.key == Key.Backspace && selection.collapsed && selection.start == 0 -> {
+            // An empty line is deleted, not joined: it has nothing to add to the line above (and, as the first line of
+            // the page, nothing to be joined to).
+            if (field.text.isEmpty()) editor.deleteLine(lineId) else editor.joinWithPrevious(lineId)
+            true
+        }
         event.key == Key.Delete && selection.collapsed && selection.end == field.text.length ->
             editor.joinWithNext(lineId).let { true }
         else -> false

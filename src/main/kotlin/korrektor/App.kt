@@ -15,7 +15,6 @@ import korrektor.editor.clickOnScan
 import korrektor.editor.highlightFor
 import korrektor.viewer.DefaultPageSourceFactory
 import korrektor.viewer.PagePoint
-import korrektor.viewer.PageSourceFactory
 import korrektor.viewer.ProjectViewer
 import korrektor.viewer.ScanLinks
 import korrektor.viewer.reveal
@@ -29,7 +28,8 @@ fun App(
     folderPicker: FolderPicker,
     pdfPicker: PdfPicker,
     modifier: Modifier = Modifier,
-    pageSources: PageSourceFactory = DefaultPageSourceFactory,
+    // What the shortcuts do: the project's own (`ProjectKeys`), or a replacement for a test.
+    keyActions: KeyActions? = null,
 ) {
     val openProject = { folderPicker.pick()?.let(model::openProject) ?: Unit }
     LaunchedEffect(model.viewer) { model.keepViewSaved() }
@@ -37,9 +37,11 @@ fun App(
     val editor = model.editor
     val shownPage = model.viewer?.page
     LaunchedEffect(editor, shownPage) { if (editor != null && shownPage != null) editor.show(shownPage) }
+    val projectKeys = remember(model) { ProjectKeys(model) }
+    val keys = keyActions ?: projectKeys
     KorrektorTheme {
         Surface(modifier.fillMaxSize()) {
-            Column {
+            Column(if (model.project != null) Modifier.shortcutKeys(keys) else Modifier) {
                 model.error?.let { ErrorBanner(message = it, onDismiss = model::dismissError) }
                 model.notice?.let { NoticeBanner(message = it, onDismiss = model::dismissNotice) }
                 val project = model.project
@@ -66,10 +68,11 @@ fun App(
                                             if (editor != null) editor.clickOnScan(viewer.page, point)
                                         }
                                     }
-                                val links = ScanLinks(highlight, onClick)
+                                val links =
+                                    ScanLinks(highlight, onClick, projectKeys::goToPage, projectKeys::leavePageField)
                                 // The scan follows the cursor: a line that is out of view is brought into it.
                                 LaunchedEffect(links.highlight) { links.highlight?.let { viewer.reveal(it.box) } }
-                                ProjectViewer(project, viewer, Modifier.fillMaxSize(), pageSources, links)
+                                ProjectViewer(project, viewer, Modifier.fillMaxSize(), DefaultPageSourceFactory, links)
                             },
                             modifier = room,
                             right = { TextPanel(checkNotNull(model.editor), Modifier.fillMaxSize()) },
@@ -79,6 +82,7 @@ fun App(
             }
             if (model.newProjectOpen) NewProjectDialog(model, pdfPicker, folderPicker)
             if (model.editMetadataOpen) EditMetadataDialog(model)
+            if (model.shortcutsOpen) ShortcutListDialog { model.shortcutsOpen = false }
         }
     }
 }

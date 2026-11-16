@@ -432,13 +432,11 @@ class ViewerStateTest {
     fun aPageNumberTypedByTheUserIsCheckedAgainstThePageCount() {
         val state = ViewerState(pageCount = 165)
 
-        assertTrue(state.goToText(" 42 "))
-        assertEquals(42, state.page)
-        assertTrue(state.goToText("165"))
-        assertTrue(state.goToText("1"))
+        assertEquals(42, state.pageOf(" 42 "))
+        assertEquals(165, state.pageOf("165"))
+        assertEquals(1, state.pageOf("1"))
         for (wrong in listOf("0", "-3", "166", "4.5", "abc", "", "  ", "1 2")) {
-            assertFalse(state.goToText(wrong), "'$wrong'")
-            assertEquals(1, state.page, "'$wrong' changes nothing")
+            assertNull(state.pageOf(wrong), "'$wrong'")
         }
     }
 

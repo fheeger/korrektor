@@ -39,9 +39,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
@@ -56,6 +59,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -96,16 +101,22 @@ fun PageViewer(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            NavigationBar(state)
+            NavigationBar(state, links)
             ZoomToolbar(state)
         }
         PageArea(source, boxes, links, state, Modifier.weight(1f).fillMaxWidth())
     }
 }
 
-/** Previous and next page, "Page n of N", and a field to go to a page: Enter goes there, a wrong number is undone. */
+/**
+ * Previous and next page, "Page n of N", and a field to go to a page: Enter goes there, a wrong number is undone, and
+ * Escape leaves the field. The field takes the focus, with its content selected, when the state is asked to (Ctrl+G).
+ */
 @Composable
-private fun NavigationBar(state: ViewerState) {
+private fun NavigationBar(
+    state: ViewerState,
+    links: ScanLinks,
+) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         OutlinedButton(
             { state.previous() },
@@ -118,7 +129,14 @@ private fun NavigationBar(state: ViewerState) {
             enabled = state.hasNext,
         ) { Text("›") }
         Text("Page ${state.page} of ${state.pageCount}")
-        var typed by remember(state.page) { mutableStateOf(state.page.toString()) }
+        var typed by remember(state.page) { mutableStateOf(TextFieldValue(state.page.toString())) }
+        val focus = remember { FocusRequester() }
+        LaunchedEffect(state.pageFieldRequests) {
+            if (state.pageFieldRequests > 0) {
+                typed = TextFieldValue(typed.text, TextRange(0, typed.text.length))
+                focus.requestFocus()
+            }
+        }
         // A plain field with a border: the Material text field is 56 dp high, too much for a toolbar.
         BasicTextField(
             value = typed,
@@ -128,11 +146,10 @@ private fun NavigationBar(state: ViewerState) {
                     .width(GO_TO_FIELD_WIDTH)
                     .height(GO_TO_FIELD_HEIGHT)
                     .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+                    .focusRequester(focus)
                     .semantics { contentDescription = "Go to page" }
                     .onKeyEvent { event ->
-                        val enter = event.key == Key.Enter && event.type == KeyEventType.KeyDown
-                        if (enter && !state.goToText(typed)) typed = state.page.toString()
-                        enter
+                        pageFieldKey(event, state, links, typed.text) { typed = TextFieldValue(it) }
                     },
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
@@ -141,6 +158,38 @@ private fun NavigationBar(state: ViewerState) {
                 Box(Modifier.padding(horizontal = 10.dp), contentAlignment = Alignment.CenterStart) { field() }
             },
         )
+    }
+}
+
+/**
+ * Enter in the page field goes to the page typed (through [links] if it wants to know) and a number that is no page is
+ * undone, with the field keeping the focus; Escape puts the page's own number back and leaves the field. Returns
+ * whether the key was used.
+ */
+private fun pageFieldKey(
+    event: KeyEvent,
+    state: ViewerState,
+    links: ScanLinks,
+    typed: String,
+    reset: (String) -> Unit,
+): Boolean {
+    val down = event.type == KeyEventType.KeyDown
+    val page = state.pageOf(typed)
+    return when {
+        down && event.key == Key.Enter -> {
+            when {
+                page == null -> reset(state.page.toString())
+                links.onGoToPage != null -> links.onGoToPage.invoke(page)
+                else -> state.goTo(page)
+            }
+            true
+        }
+        down && event.key == Key.Escape -> {
+            reset(state.page.toString())
+            links.onLeavePageField()
+            true
+        }
+        else -> false
     }
 }
 

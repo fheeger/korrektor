@@ -16,6 +16,12 @@ class FocusRequest(
     val serial: Long,
 )
 
+/** Where the cursor goes when a page is opened by the keyboard: its first line or its last line. */
+enum class Arrival { FIRST, LAST }
+
+/** What a move to another line came to: it moved, it needs another page, or there was nothing to move to. */
+enum class LineMove { MOVED, PREVIOUS_PAGE, NEXT_PAGE, NOTHING }
+
 /**
  * The corrected text of the book while it is being worked on, shared by the scan and the text panel (S05). It holds
  * the corrected layer of the page shown, and keeps every page that was changed in this session, so that going to
@@ -32,6 +38,18 @@ class BookEditor(
 ) {
     private val changed = mutableMapOf<Int, PageLayer>()
     private var serial = 0L
+
+    /** The page the cursor is wanted on when it is shown, and where on it (see [arriveAt]). */
+    internal var arriving: Pair<Int, Arrival>? = null
+
+    /** Counts the requests to give the text panel itself the focus (no line to put the cursor in). */
+    internal var panelFocusRequests: Int by mutableIntStateOf(0)
+
+    /**
+     * The column of the cursor, as a character index: where it was last put or moved by the user. Not state: nothing
+     * draws it. The rows report it, and moving to the line above or below keeps it (also over a short line).
+     */
+    var caret: Int = 0
 
     /** The page shown, from 1. */
     var page: Int by mutableIntStateOf(1)
@@ -65,6 +83,8 @@ class BookEditor(
      * empty while it is read. If the caller is cancelled (the next page was asked for), the result is not used.
      */
     suspend fun show(number: Int) {
+        // A wish for the cursor on another page is stale (the page it was for was never shown): drop it.
+        if (arriving?.first != number) arriving = null
         page = number
         layer = null
         error = null
@@ -73,11 +93,15 @@ class BookEditor(
         val kept = changed[number]
         if (kept != null) {
             layer = kept
+            applyArrival(number)
             return
         }
         try {
             val read = withContext(io) { readPage(number) }
-            if (page == number) layer = read
+            if (page == number) {
+                layer = read
+                applyArrival(number)
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (
@@ -115,11 +139,17 @@ class BookEditor(
 
     fun deleteLine(lineId: String) = edit { PageEdits.deleteLine(it, lineId) }
 
-    /** Asks the panel to put the cursor at [index] of the line [lineId], also without an edit (a click on the scan). */
+    /**
+     * Asks the panel to put the cursor at [index] of the line [lineId], also without an edit (a click on the scan). The
+     * column ([caret]) becomes [index], unless [keepColumn]: a move to the line above or below keeps the column it
+     * started from, even over a line that is too short for it.
+     */
     fun requestFocus(
         lineId: String,
         index: Int,
+        keepColumn: Boolean = false,
     ) {
+        if (!keepColumn) caret = index
         activate(lineId)
         focusRequest = FocusRequest(Focus(lineId, index), ++serial)
     }

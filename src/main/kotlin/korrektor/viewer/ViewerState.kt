@@ -57,6 +57,10 @@ class ViewerState(
     /** Whether the boxes of the page's words are drawn over the scan: a view option, off at the start. */
     var showWordBoxes: Boolean by mutableStateOf(false)
 
+    /** Counts the requests to move the focus to the page field (Ctrl+G): the field acts when this changes. */
+    var pageFieldRequests: Int by mutableIntStateOf(0)
+        internal set
+
     var mode: ZoomMode by mutableStateOf(ZoomMode.FIT_WIDTH)
         private set
     private var fixedScale: Double by mutableDoubleStateOf(ACTUAL_SIZE)
