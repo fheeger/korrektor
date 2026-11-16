@@ -33,3 +33,4 @@ S07 decides when and how changes from S05, S06 and later S09 (page status) are s
   - Kill the app while typing and while saving, then check that the project opens and at most the last 10 s are lost.
   - Simulate failed saves.
   - Measure saving speed in a 1000-page book.
+- [x] S07.9 Fixes from the code review → [T066](../tickets/T066-review-fixes.md)

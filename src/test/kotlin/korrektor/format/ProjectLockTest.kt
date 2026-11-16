@@ -127,6 +127,15 @@ class ProjectLockTest {
         }
 
     @Test
+    fun aFailedSecondTryInTheSameProcessKeepsTheFirstLockHeld() =
+        withFolder { dir ->
+            ProjectLock.acquire(dir).use {
+                repeat(3) { assertFailsWith<ProjectLockedException> { ProjectLock.acquire(dir) } }
+                assertFailsWith<ProjectLockedException> { ProjectLock.acquire(dir) }
+            }
+        }
+
+    @Test
     fun aLockLeftByAKilledProcessDoesNotBlock() =
         withFolder { dir ->
             val other = startHolder(dir)

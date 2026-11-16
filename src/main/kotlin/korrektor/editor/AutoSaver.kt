@@ -197,6 +197,7 @@ class AutoSaver(
         snapshot: Map<Int, PageLayer>,
         stillWanted: () -> Unit,
     ): SaveOutcome {
+        var failed: SaveOutcome.Failed? = null
         for ((page, layer) in snapshot) {
             stillWanted() // throws if the caller was cancelled: no further page is started
             try {
@@ -207,11 +208,13 @@ class AutoSaver(
                 // Any failure of writing is a failed save, not a crash: the changes stay in memory (S07).
                 @Suppress("TooGenericExceptionCaught") e: Exception,
             ) {
-                return SaveOutcome.Failed(page, describe(e))
+                // The other pages are still written: a page that cannot be saved must not hold back the rest.
+                if (failed == null) failed = SaveOutcome.Failed(page, describe(e))
+                continue
             }
             editor.markSaved(page, layer)
         }
-        return SaveOutcome.Done
+        return failed ?: SaveOutcome.Done
     }
 
     private fun describe(e: Exception): String =

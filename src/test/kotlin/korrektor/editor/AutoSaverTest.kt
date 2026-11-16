@@ -180,7 +180,7 @@ class AutoSaverTest {
         }
 
     @Test
-    fun aFailingWriteLeavesThatPageAndTheOnesAfterItUnsaved() =
+    fun aFailingWriteLeavesThatPageUnsavedAndTheOthersAreWritten() =
         withProject { project ->
             val (editor, saver) =
                 editorAndSaver(project) { page, layer ->
@@ -198,8 +198,9 @@ class AutoSaverTest {
                 assertTrue(outcome.reason.contains("disk full"), outcome.reason)
                 assertEquals(outcome.reason, saver.error)
             }
-            assertEquals(setOf(2, 3), editor.changedPages)
+            assertEquals(setOf(2), editor.changedPages, "page 3 is written although page 2 failed (T066)")
             assertEquals("neu 1", project.firstText(1))
+            assertEquals("neu 3", project.firstText(3))
             assertEquals("Seite 2 oben", project.firstText(2), "not written")
             assertFalse(saver.saving)
         }

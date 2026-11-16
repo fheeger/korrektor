@@ -91,3 +91,4 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T063](tickets/T063-ctrl-s.md) | Ctrl+S does nothing | task | S07 | done |
 | [T064](tickets/T064-project-lock.md) | Lock the project so that it cannot be opened twice | task | S07 | done |
 | [T065](tickets/T065-autosave-tests.md) | Crash tests, failed saves and speed | task | S07 | done |
+| [T066](tickets/T066-review-fixes.md) | Fixes from the S07 code review | task | S07 | done |

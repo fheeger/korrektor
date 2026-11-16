@@ -94,6 +94,9 @@ class AppModel(
     /** True while a close request is saving; a second request in that time is ignored. */
     internal var closing: Boolean = false
 
+    /** Whether "save to another location" is copying the project (it must not be started twice). */
+    internal var copying: Boolean = false
+
     /** Ends the app. `Main` puts `exitApplication` here; tests put something that records the call. */
     var exit: () -> Unit = {}
 
@@ -108,15 +111,18 @@ class AppModel(
     fun openProject(folder: Path) {
         if (!flushBeforeSwitch()) return
         var taken: ProjectLock? = null
+        var opened = false
         try {
             // Only a project folder is locked: the lock file must not be left in just any folder that was chosen.
             if (Files.isRegularFile(folder.resolve(Project.PROJECT_FILE))) taken = ProjectLock.acquire(folder)
             open(Project.open(folder), taken)
+            opened = true
         } catch (e: ProjectLockedException) {
             error = e.message
         } catch (e: FormatException) {
-            taken?.close()
             error = e.message
+        } finally {
+            if (!opened) taken?.close() // whatever went wrong, a project that is not open keeps no lock
         }
     }
 

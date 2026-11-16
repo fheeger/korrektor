@@ -7,6 +7,7 @@ import java.nio.channels.OverlappingFileLockException
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 
 /** The project is open already: in another window of this app, or in another instance (S07). */
 class ProjectLockedException(
@@ -28,9 +29,11 @@ class ProjectLockedException(
 class ProjectLock private constructor(
     private val channel: FileChannel,
     private val lock: FileLock,
+    private val key: Path,
 ) : AutoCloseable {
     /** Gives the lock back. Safe to call twice. */
     override fun close() {
+        held.remove(key)
         try {
             lock.release()
         } catch (_: IOException) {
@@ -52,6 +55,37 @@ class ProjectLock private constructor(
          * could not be saved to either).
          */
         fun acquire(folder: Path): ProjectLock {
+            // Asked before a second channel is opened: on some systems closing it would give back the first one's lock.
+            val key = realKey(folder)
+            if (!held.add(key)) throw alreadyOpen(folder)
+            var taken: ProjectLock? = null
+            try {
+                taken = take(folder, key)
+            } finally {
+                if (taken == null) held.remove(key) // not locked: the folder is free to be tried again
+            }
+            return taken
+        }
+
+        /** The folders that this JVM holds a lock of. */
+        private val held: MutableSet<Path> = ConcurrentHashMap.newKeySet()
+
+        private fun realKey(folder: Path): Path =
+            try {
+                folder.toRealPath()
+            } catch (_: IOException) {
+                folder.toAbsolutePath().normalize()
+            }
+
+        private fun alreadyOpen(folder: Path) =
+            ProjectLockedException(
+                "The project ${folder.fileName} is already open, in another window or another instance of the app.",
+            )
+
+        private fun take(
+            folder: Path,
+            key: Path,
+        ): ProjectLock {
             val file = folder.resolve(FILE)
             val channel =
                 try {
@@ -62,12 +96,10 @@ class ProjectLock private constructor(
             val lock = tryLock(channel)
             if (lock == null) {
                 closeQuietly(channel)
-                throw ProjectLockedException(
-                    "The project ${folder.fileName} is already open, in another window or another instance of the app.",
-                )
+                throw alreadyOpen(folder)
             }
             describe(channel)
-            return ProjectLock(channel, lock)
+            return ProjectLock(channel, lock, key)
         }
 
         /** The lock, or null if it is held: by another process (null) or, in this JVM, by another channel. */
