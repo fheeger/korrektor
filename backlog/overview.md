@@ -75,7 +75,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T047](tickets/T047-editor-tests.md) | Tests with the sample, and typing speed | task | S05 | done |
 | [T048](tickets/T048-review-fixes.md) | Fixes from the S05 code review | task | S05 | done |
 | [T049](tickets/T049-shortcut-set.md) | The shortcut set and one place that handles it | task | S06 | done |
-| [T050](tickets/T050-line-navigation.md) | Move between lines, also into the next and previous page | task | S06 | ready for development |
+| [T050](tickets/T050-line-navigation.md) | Move between lines, also into the next and previous page | task | S06 | done |
 | [T051](tickets/T051-page-shortcuts.md) | Page shortcuts: next, previous and go to page | task | S06 | ready for development |
 | [T052](tickets/T052-line-edit-keys.md) | Editing keys: Backspace on an empty line, and the full set by keyboard | task | S06 | ready for development |
 | [T053](tickets/T053-zoom-shortcuts.md) | Zoom shortcuts | task | S06 | ready for development |

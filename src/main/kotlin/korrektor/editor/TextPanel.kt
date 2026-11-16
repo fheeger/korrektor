@@ -2,6 +2,7 @@ package korrektor.editor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,7 +74,18 @@ fun TextPanel(
 ) {
     val layer = editor.layer
     val lines = editor.lines
-    Column(modifier.fillMaxSize().testTag("text list")) {
+    // Keys only reach the shortcuts if something has the focus. When the page changes the focused row is gone, so the
+    // panel takes the focus until a row asks for it (the cursor arriving on the new page): while the page is read,
+    // and for good on a page without lines.
+    val panelFocus = remember { FocusRequester() }
+    LaunchedEffect(editor.page) { panelFocus.requestFocus() }
+    Column(
+        modifier
+            .fillMaxSize()
+            .focusRequester(panelFocus)
+            .focusable()
+            .testTag("text list"),
+    ) {
         LineCommands(editor)
         Box(Modifier.fillMaxSize()) {
             when {
@@ -223,6 +235,7 @@ private fun LineRow(
         val wish = state.wish
         if (wish != null) {
             field = field.copy(selection = TextRange(wish.coerceIn(0, field.text.length)))
+            actions.editor.caret = field.selection.end
             focus.requestFocus()
             actions.wishDone(line.id)
         }
@@ -243,6 +256,7 @@ private fun LineRow(
             onValueChange = { typed ->
                 val clean = typed.text.replace('\n', ' ').replace('\r', ' ')
                 field = if (clean == typed.text) typed else typed.copy(text = clean)
+                actions.editor.caret = field.selection.end
                 // Always passed on: `line` may be one keystroke behind, and the editor ignores a text it already has.
                 actions.changeText(line.id, clean)
             },

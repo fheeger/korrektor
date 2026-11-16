@@ -26,7 +26,7 @@ Note: on macOS (N3) Ctrl+Up/Down belongs to the system, so the page shortcuts wi
 
 ## Tasks
 - [x] S06.1 Define the shortcut set and check it for conflicts with standard Windows and text-editing keys → [T049](../tickets/T049-shortcut-set.md)
-- [ ] S06.2 Move between lines, including into the next and previous page → [T050](../tickets/T050-line-navigation.md)
+- [x] S06.2 Move between lines, including into the next and previous page → [T050](../tickets/T050-line-navigation.md)
 - [ ] S06.3 Page shortcuts: next/previous page (Ctrl+Down/Up) and go to page (Ctrl+G) → [T051](../tickets/T051-page-shortcuts.md)
 - [ ] S06.4 Split, join, add and delete lines with the usual editor keys → [T052](../tickets/T052-line-edit-keys.md)
 - [ ] S06.5 Zoom shortcuts → [T053](../tickets/T053-zoom-shortcuts.md)
