@@ -1,6 +1,6 @@
 # T054 Menus with the shortcuts, and the list on F1
 
-**Type:** task · **Status:** ready for development · **Story:** S06 · **Task:** S06.6
+**Type:** task · **Status:** done · **Story:** S06 · **Task:** S06.6
 
 ## What needs doing
 - **A menu bar** in the window (Compose `MenuBar`) with the menus *Go* (previous/next line, first/last line, previous/next page, go to page), *View* (zoom in, zoom out, fit page, fit width) and *Help* (Keyboard shortcuts). Each entry shows its shortcut and calls the same action as the key. Entries that cannot apply are disabled (no project open, first/last page).
@@ -24,7 +24,14 @@
 T049, T050, T051, T053.
 
 ## Decisions
-(filled in while building)
+- **The menu entries only show the shortcut; the key handler does the work.** An entry is a plain item whose text is the name and the key ("Next page, Ctrl+Down", separated by a wide space), without Compose's `shortcut` parameter. With that parameter the menu bar registers an accelerator of its own, and whether Swing's accelerator and the Compose key handler both fire for one key press could not be checked in a test (menu bars are native and a headless test cannot press keys on them), so the safe way was taken: one place handles keys. Clicking an entry calls the same `ProjectKeys.perform` as the key. A native right-aligned accelerator column could come later if it can be shown not to double-handle.
+- **The menus are made by `menus(MenuState)`,** a plain function from the table of shortcuts and four facts (project open, previous and next page exist, the page has lines). So they are tested without a window: every action of the table is in exactly one entry, each entry shows its label and key, the enabled states. `Main.kt` only turns the specs into `MenuBar` items.
+- **Disabled entries:** all but "Keyboard shortcuts" without a project; "Previous page" on page 1 and "Next page" on the last page; the four line moves on a page without lines.
+- **No dead keys:** `ProjectKeys.handledActions` must equal all actions (test), so a new action in the table without a handler fails the build.
+- **F1 toggles** (`AppModel.shortcutsOpen`, a plain flag): it opens the dialog and, pressed in the dialog, closes it. The dialog content (`ShortcutList`) takes the focus and closes on F1 and Escape; "Close" and the window's own close button too. It works without a project too, from the menu.
+- **The list is generated from the table** (keys with their alternatives, description) plus `Shortcuts.editorKeys` for Enter, Backspace and Delete in a line, which are not shortcuts of the handler.
+- **README:** a "Keyboard" bullet in "Using korrektor" with the keys.
+- **Not testable here (listed for the report):** that the native menu bar shows the entries and that clicking works; that after the F1 dialog closes the focus is back in the line the cursor was in.
 
 ## Progress
-Not started.
+Done. `Menus.kt`, `ShortcutList.kt`, `Main.kt` (menu bar), `AppModel` (`shortcutsOpen`), `ProjectKeys` (F1), `Shortcuts.editorKeys`, README. Tests: `MenusTest` (9: every action once, label and key, the menus, disabled states, F1 toggles the model, no action without a handler) and `ShortcutListTest` (3: every shortcut and editor key listed, Close/Escape/F1 close it).

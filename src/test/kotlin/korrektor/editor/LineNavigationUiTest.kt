@@ -151,7 +151,10 @@ class LineNavigationUiTest {
                     .first()
                     .text,
             )
-            onNodeWithContentDescription("Highlighted line: l1").assertExists()
+            // The scan draws the box a moment after the cursor has arrived (it needs the new page's size first).
+            waitUntil(timeoutMillis = 5_000) {
+                runCatching { onNodeWithContentDescription("Highlighted line: l1").assertExists() }.isSuccess
+            }
         }
 
     @Test
