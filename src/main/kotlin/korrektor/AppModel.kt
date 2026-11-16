@@ -82,17 +82,31 @@ class AppModel(
 
     /** A message for the user, shown until it is dismissed. */
     var error: String? by mutableStateOf(null)
-        private set
+        internal set
+
+    /**
+     * Set when the window is to be closed and the changes could not be saved: what went wrong. The dialog that offers
+     * to save somewhere else or to close without saving shows while this is set (S07).
+     */
+    var closeProblem: String? by mutableStateOf(null)
+        internal set
+
+    /** True while a close request is saving; a second request in that time is ignored. */
+    internal var closing: Boolean = false
+
+    /** Ends the app. `Main` puts `exitApplication` here; tests put something that records the call. */
+    var exit: () -> Unit = {}
 
     /** Something the user should know that is not an error, for example which pages had no text. */
     var notice: String? by mutableStateOf(null)
-        private set
+        internal set
 
     /**
      * Opens the project in [folder]. If that fails, [error] says why and the current project stays open. A project
      * that is open already (in another window or instance, or this one) is not opened a second time (S07).
      */
     fun openProject(folder: Path) {
+        if (!flushBeforeSwitch()) return
         var taken: ProjectLock? = null
         try {
             // Only a project folder is locked: the lock file must not be left in just any folder that was chosen.
@@ -135,17 +149,10 @@ class AppModel(
         created: Project,
         notice: String? = null,
     ) {
-        try {
-            open(created, ProjectLock.acquire(created.folder))
-        } catch (e: ProjectLockedException) {
-            error = e.message
-            return
-        } catch (e: FormatException) {
-            error = e.message
-            return
+        if (flushBeforeSwitch() && openLocked(created)) {
+            this.notice = notice
+            newProjectOpen = false
         }
-        this.notice = notice
-        newProjectOpen = false
     }
 
     /**
@@ -158,7 +165,7 @@ class AppModel(
         metadata = new
     }
 
-    private fun open(
+    internal fun open(
         opened: Project,
         taken: ProjectLock?,
     ) {

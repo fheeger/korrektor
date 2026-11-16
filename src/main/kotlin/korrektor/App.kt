@@ -82,9 +82,7 @@ fun App(
                     }
                 }
             }
-            if (model.newProjectOpen) NewProjectDialog(model, pdfPicker, folderPicker)
-            if (model.editMetadataOpen) EditMetadataDialog(model)
-            if (model.shortcutsOpen) ShortcutListDialog { model.shortcutsOpen = false }
+            Dialogs(model, folderPicker, pdfPicker)
         }
     }
 }

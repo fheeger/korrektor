@@ -1,6 +1,6 @@
 # T062 Closing the app or the project: save first, and a way out when saving fails
 
-**Type:** task · **Status:** ready for development · **Story:** S07 · **Task:** S07.2 (closing), S07.5 (second part)
+**Type:** task · **Status:** done · **Story:** S07 · **Task:** S07.2 (closing), S07.5 (second part)
 
 ## What needs doing
 - **Closing the window** (`onCloseRequest` in `Main`) saves first: `AppModel.requestClose(onDone)`:
@@ -30,7 +30,13 @@
 T058, T060, T064 (the copy has to skip the lock file; if T064 is not done yet the file is simply not there).
 
 ## Decisions
-(filled in while building)
+- **Closing never asks to save.** `requestClose()` (a suspend function in `ProjectClosing.kt`, called from `Main`'s `onCloseRequest` in a coroutine) saves with `saveNow()`, which also waits for a save that is running, and then calls `AppModel.exit` (`exitApplication` in `Main`; tests record the call). With nothing unsaved nothing is written. A project that is being created is not interrupted (`canClose`), and a second close request while the first is saving is ignored.
+- **If saving fails the app stays open,** and `AppModel.closeProblem` holds the message ("The changes of N pages could not be saved: <reason>"); the dialog shows while it is set. The three buttons: **Close without saving** (exit, the changes are lost), **Keep the app open** (the dialog goes, the changes stay in memory and saving is retried, T060), **Save to another location…**.
+- **Save to another location copies the project and opens the copy, but does not close the app.** The ticket text said "then the window closes"; a window that disappears right after a recovery gives no chance to see where the work went. Instead the copy becomes the open project with a notice ("Your changes were saved in a copy of the project: <folder>. The copy is open now."), and the user closes the app again, which now works. The copy is `<chosen folder>/<name>.korrektur`, or `<name> (copy).korrektur`, `(copy 2)`, … if the name is taken.
+- **`Project.copyTo`** (an extension in `format/ProjectCopy.kt`; `Project` has as many functions as the code checks allow) copies every file but the lock and `*.tmp`, each with the crash-safe copy of `AtomicFile`; it refuses an existing target or a project without `source.pdf`, and removes what it made if it fails. Then the unsaved pages are written into the copy (from the snapshot `unsaved()`), and if that fails the copy is removed again and the dialog says so. If the project folder itself is gone or unreadable, the copy fails with that message and the changes stay in memory: there is nothing to build a project from (the PDF is in the project folder). That case is told to the user instead of guessed around.
+- **Opening or creating another project first saves the open one** (`flushBeforeSwitch`, blocking the UI thread for the few milliseconds a save of a few pages takes). If that fails, the other project is not opened and `error` says why; the changes are kept.
+- **The dialog content is a separate composable** (`SaveFailedContent`) so that it can be tested without a window.
+- **Not tested here:** the real window-close event (Main) and a real folder chooser; the flow from `requestClose` to the dialog buttons is tested through the model and the dialog content.
 
 ## Progress
-Not started.
+Done. `ProjectClosing.kt` (`closeProject`, `requestClose`, `flushBeforeSwitch`, `saveElsewhere`), `format/ProjectCopy.kt` (`Project.copyTo`), `SaveFailedDialog.kt`, `AppModel` (`closeProblem`, `exit`, flush in `openProject`/`openCreated`), `Main` (the close request), README and `docs/architecture.md`. Tests: `CloseTest` (13: closing saves first without asking and exits, nothing unsaved writes nothing, no project, failure stays open with the reason, a second request is ignored, creating blocks, opening another project saves first and does not open it when saving fails, saving elsewhere with the change, a taken name, a project without its PDF), `CopyToTest` (5), `SaveFailedDialogTest` (4: the three ways out and a cancelled chooser).
