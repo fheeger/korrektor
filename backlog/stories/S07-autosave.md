@@ -29,7 +29,7 @@ S07 decides when and how changes from S05, S06 and later S09 (page status) are s
 - [x] S07.5 Handle failed saves: warning, retry, warning when closing, saving to another location → [T060](../tickets/T060-failed-saves.md), [T062](../tickets/T062-closing-and-switching.md)
 - [x] S07.6 Catch Ctrl+S and ignore it silently → [T063](../tickets/T063-ctrl-s.md)
 - [x] S07.7 Lock the project so it can't be opened twice, and clean up a lock left behind by a crash → [T064](../tickets/T064-project-lock.md)
-- [ ] S07.8 Tests: → [T065](../tickets/T065-autosave-tests.md)
+- [x] S07.8 Tests: → [T065](../tickets/T065-autosave-tests.md)
   - Kill the app while typing and while saving, then check that the project opens and at most the last 10 s are lost.
   - Simulate failed saves.
   - Measure saving speed in a 1000-page book.
