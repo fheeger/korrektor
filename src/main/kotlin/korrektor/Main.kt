@@ -1,12 +1,14 @@
 package korrektor
 
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import korrektor.settings.AppSettings
 import korrektor.viewer.hasNext
 import korrektor.viewer.hasPrevious
+import kotlinx.coroutines.launch
 
 /** Name shown in the window title. */
 const val APP_NAME = "korrektor"
@@ -14,13 +16,11 @@ const val APP_NAME = "korrektor"
 fun main() =
     application {
         val model = remember { AppModel(settings = AppSettings(AppSettings.defaultFile())) }
+        val scope = rememberCoroutineScope()
+        model.exit = ::exitApplication
         Window(
-            onCloseRequest = {
-                if (model.canClose) {
-                    model.saveView()
-                    exitApplication()
-                }
-            },
+            // The corrections are saved first, without asking; if that fails the user is told (see `requestClose`).
+            onCloseRequest = { scope.launch { model.requestClose() } },
             title = windowTitle(model.project, model.metadata),
         ) {
             val keys = remember { ProjectKeys(model) }
