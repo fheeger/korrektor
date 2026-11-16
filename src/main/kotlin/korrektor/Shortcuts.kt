@@ -172,7 +172,19 @@ object Shortcuts {
         } else {
             byCombo[KeyCombo(event.key, event.isCtrlPressed, event.isShiftPressed)]
         }
+
+    /**
+     * Whether the key is one that does nothing and must not reach the text: Ctrl+S, which people press out of habit.
+     * Everything is saved by itself (S07), so there is nothing to ask for and nothing to say. The same rule for the
+     * modifiers as [resolve]: Ctrl+Shift+S and an AltGr+S are other keys.
+     */
+    fun isIgnored(event: KeyEvent): Boolean =
+        event.type == KeyEventType.KeyDown &&
+            !event.makesACharacter() &&
+            KeyCombo(event.key, event.isCtrlPressed, event.isShiftPressed) in IGNORED
 }
+
+private val IGNORED = setOf(KeyCombo(Key.S, ctrl = true))
 
 private val KEY_NAMES =
     mapOf(
@@ -218,5 +230,5 @@ fun Modifier.shortcutKeys(actions: KeyActions): Modifier =
     onPreviewKeyEvent { event ->
         val action = Shortcuts.resolve(event)
         if (action != null) actions.perform(action)
-        action != null
+        action != null || Shortcuts.isIgnored(event)
     }

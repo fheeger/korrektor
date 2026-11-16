@@ -88,6 +88,6 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T060](tickets/T060-failed-saves.md) | Failed saves: a warning, and saving is retried | task | S07 | done |
 | [T061](tickets/T061-save-indicator.md) | The save status indicator | task | S07 | done |
 | [T062](tickets/T062-closing-and-switching.md) | Closing the app or the project: save first, and a way out when saving fails | task | S07 | ready for development |
-| [T063](tickets/T063-ctrl-s.md) | Ctrl+S does nothing | task | S07 | ready for development |
+| [T063](tickets/T063-ctrl-s.md) | Ctrl+S does nothing | task | S07 | done |
 | [T064](tickets/T064-project-lock.md) | Lock the project so that it cannot be opened twice | task | S07 | ready for development |
 | [T065](tickets/T065-autosave-tests.md) | Crash tests, failed saves and speed | task | S07 | ready for development |
