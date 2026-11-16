@@ -28,8 +28,8 @@ fun App(
     folderPicker: FolderPicker,
     pdfPicker: PdfPicker,
     modifier: Modifier = Modifier,
-    // What the shortcuts do is wired in with the tickets that give them an effect (T050 to T054).
-    keyActions: KeyActions = KeyActions {},
+    // What the shortcuts do: the project's own (`ProjectKeys`), or a replacement for a test.
+    keyActions: KeyActions? = null,
 ) {
     val openProject = { folderPicker.pick()?.let(model::openProject) ?: Unit }
     LaunchedEffect(model.viewer) { model.keepViewSaved() }
@@ -37,9 +37,10 @@ fun App(
     val editor = model.editor
     val shownPage = model.viewer?.page
     LaunchedEffect(editor, shownPage) { if (editor != null && shownPage != null) editor.show(shownPage) }
+    val keys = keyActions ?: remember(model) { ProjectKeys(model) }
     KorrektorTheme {
         Surface(modifier.fillMaxSize()) {
-            Column(if (model.project != null) Modifier.shortcutKeys(keyActions) else Modifier) {
+            Column(if (model.project != null) Modifier.shortcutKeys(keys) else Modifier) {
                 model.error?.let { ErrorBanner(message = it, onDismiss = model::dismissError) }
                 model.notice?.let { NoticeBanner(message = it, onDismiss = model::dismissNotice) }
                 val project = model.project

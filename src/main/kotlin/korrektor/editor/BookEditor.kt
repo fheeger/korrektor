@@ -16,6 +16,12 @@ class FocusRequest(
     val serial: Long,
 )
 
+/** Where the cursor goes when a page is opened by the keyboard: its first line, its last line, or nowhere. */
+enum class Arrival { NONE, FIRST, LAST }
+
+/** What a move to another line came to: it moved, it needs another page, or there was nothing to move to. */
+enum class LineMove { MOVED, PREVIOUS_PAGE, NEXT_PAGE, NOTHING }
+
 /**
  * The corrected text of the book while it is being worked on, shared by the scan and the text panel (S05). It holds
  * the corrected layer of the page shown, and keeps every page that was changed in this session, so that going to
@@ -32,6 +38,15 @@ class BookEditor(
 ) {
     private val changed = mutableMapOf<Int, PageLayer>()
     private var serial = 0L
+
+    /** The page the cursor is wanted on when it is shown, and where on it (see [arriveAt]). */
+    internal var arriving: Pair<Int, Arrival>? = null
+
+    /**
+     * Where the cursor is in the line it is in, as a character index. Not state: nothing draws it, the rows report it
+     * so that a move to the line above or below can keep the column.
+     */
+    var caret: Int = 0
 
     /** The page shown, from 1. */
     var page: Int by mutableIntStateOf(1)
@@ -73,11 +88,15 @@ class BookEditor(
         val kept = changed[number]
         if (kept != null) {
             layer = kept
+            applyArrival(number)
             return
         }
         try {
             val read = withContext(io) { readPage(number) }
-            if (page == number) layer = read
+            if (page == number) {
+                layer = read
+                applyArrival(number)
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (
