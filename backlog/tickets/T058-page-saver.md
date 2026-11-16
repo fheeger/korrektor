@@ -1,6 +1,6 @@
 # T058 The saver: write the unsaved pages in the background
 
-**Type:** task · **Status:** ready for development · **Story:** S07 · **Task:** S07.3
+**Type:** task · **Status:** done · **Story:** S07 · **Task:** S07.3
 
 ## What needs doing
 - **`AutoSaver`** (package `korrektor.editor`; plain Kotlin, no UI) for one open project. Its core is `suspend fun saveNow(): SaveOutcome`:
@@ -30,7 +30,13 @@
 T057.
 
 ## Decisions
-(filled in while building)
+- **A failure is a result, not an exception:** `saveNow()` returns `SaveOutcome.Done` or `SaveOutcome.Failed(page, reason)` and also sets `error`. Any `Exception` of a write counts (disk full, access denied, a vanished folder, a `FormatException`); only cancellation passes through. The saver stops at the first failure: later pages would most likely fail for the same reason, and the order of the pages is kept simple.
+- **A readable reason:** a `FileSystemException` becomes "<file name>: <reason>" and other `IOException`s use the same `reason()` helper as the format package.
+- **No overlap, no lock on the editor:** one `Mutex` for the saves; the editor is only asked for a snapshot (`unsaved()`) and told afterwards (`markSaved`), both short and thread-safe (T057). The writing itself runs on the IO dispatcher with nothing held. A test blocks the writer and shows that a hundred edits go through meanwhile.
+- **Cancelling:** the caller's cancellation stops the loop before the next page (`ensureActive`); a page that is being written is finished, because a file write cannot be interrupted and a half-written page does not exist anyway (temp file and rename, S01.6).
+- **An empty snapshot clears `error`:** with nothing to save there is nothing wrong any more (for example the pages were saved elsewhere, T062).
+- **The writer is a constructor parameter** (`project::writePage` in the app, wired in T059), the dispatcher too.
+- **Not in this ticket:** when to save (T059), retrying and the warning (T060), the indicator (T061).
 
 ## Progress
-Not started.
+Done. `AutoSaver` (`saveNow`, `saving`, `error`, `SaveOutcome`). Tests: `AutoSaverTest` (11, with a real generated project and fake writers: changed pages written and cleared; only the changed file differs, byte for byte; a saved page is not written again; a page edited while written is not lost and the old layer never overwrites the new one; no two writes at once; a failing write keeps that page and the ones after it; the next save works and clears the error; a real file-system failure gives a reason; `saving` is true while the writer runs; typing is not held up; nothing unsaved writes nothing).
