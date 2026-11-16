@@ -2,6 +2,7 @@ package korrektor.settings
 
 import androidx.compose.runtime.snapshots.Snapshot
 import korrektor.AppModel
+import korrektor.closeProject
 import korrektor.format.Metadata
 import korrektor.format.PageInfo
 import korrektor.format.Project
@@ -123,6 +124,7 @@ class ViewRestoreTest {
             first.viewer!!.goTo(5)
             first.viewer!!.zoomTo(1.5)
             first.saveView()
+            first.closeProject() // the session ends
 
             val second = AppModel(settings = AppSettings(file)) // the next session
             second.openProject(folder)
@@ -175,6 +177,7 @@ class ViewRestoreTest {
             model.openProject(b)
             model.viewer!!.goTo(9)
             model.saveView()
+            model.closeProject()
 
             val again = AppModel(settings = AppSettings(file))
             again.openProject(a)
@@ -207,7 +210,7 @@ class ViewRestoreTest {
             val folder = project(dir, "book")
 
             fun snapshot() =
-                folder.walk().filter { Files.isRegularFile(it) }.associate {
+                folder.walk().filter { Files.isRegularFile(it) && it.fileName.toString() != ".lock" }.associate {
                     it.toString() to
                         it.readBytes()
                 }

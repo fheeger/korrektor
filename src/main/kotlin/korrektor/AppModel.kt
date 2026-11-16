@@ -9,10 +9,13 @@ import korrektor.format.FormatException
 import korrektor.format.Metadata
 import korrektor.format.PageLayer
 import korrektor.format.Project
+import korrektor.format.ProjectLock
+import korrektor.format.ProjectLockedException
 import korrektor.settings.AppSettings
 import korrektor.viewer.ViewerState
 import korrektor.viewer.restore
 import kotlinx.coroutines.Dispatchers
+import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.name
 
@@ -32,29 +35,32 @@ class AppModel(
 
     /** The open project, or null on the start screen. */
     var project: Project? by mutableStateOf(null)
-        private set
+        internal set
 
     /**
      * What the viewer shows of the open project: the page and the zoom. Made when the project is opened, from what
      * the settings remember, and saved back to them (see `saveView` and `keepViewSaved`).
      */
     var viewer: ViewerState? by mutableStateOf(null)
-        private set
+        internal set
+
+    /** The right to work on the open project: nobody else can open it as long as this is held (S07). */
+    internal var lock: ProjectLock? = null
 
     /** The corrected text of the open project in memory, shared by the scan and the text panel (S05). */
     var editor: BookEditor? by mutableStateOf(null)
-        private set
+        internal set
 
     /** Writes the corrections of the open project to its page files (S07); `App` runs its timer. */
     var saver: AutoSaver? by mutableStateOf(null)
-        private set
+        internal set
 
     /**
      * The metadata of the open project. [Project.metadata] is plain data, so the screens read it from here,
      * which the UI can observe.
      */
     var metadata: Metadata? by mutableStateOf(null)
-        private set
+        internal set
 
     /** Whether the "New project" dialog is showing. */
     var newProjectOpen: Boolean by mutableStateOf(false)
@@ -82,11 +88,20 @@ class AppModel(
     var notice: String? by mutableStateOf(null)
         private set
 
-    /** Opens the project in [folder]. If that fails, [error] says why and the current project stays open. */
+    /**
+     * Opens the project in [folder]. If that fails, [error] says why and the current project stays open. A project
+     * that is open already (in another window or instance, or this one) is not opened a second time (S07).
+     */
     fun openProject(folder: Path) {
+        var taken: ProjectLock? = null
         try {
-            open(Project.open(folder))
+            // Only a project folder is locked: the lock file must not be left in just any folder that was chosen.
+            if (Files.isRegularFile(folder.resolve(Project.PROJECT_FILE))) taken = ProjectLock.acquire(folder)
+            open(Project.open(folder), taken)
+        } catch (e: ProjectLockedException) {
+            error = e.message
         } catch (e: FormatException) {
+            taken?.close()
             error = e.message
         }
     }
@@ -120,7 +135,15 @@ class AppModel(
         created: Project,
         notice: String? = null,
     ) {
-        open(created)
+        try {
+            open(created, ProjectLock.acquire(created.folder))
+        } catch (e: ProjectLockedException) {
+            error = e.message
+            return
+        } catch (e: FormatException) {
+            error = e.message
+            return
+        }
         this.notice = notice
         newProjectOpen = false
     }
@@ -135,8 +158,14 @@ class AppModel(
         metadata = new
     }
 
-    private fun open(opened: Project) {
+    private fun open(
+        opened: Project,
+        taken: ProjectLock?,
+    ) {
         saveView() // the project that was open until now
+        // Its lock is given back only now that the new project is open: if opening failed, nothing was changed.
+        lock?.close()
+        lock = taken
         project = opened
         viewer = ViewerState(opened.pages.size).also { state -> settings.viewOf(opened.folder)?.let(state::restore) }
         val newEditor = BookEditor(opened::readPage, Dispatchers.IO)

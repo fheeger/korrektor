@@ -67,10 +67,17 @@ class EditorFlowTest {
             PdfImport.run(project)
 
             fun snapshot() =
-                project.folder.walk().filter { Files.isRegularFile(it) }.associate {
-                    it.toString() to
-                        it.readBytes()
-                }
+                project.folder
+                    .walk()
+                    .filter {
+                        Files.isRegularFile(
+                            it,
+                        ) &&
+                            it.fileName.toString() != ".lock"
+                    }.associate {
+                        it.toString() to
+                            it.readBytes()
+                    }
             val before = snapshot()
             val model = AppModel()
             runComposeUiTest {
