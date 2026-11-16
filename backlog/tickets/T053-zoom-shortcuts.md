@@ -1,6 +1,6 @@
 # T053 Zoom shortcuts
 
-**Type:** task · **Status:** ready for development · **Story:** S06 · **Task:** S06.5
+**Type:** task · **Status:** done · **Story:** S06 · **Task:** S06.5
 
 ## What needs doing
 - **Ctrl+Plus / Ctrl+Minus** call `ViewerState.zoomIn()` / `zoomOut()` (the same steps as the buttons, including the scan's own resolution). **Ctrl+0** calls `fitPage()`, **Ctrl+1** calls `fitWidth()`.
@@ -20,7 +20,10 @@
 T049.
 
 ## Decisions
-(filled in while building)
+- **The actions are the viewer's own methods** (`zoomIn`, `zoomOut`, `fitPage`, `fitWidth`), called from `ProjectKeys`, so keys and buttons cannot differ (tested by comparing the scale after each).
+- **The anchor is the centre of the viewport,** as with the buttons (the default of `zoomTo`).
+- **"No `+` or `-` typed":** the root handler uses the key press up (`onPreviewKeyEvent`), so the field never sees it, and the test checks that the text and `changedPages` are unchanged. The test driver sends key events only, not the typed characters of a real keyboard: whether a real keyboard types a character anyway (Ctrl+Plus on a German layout) is on the list for the report, "how to try it".
+- **The limits** need no code: `zoomIn`/`zoomOut` do nothing beyond the steps.
 
 ## Progress
-Not started.
+Done. Four lines in `ProjectKeys`. Tests: `ZoomShortcutsUiTest` (6, whole window, real keys: Plus/Minus against the buttons, the alternative keys, fit page and fit width on the number row and the numpad, no text typed, the limits, from the page field).
