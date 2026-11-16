@@ -3,6 +3,7 @@ package korrektor
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import korrektor.editor.AutoSaver
 import korrektor.editor.BookEditor
 import korrektor.format.FormatException
 import korrektor.format.Metadata
@@ -39,6 +40,10 @@ class AppModel(
 
     /** The corrected text of the open project in memory, shared by the scan and the text panel (S05). */
     var editor: BookEditor? by mutableStateOf(null)
+        private set
+
+    /** Writes the corrections of the open project to its page files (S07); `App` runs its timer. */
+    var saver: AutoSaver? by mutableStateOf(null)
         private set
 
     /**
@@ -131,7 +136,11 @@ class AppModel(
         saveView() // the project that was open until now
         project = opened
         viewer = ViewerState(opened.pages.size).also { state -> settings.viewOf(opened.folder)?.let(state::restore) }
-        editor = BookEditor(opened::readPage, Dispatchers.IO)
+        val newEditor = BookEditor(opened::readPage, Dispatchers.IO)
+        val newSaver = AutoSaver(newEditor, Dispatchers.IO, write = opened::writePage)
+        newEditor.onUnsaved = newSaver::changed
+        editor = newEditor
+        saver = newSaver
         metadata = opened.metadata
         error = null
         notice = null
