@@ -1,6 +1,6 @@
 # T061 The save status indicator
 
-**Type:** task · **Status:** ready for development · **Story:** S07 · **Task:** S07.4
+**Type:** task · **Status:** done · **Story:** S07 · **Task:** S07.4
 
 ## What needs doing
 - **A small indicator** in the text panel's header row (where "N pages changed, not saved yet" is now, which it replaces) with three states:
@@ -25,7 +25,10 @@
 T058, T060.
 
 ## Decisions
-(filled in while building)
+- **One place decides:** `AutoSaver.status` (`SAVED`, `SAVING`, `NOT_SAVED`) is derived from `saving` and `editor.changedPages`; `SaveIndicator` only shows `status.text`, in the error colour when the status is "Not saved" and the last save failed, otherwise in a quiet colour. Test tag `save status`.
+- **No delay or minimum time for "Saving…":** a save that takes a few milliseconds shows the word for a frame. It happens once after a pause in typing (a second after the last key), not while typing, so it does not flicker under the hands. A threshold would have made the status lie for 300 ms. Easy to add later if it looks restless.
+- **The indicator is part of the panel's header row**, where the old red "N pages changed, not saved yet" was; that text and its page count are gone (the three words are enough). `TextPanel` takes the saver as an optional parameter (none: no indicator), so the panel tests without a saver are unchanged. A test replaced the old text test.
+- **README** now describes autosave instead of "kept in memory only"; T062 adds what happens when closing.
 
 ## Progress
-Not started.
+Done. `SaveStatus`, `AutoSaver.status`, `SaveIndicator.kt`, `TextPanel` (saver parameter), `App`, README. Tests: `SaveStatusUiTest` (3, the whole window: Saved, Not saved, Saving…, Saved with a blocking writer; an edit during a save ends as Not saved and then Saved; a failing writer shows Not saved and the warning), and `EditLinesTest` (the old page-count text replaced by a check that the panel without a saver has no indicator).

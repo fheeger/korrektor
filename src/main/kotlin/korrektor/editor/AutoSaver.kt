@@ -19,6 +19,20 @@ import java.nio.file.Path
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
 
+/** What the save status indicator says (S07): [text] is shown as it is. */
+enum class SaveStatus(
+    val text: String,
+) {
+    /** Nothing is unsaved and nothing is being written. */
+    SAVED("Saved"),
+
+    /** Pages are being written. */
+    SAVING("Saving…"),
+
+    /** Pages are unsaved and nothing is being written: waiting for the timer, or the last save failed. */
+    NOT_SAVED("Not saved"),
+}
+
 /** How long saving waits before it tries again after a failure. */
 const val RETRY_DELAY_MS = 5_000L
 
@@ -77,6 +91,15 @@ class AutoSaver(
         private set
 
     private var warningDismissed: Boolean by mutableStateOf(false)
+
+    /** What the indicator shows. The one place that decides it; the UI only shows it. */
+    val status: SaveStatus
+        get() =
+            when {
+                saving -> SaveStatus.SAVING
+                editor.changedPages.isNotEmpty() -> SaveStatus.NOT_SAVED
+                else -> SaveStatus.SAVED
+            }
 
     /**
      * What to tell the user while saving fails: the reason, once however often saving is tried, until it works again

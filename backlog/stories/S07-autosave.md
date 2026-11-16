@@ -25,7 +25,7 @@ S07 decides when and how changes from S05, S06 and later S09 (page status) are s
 - [x] S07.1 Keep track of which pages have unsaved changes → [T057](../tickets/T057-unsaved-pages.md)
 - [ ] S07.2 Save triggers: 1 s pause in typing, at least every 10 s, page switch, closing → [T059](../tickets/T059-save-triggers.md), [T062](../tickets/T062-closing-and-switching.md)
 - [x] S07.3 Save in the background, using the crash-safe writing from S01.6 → [T058](../tickets/T058-page-saver.md)
-- [ ] S07.4 Save status indicator → [T061](../tickets/T061-save-indicator.md)
+- [x] S07.4 Save status indicator → [T061](../tickets/T061-save-indicator.md)
 - [ ] S07.5 Handle failed saves: warning, retry, warning when closing, saving to another location → [T060](../tickets/T060-failed-saves.md), [T062](../tickets/T062-closing-and-switching.md)
 - [ ] S07.6 Catch Ctrl+S and ignore it silently → [T063](../tickets/T063-ctrl-s.md)
 - [ ] S07.7 Lock the project so it can't be opened twice, and clean up a lock left behind by a crash → [T064](../tickets/T064-project-lock.md)

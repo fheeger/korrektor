@@ -77,7 +77,7 @@ fun App(
                                 ProjectViewer(project, viewer, Modifier.fillMaxSize(), DefaultPageSourceFactory, links)
                             },
                             modifier = room,
-                            right = { TextPanel(checkNotNull(model.editor), Modifier.fillMaxSize()) },
+                            right = { TextPanel(checkNotNull(model.editor), Modifier.fillMaxSize(), model.saver) },
                         )
                     }
                 }
