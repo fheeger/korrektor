@@ -1,6 +1,6 @@
 # T052 Editing keys: Backspace on an empty line, and the full set by keyboard
 
-**Type:** task · **Status:** ready for development · **Story:** S06 · **Task:** S06.4
+**Type:** task · **Status:** done · **Story:** S06 · **Task:** S06.4
 
 Enter (split), Backspace at the start (join with the line above) and Delete at the end (join with the line below) exist since S05 (T043). What the story adds is the empty line, and the check that all five behaviours hold together.
 
@@ -25,7 +25,11 @@ Enter (split), Backspace at the start (join with the line above) and Delete at t
 T049 (the handler order: the row's keys first, then the shortcuts).
 
 ## Decisions
-(filled in while building)
+- **An empty line is deleted, not joined,** when Backspace is pressed at its start (`deleteLine` instead of `joinWithPrevious`). A join would have been right for a line above, but an erased line may still carry a box, which the join would add to the line above, and an empty first line has nothing to join to. `deleteLine` already puts the cursor at the end of the line above, or at the start of the next one for the first line.
+- **The only line of a page is deleted too,** and the page then shows its note (or "No lines on this page."). Add line / Enter-free ways to get a line back: the "Add line" button. The text panel takes the focus when the page has no lines (the row that had it is gone), so the shortcuts keep working (tested).
+- **Delete on an empty line** joins the next line into it (unchanged): the line keeps its id, the next one goes.
+- **Enter at the end** adds an empty line with a new id and no box, the cursor in it (already so since T043; now pinned down by a test).
+- **Ctrl+Backspace, Ctrl+Delete, and Backspace/Delete with a selection** are not matched by the line keys (they ignore Ctrl/Alt/Meta and a non-empty selection) and stay with the field (tested).
 
 ## Progress
-Not started.
+Done. `lineKey` in `TextPanel.kt`, and the panel's focus after the last line is deleted. Tests: `EditKeysUiTest` (11, real key events: Backspace on an empty middle, first, last and only line, Backspace on a line with text, Delete on an empty line, Enter at the end and in the middle, selections, Ctrl+Backspace/Ctrl+Delete). The tests of T043 (`LineOperationsUiTest`) pass unchanged.
