@@ -37,7 +37,8 @@ fun App(
     val editor = model.editor
     val shownPage = model.viewer?.page
     LaunchedEffect(editor, shownPage) { if (editor != null && shownPage != null) editor.show(shownPage) }
-    val keys = keyActions ?: remember(model) { ProjectKeys(model) }
+    val projectKeys = remember(model) { ProjectKeys(model) }
+    val keys = keyActions ?: projectKeys
     KorrektorTheme {
         Surface(modifier.fillMaxSize()) {
             Column(if (model.project != null) Modifier.shortcutKeys(keys) else Modifier) {
@@ -67,7 +68,8 @@ fun App(
                                             if (editor != null) editor.clickOnScan(viewer.page, point)
                                         }
                                     }
-                                val links = ScanLinks(highlight, onClick)
+                                val links =
+                                    ScanLinks(highlight, onClick, projectKeys::goToPage, projectKeys::leavePageField)
                                 // The scan follows the cursor: a line that is out of view is brought into it.
                                 LaunchedEffect(links.highlight) { links.highlight?.let { viewer.reveal(it.box) } }
                                 ProjectViewer(project, viewer, Modifier.fillMaxSize(), DefaultPageSourceFactory, links)

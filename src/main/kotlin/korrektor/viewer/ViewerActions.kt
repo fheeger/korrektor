@@ -47,6 +47,11 @@ fun ViewerState.previous() = goTo(page - 1)
 
 fun ViewerState.next() = goTo(page + 1)
 
+/** Asks the page field to take the focus and select its content (Ctrl+G). */
+fun ViewerState.focusPageField() {
+    pageFieldRequests++
+}
+
 /** Goes to the page the user typed: whole numbers from 1 to the page count, spaces around are fine. */
 fun ViewerState.goToText(text: String): Boolean = text.trim().toIntOrNull()?.let(::goTo) ?: false
 
