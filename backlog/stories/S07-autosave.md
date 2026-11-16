@@ -1,6 +1,6 @@
 # S07 Autosave
 
-**Features:** N4 · **Status:** in progress
+**Features:** N4 · **Status:** in review
 
 As a reader of historical sources, I want my corrections to be saved automatically
 so that I never lose work, even if the app crashes.
@@ -34,3 +34,47 @@ S07 decides when and how changes from S05, S06 and later S09 (page status) are s
   - Simulate failed saves.
   - Measure saving speed in a 1000-page book.
 - [x] S07.9 Fixes from the code review → [T066](../tickets/T066-review-fixes.md)
+
+## Report
+
+### What was built
+- **Tracking** (T057): `BookEditor` knows which pages differ from what is on disk (`changedPages`, `unsaved()`, `markSaved` by layer identity, so an edit made during a save stays unsaved).
+- **The saver** (T058, T059): `AutoSaver` writes only the changed pages, in the background on the IO dispatcher, one save at a time. It saves 1 s after the last change, at least every 10 s during continuous typing, and at once on a page switch, on closing and on switching projects.
+- **Failed saves** (T060): the changes stay in memory, a red banner names the reason, and saving is retried every 5 s; the warning goes by itself when saving works.
+- **Indicator** (T061): "Saved", "Saving…" or "Not saved" in the text panel.
+- **Ctrl+S** (T063) is swallowed and does nothing.
+- **Project lock** (T064): an operating system file lock on `<project>/.lock`. A second window or instance gets a clear message. A file left behind by a crash blocks nothing, because the lock is the system's, not the file's.
+- **Closing and switching** (T062): closing saves first without asking. If saving fails, a dialog offers "Save to another location…" (copies the project, writes the unsaved pages into the copy, opens the copy), "Keep the app open" or "Close without saving". Switching projects saves first and does not switch if that fails.
+- **Tests** (T065): kills of a child JVM while typing and while saving, a folder that goes away and comes back, a window session from typing to reopening with the originals compared byte for byte, and speed in a book of 1000 pages.
+- **Review fixes** (T066): see below.
+
+### Decisions
+- No "is the lock stale?" check: an OS lock is released by the system when the process ends, however it ends. The `.lock` file is never deleted.
+- The retry interval is fixed (5 s); `Ctrl+S` is not in the shortcut table, so it is not listed as a shortcut.
+- The timer runs on `Dispatchers.Default`, not on the UI thread (review finding): the UI thread may wait for a save (project switch).
+- `saveElsewhere` does not exit the app: it opens the copy and shows a notice with its path.
+
+### How each criterion was checked
+- **No save step, saved at the right moments:** `SaveTriggersTest` (virtual time: 1 s, 10 s cap, flush) and `SaveTriggersUiTest` (real window: pause, page switch); `CloseTest` for closing and switching.
+- **At most the last 10 s lost, the project always opens:** `CrashTest` kills a real child JVM. Typing kills lost 0.56 to 2.6 s; a 12 s run of continuous typing lost about 2 s (the 10 s cap works). 8 of 10 kills while saving 40 pages left a `.tmp` file, i.e. landed mid-write; the project opened every time, every page decoded and held one whole state.
+- **Only changed pages, originals untouched:** `AutosavePerformanceTest` (999 of 1000 pages not written) and `AutosaveFlowTest` (all files except the corrected layers byte for byte equal after a session).
+- **Background, never interrupts typing, 1000 pages:** save of 1 page 7 to 9 ms, of 50 pages about 50 ms; typing latency 95th percentile 21 µs without a save, 33 µs during a save of 500 pages.
+- **Indicator, warning, retry:** `SaveStatusUiTest`, `SaveWarningUiTest`, `SaverFailureTest`, `AutosaveFlowTest` (folder moved away and back).
+- **Closing while saving fails:** `CloseTest`, `SaveFailedDialogTest`, `AutosaveFlowTest`.
+- **Ctrl+S:** `CtrlSTest`.
+- **Lock:** `ProjectLockTest` (same JVM, child JVM, killed child), `AppModelLockTest`.
+- Kover: the new files are covered 90 to 100 % of their lines (`AutoSaver` 77/78, `SaveUi` 20/20, `SaveIndicator` 10/10, `ProjectLock` 25/26, `ProjectClosing` 56/60, `ProjectCopy` 12/16).
+
+### Code review (Opus 5.5, whole story)
+Eight findings; seven fixed in T066 (#77): the window could freeze when another project was opened during a save; edits typed during the closing save were lost; one failing page held back the pages after it; save-to-another-location could run twice or into itself; a failed second lock attempt could release the first lock on Linux/macOS; a failed open could leak the lock. The freeze test was checked to hang without the fix.
+
+### Known gaps
+- After `closeProject` the old saver's loop may run until the next recomposition and could retry into the old folder for a moment (only in "save elsewhere"). A `close()` on the saver would fix it.
+- `flushBeforeSwitch` still uses `runBlocking` on the UI thread: a slow disk freezes the window for the length of the save when switching projects.
+- "Saving…" has no minimum display time, so it may flash.
+- The long crash run (10 kills each) and the speed tests only run with `KORREKTOR_PERF_TESTS=1`; CI runs 3 kills each.
+- Not tried by hand: the real window close button, the real folder chooser in the failure dialog, Ctrl+S on a real keyboard, two real app instances with the native lock, and how the red banner and the indicator look.
+- Open since S06: should Up/Down skip pages without lines (e.g. sample page 3)? They stop there now.
+
+### How to try it
+Open a project, type, and watch the indicator: "Not saved", then "Saved" after a second. Close the window right after typing: it closes without asking, and the text is there after reopening. Press Ctrl+S: nothing happens. Start a second instance on the same project: it says the project is open already. To see a failure, make the project folder read-only (or move its `pages` folder away), type, and look at the red banner; then close the app and try "Save to another location…".

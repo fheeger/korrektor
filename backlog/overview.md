@@ -17,7 +17,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [S04](stories/S04-page-viewer.md) | Page viewer | C2, N1 | done |
 | [S05](stories/S05-side-by-side-editor.md) | Scan and text side by side | C1 | in review |
 | [S06](stories/S06-keyboard-navigation.md) | Keyboard navigation | C2 | in review |
-| [S07](stories/S07-autosave.md) | Autosave | N4 | in progress |
+| [S07](stories/S07-autosave.md) | Autosave | N4 | in review |
 | [S08](stories/S08-undo-redo.md) | Undo/redo | F1 | ready for development |
 | [S09](stories/S09-page-status.md) | Page status | C5 | ready for development |
 | [S10](stories/S10-find-and-replace.md) | Find and replace with a preview | D2 | ready for development |
