@@ -6,26 +6,35 @@ import korrektor.editor.arriveAt
 import korrektor.editor.firstLine
 import korrektor.editor.lastLine
 import korrektor.editor.moveLine
+import korrektor.viewer.fitPage
+import korrektor.viewer.fitWidth
 import korrektor.viewer.focusPageField
 
 /**
  * What the shortcuts do in the open project: they move the cursor in the editor and the page in the viewer. The
- * actions of the lines (T050) and the pages (T051) are here; the zoom and list actions come with their tickets.
+ * actions of the lines (T050), the pages (T051) and the zoom (T053) are here; the list on F1 comes with the menus.
  */
 class ProjectKeys(
     private val model: AppModel,
 ) : KeyActions {
+    // A table instead of one big `when`: each action is one line, and an action with nothing to do is just not here.
+    private val handlers: Map<AppAction, () -> Unit> =
+        mapOf(
+            AppAction.PREVIOUS_LINE to { moveLine(-1) },
+            AppAction.NEXT_LINE to { moveLine(1) },
+            AppAction.FIRST_LINE to { model.editor?.firstLine() },
+            AppAction.LAST_LINE to { model.editor?.lastLine() },
+            AppAction.NEXT_PAGE to { model.viewer?.let { openPage(it.page + 1, Arrival.FIRST) } },
+            AppAction.PREVIOUS_PAGE to { model.viewer?.let { openPage(it.page - 1, Arrival.FIRST) } },
+            AppAction.GO_TO_PAGE to { model.viewer?.focusPageField() },
+            AppAction.ZOOM_IN to { model.viewer?.zoomIn() },
+            AppAction.ZOOM_OUT to { model.viewer?.zoomOut() },
+            AppAction.FIT_PAGE to { model.viewer?.fitPage() },
+            AppAction.FIT_WIDTH to { model.viewer?.fitWidth() },
+        )
+
     override fun perform(action: AppAction) {
-        when (action) {
-            AppAction.PREVIOUS_LINE -> moveLine(-1)
-            AppAction.NEXT_LINE -> moveLine(1)
-            AppAction.FIRST_LINE -> model.editor?.firstLine()
-            AppAction.LAST_LINE -> model.editor?.lastLine()
-            AppAction.NEXT_PAGE -> model.viewer?.let { openPage(it.page + 1, Arrival.FIRST) }
-            AppAction.PREVIOUS_PAGE -> model.viewer?.let { openPage(it.page - 1, Arrival.FIRST) }
-            AppAction.GO_TO_PAGE -> model.viewer?.focusPageField()
-            else -> Unit
-        }
+        handlers[action]?.invoke()
     }
 
     /**
