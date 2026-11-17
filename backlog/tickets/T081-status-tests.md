@@ -1,6 +1,6 @@
 # T081 Page status tests: undo, crash, 1000 pages
 
-**Type:** task · **Status:** ready for development · **Story:** S09 · **Task:** S09.7
+**Type:** task · **Status:** done · **Story:** S09 · **Task:** S09.7
 
 ## What needs doing
 Tests that cover several tickets (the ones of each ticket are in the ticket):
@@ -15,7 +15,7 @@ Tests that cover several tickets (the ones of each ticket are in the ticket):
 3. The measured numbers are in the story report.
 
 ## Approach
-`StatusFlowTest`, `StatusPerformanceTest` (history package), `HistoryChild`/`HistoryCrashTest`, `HistorySampleTest` pattern.
+`StatusFlowTest` and `StatusSampleTest` (history package), `HistoryChild`/`HistoryCrashTest`; the timing of the jumps is in `UncheckedPagesTest` (T080).
 
 ## Dependencies
 T076–T080.
@@ -23,3 +23,4 @@ T076–T080.
 ## Decisions
 
 ## Progress
+Done. Tests: `StatusFlowTest` (corrections and statuses across pages undone in order after saving and reopening; 1000 pages without any page file: opened and the progress counted in 288 ms), the child JVM of `HistoryCrashTest` now also sets statuses (12 kills locally, the statuses equal a replay of the history each time; with the status recovery switched off on purpose the test fails at kill 1), `StatusSampleTest` (the sample: 20 pages marked, saved, reopened, progress "20 of 165 corrected (12 %)", jumps), `UncheckedPagesTest` has 1000 searches over 1000 pages in 65 ms. Build green.

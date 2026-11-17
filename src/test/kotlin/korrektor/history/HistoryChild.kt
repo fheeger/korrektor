@@ -5,9 +5,12 @@ import korrektor.editor.BookEditor
 import korrektor.editor.HistoryRecovery
 import korrektor.editor.UndoHistory
 import korrektor.editor.redo
+import korrektor.editor.setStatus
 import korrektor.editor.undo
 import korrektor.format.HistoryCodec
+import korrektor.format.PageStatus
 import korrektor.format.Project
+import korrektor.format.setStatuses
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -17,19 +20,26 @@ import java.nio.file.Path
 /**
  * The process that `HistoryCrashTest` kills (S08). It opens the project in the first argument as the app does (the
  * history is repaired and loaded), runs the real saver with the history and keeps changing text on all pages, with
- * splits, added lines, undo and redo, until it is killed. It says "<round> <time in ms>" for each round.
+ * splits, added lines, page statuses, undo and redo, until it is killed. It says "<round> <time in ms>" for each round.
  * Arguments: the project folder, the first round.
  */
 fun main(args: Array<String>) {
     val project = Project.open(Path.of(args[0]))
     val first = args[1].toInt()
     HistoryRecovery.recover(project)
-    val editor = BookEditor(project::readPage, Dispatchers.IO, history = UndoHistory.load(project.historyLog))
+    val editor =
+        BookEditor(
+            project::readPage,
+            Dispatchers.IO,
+            history = UndoHistory.load(project.historyLog),
+            initialStatuses = project.statuses,
+        )
     val saver =
         AutoSaver(
             editor,
             Dispatchers.IO,
             appendHistory = { entries -> project.historyLog.appendAll(entries.map(HistoryCodec::encode)) },
+            writeStatuses = project::setStatuses,
             write = project::writePage,
         )
     editor.onUnsaved = saver::changed
@@ -41,6 +51,11 @@ fun main(args: Array<String>) {
             for (page in 1..project.pages.size) {
                 editor.show(page)
                 editor.setLineText("l1", "p$page r$round")
+                if (page % 4 ==
+                    0
+                ) {
+                    editor.setStatus(page, if (round % 2 == 0) PageStatus.CORRECTED else PageStatus.UNCHECKED)
+                }
                 if (round % 3 == 0) editor.splitLine("l1", 2)
                 if (round % 5 == 0) editor.addLineAfter("l1", "neu $round")
                 if (round % 4 == 0) {
