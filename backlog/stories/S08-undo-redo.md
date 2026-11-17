@@ -1,6 +1,6 @@
 # S08 Undo/redo
 
-**Features:** F1 · **Status:** in review
+**Features:** F1 · **Status:** done
 
 As a reader of historical sources, I want to undo and redo my edits, even after reopening the project
 so that I can fix mistakes in my corrections without worry.
