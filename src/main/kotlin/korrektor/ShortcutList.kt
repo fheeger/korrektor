@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -28,6 +29,8 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+
+private val MAX_HEIGHT = 640.dp
 
 /** The list of keyboard shortcuts in a dialog (F1). F1 again, Escape and "Close" close it. */
 @Composable
@@ -58,9 +61,16 @@ fun ShortcutList(
         shape = MaterialTheme.shapes.large,
         tonalElevation = 6.dp,
     ) {
-        Column(Modifier.padding(24.dp).width(620.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // The list scrolls inside a dialog of a bounded height, so that "Close" stays in view however many shortcuts.
+        Column(
+            Modifier.padding(24.dp).width(620.dp).heightIn(max = MAX_HEIGHT),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             Text("Keyboard shortcuts", style = MaterialTheme.typography.headlineSmall)
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(
+                Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 for (shortcut in Shortcuts.all) {
                     Entry(
                         shortcut.combos.joinToString("   or   ") { it.text },
