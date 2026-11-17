@@ -1,5 +1,7 @@
 package korrektor.format
 
+import kotlinx.serialization.json.JsonObject
+
 /**
  * One entry of the history of the book (`history/book.jsonl`, S08). Every entry that changes pages has a [seq], counted
  * up from 1 over all of them, and a list of [changes] that is applied forward as it is.
@@ -27,4 +29,14 @@ data class RedoEntry(
     val seq: Int,
     val step: Int,
     val changes: List<Change>,
+) : HistoryEntry
+
+/** All entries up to [upTo] are in the page files: after a crash, only the entries after the last one are checked. */
+data class SavedEntry(
+    val upTo: Int,
+) : HistoryEntry
+
+/** An entry of a type this version does not know: kept as it is, so that a newer project loses nothing. */
+data class UnknownEntry(
+    val json: JsonObject,
 ) : HistoryEntry

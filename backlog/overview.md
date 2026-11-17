@@ -96,7 +96,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T068](tickets/T068-record-steps.md) | Record steps: the undo and redo stacks of the editor | task | S08 | done |
 | [T069](tickets/T069-undo-redo-logic.md) | Undo and redo in the editor, also on another page | task | S08 | done |
 | [T070](tickets/T070-undo-keys-menu.md) | Keys, menu and list for undo and redo | task | S08 | done |
-| [T071](tickets/T071-history-file.md) | The history file and its entries | task | S08 | ready for development |
+| [T071](tickets/T071-history-file.md) | The history file and its entries | task | S08 | done |
 | [T072](tickets/T072-history-with-saves.md) | History saved together with the pages, and recovery after a crash | task | S08 | ready for development |
 | [T073](tickets/T073-load-history.md) | Load the history when a project is opened, and on demand | task | S08 | ready for development |
 | [T074](tickets/T074-history-tests.md) | History tests: across pages, after reopening, after a crash, speed | task | S08 | ready for development |

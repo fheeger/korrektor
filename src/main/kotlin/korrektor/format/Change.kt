@@ -1,5 +1,7 @@
 package korrektor.format
 
+import kotlinx.serialization.json.JsonObject
+
 /**
  * One change of the book's text that the history can undo and redo (S08). A step of the history is a list of changes,
  * which may lie on several pages (a "replace all"). The changes of a step are made in order, each on the state that the
@@ -40,4 +42,12 @@ data class LineChange(
 
     override fun inverted(): LineChange =
         copy(removed = inserted, inserted = removed, regionBefore = regionAfter, regionAfter = regionBefore)
+}
+
+/** A change of a kind this version does not know (a later version wrote it): kept as it is, and it cannot be made. */
+data class UnknownChange(
+    override val page: Int,
+    val json: JsonObject,
+) : Change {
+    override fun inverted(): UnknownChange = this
 }
