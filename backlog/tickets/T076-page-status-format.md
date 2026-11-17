@@ -1,6 +1,6 @@
 # T076 Page status in the format
 
-**Type:** task · **Status:** ready for development · **Story:** S09 · **Task:** S09.1
+**Type:** task · **Status:** done · **Story:** S09 · **Task:** S09.1
 
 ## What needs doing
 - **`PageStatus`** (format): an open set like `RegionType`: `UNCHECKED` and `CORRECTED`; an unknown name from a later version is kept as it is.
@@ -29,3 +29,4 @@ None.
 - **Open set:** later statuses ("needs attention", C5) need no format change.
 
 ## Progress
+Done. `PageStatus`, `PageInfo.status`, `Project.setStatuses`/`statuses`, `StatusChange` and its codec, docs. Tests: `ProjectStatusTest` (8), additions to `HistoryCodecTest`, `SpecExamplesTest` (the examples now have a status and a status entry). Build green.

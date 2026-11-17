@@ -84,15 +84,15 @@ class HistoryCodecTest {
 
     @Test
     fun anEntryOfAnUnknownTypeIsKeptAsItIs() {
-        val json = CanonicalJson.parse("{\"future\": [1, 2], \"seq\": 8, \"type\": \"status\"}") as JsonObject
+        val json = CanonicalJson.parse("{\"future\": [1, 2], \"seq\": 8, \"type\": \"future\"}") as JsonObject
         val entry = HistoryCodec.decode(json)
         assertEquals(UnknownEntry(json), entry)
-        assertEquals("{\"future\": [1, 2], \"seq\": 8, \"type\": \"status\"}", text(entry))
+        assertEquals("{\"future\": [1, 2], \"seq\": 8, \"type\": \"future\"}", text(entry))
     }
 
     @Test
     fun aChangeOfAnUnknownTypeIsKeptAndCannotBeInverted() {
-        val change = CanonicalJson.parse("{\"page\": 2, \"to\": \"corrected\", \"type\": \"status\"}") as JsonObject
+        val change = CanonicalJson.parse("{\"page\": 2, \"to\": \"corrected\", \"type\": \"future\"}") as JsonObject
         val json =
             JsonObject(
                 mapOf(
@@ -105,6 +105,32 @@ class HistoryCodecTest {
         assertEquals(UnknownChange(2, change), entry.changes.single())
         assertEquals(entry.changes.single(), entry.changes.single().inverted())
         assertEquals(json, HistoryCodec.encode(entry))
+    }
+
+    @Test
+    fun aStatusChangeRoundTripsAndInvertsBySwappingTheStatuses() {
+        val change = StatusChange(12, PageStatus.UNCHECKED, PageStatus.CORRECTED)
+        val entry = EditEntry(3, listOf(change))
+        assertEquals(
+            "{\"changes\": [{\"from\": \"unchecked\", \"page\": 12, \"to\": \"corrected\", \"type\": \"status\"}], " +
+                "\"seq\": 3, \"type\": \"edit\"}",
+            text(entry),
+        )
+        assertEquals(entry, HistoryCodec.decode(HistoryCodec.encode(entry)))
+        assertEquals(StatusChange(12, PageStatus.CORRECTED, PageStatus.UNCHECKED), change.inverted())
+        assertEquals(change, change.inverted().inverted())
+    }
+
+    @Test
+    fun aDamagedStatusChangeIsAnError() {
+        fun fail(change: String) =
+            assertFailsWith<FormatException> {
+                HistoryCodec.decode(
+                    CanonicalJson.parse("{\"changes\": [$change], \"seq\": 1, \"type\": \"edit\"}") as JsonObject,
+                )
+            }.message!!
+        assertTrue("to" in fail("{\"from\": \"unchecked\", \"page\": 1, \"type\": \"status\"}"))
+        assertTrue("blank" in fail("{\"from\": \"\", \"page\": 1, \"to\": \"corrected\", \"type\": \"status\"}"))
     }
 
     @Test

@@ -180,12 +180,12 @@ class ProjectTest {
                 folder
                     .resolve("project.json")
                     .readText()
-                    .replace("{\"pdfPage\": 1}", "{\"pdfPage\": 1, \"status\": \"done\"}")
+                    .replace("{\"pdfPage\": 1}", "{\"pdfPage\": 1, \"later\": \"done\"}")
                     .replace("\n}\n", ",\n  \"title\": \"Kleiner Krieg\"\n}\n")
             folder.resolve("project.json").writeText(withExtra)
 
             val project = Project.open(folder)
-            assertEquals(JsonPrimitive("done"), project.pages[0].extra["status"])
+            assertEquals(JsonPrimitive("done"), project.pages[0].extra["later"])
             project.saveProjectFile()
             assertEquals(withExtra, folder.resolve("project.json").readText())
         }
