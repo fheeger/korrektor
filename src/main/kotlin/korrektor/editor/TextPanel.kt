@@ -290,8 +290,16 @@ private fun lineKey(
     return when {
         !event.isPlainKeyDown() -> false
         event.key == Key.Enter || event.key == Key.NumPadEnter -> {
-            if (!selection.collapsed) editor.setLineText(lineId, field.text.removeRange(selection.min, selection.max))
-            editor.splitLine(lineId, selection.min)
+            // Removing the selection and cutting the line is one key press, so one undo step.
+            editor.oneStep {
+                if (!selection.collapsed) {
+                    editor.setLineText(
+                        lineId,
+                        field.text.removeRange(selection.min, selection.max),
+                    )
+                }
+                editor.splitLine(lineId, selection.min)
+            }
             true
         }
         event.key == Key.Backspace && selection.collapsed && selection.start == 0 -> {

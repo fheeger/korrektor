@@ -93,7 +93,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T065](tickets/T065-autosave-tests.md) | Crash tests, failed saves and speed | task | S07 | done |
 | [T066](tickets/T066-review-fixes.md) | Fixes from the S07 code review | task | S07 | done |
 | [T067](tickets/T067-change-model.md) | The change model: line changes, applying them, and grouping typing | task | S08 | done |
-| [T068](tickets/T068-record-steps.md) | Record steps: the undo and redo stacks of the editor | task | S08 | ready for development |
+| [T068](tickets/T068-record-steps.md) | Record steps: the undo and redo stacks of the editor | task | S08 | done |
 | [T069](tickets/T069-undo-redo-logic.md) | Undo and redo in the editor, also on another page | task | S08 | ready for development |
 | [T070](tickets/T070-undo-keys-menu.md) | Keys, menu and list for undo and redo | task | S08 | ready for development |
 | [T071](tickets/T071-history-file.md) | The history file and its entries | task | S08 | ready for development |
