@@ -28,7 +28,7 @@ data class MenuState(
 /** How the actions are arranged in the menus. Every action of [Shortcuts] has to be in here (tested). */
 private val MENU_LAYOUT: List<Pair<String, List<List<AppAction>>>> =
     listOf(
-        "Edit" to listOf(listOf(AppAction.UNDO, AppAction.REDO)),
+        "Edit" to listOf(listOf(AppAction.UNDO, AppAction.REDO), listOf(AppAction.FIND, AppAction.REPLACE)),
         "Go" to
             listOf(
                 listOf(AppAction.PREVIOUS_LINE, AppAction.NEXT_LINE, AppAction.FIRST_LINE, AppAction.LAST_LINE),

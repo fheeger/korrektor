@@ -109,20 +109,26 @@ class MenusTest {
         assertTrue(AppAction.UNDO in open.copy(canRedo = false).enabled())
         val edit = menus(open).first()
         assertEquals("Edit", edit.title)
-        assertEquals(listOf(AppAction.UNDO, AppAction.REDO), edit.groups.flatten().map { it.action })
+        assertEquals(
+            listOf(listOf(AppAction.UNDO, AppAction.REDO), listOf(AppAction.FIND, AppAction.REPLACE)),
+            edit.groups.map { group -> group.map { it.action } },
+        )
+        val undoRedo = edit.groups.first()
+        assertTrue(undoRedo.first().text.endsWith("Ctrl+Z"), undoRedo.first().text)
+        assertTrue(undoRedo.last().text.endsWith("Ctrl+Y"), undoRedo.last().text)
         assertTrue(
             edit.groups
-                .flatten()
+                .last()
                 .first()
                 .text
-                .endsWith("Ctrl+Z"),
+                .endsWith("Ctrl+F"),
         )
         assertTrue(
             edit.groups
-                .flatten()
+                .last()
                 .last()
                 .text
-                .endsWith("Ctrl+Y"),
+                .endsWith("Ctrl+H"),
         )
     }
 

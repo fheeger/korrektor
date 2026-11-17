@@ -15,6 +15,7 @@ import korrektor.editor.clickOnScan
 import korrektor.editor.highlightFor
 import korrektor.editor.statusOf
 import korrektor.format.Project
+import korrektor.search.SearchPanel
 import korrektor.viewer.DefaultPageSourceFactory
 import korrektor.viewer.PagePoint
 import korrektor.viewer.ProjectViewer
@@ -37,6 +38,7 @@ fun ProjectPanels(
     Column(modifier) {
         val viewer = model.viewer
         model.editor?.let { if (viewer != null) StatusBar(it, viewer.page, project.pages.size, keys::toggleStatus) }
+        model.search?.takeIf { it.open }?.let { SearchPanel(it, keys::openResult, keys::leavePageField) }
         val scope = rememberCoroutineScope()
         SplitPane(
             model.layout,

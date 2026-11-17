@@ -24,13 +24,15 @@ import korrektor.viewer.focusPageField
  * actions of the lines (T050), the pages (T051) and the zoom (T053) are here; F1 shows the list.
  */
 class ProjectKeys(
-    private val model: AppModel,
+    internal val model: AppModel,
 ) : KeyActions {
     // A table instead of one big `when`: each action is one line, and an action with nothing to do is just not here.
     private val handlers: Map<AppAction, () -> Unit> =
         mapOf(
             AppAction.UNDO to { undoOrRedo(undoing = true) },
             AppAction.REDO to { undoOrRedo(undoing = false) },
+            AppAction.FIND to { model.search?.show(replace = false) },
+            AppAction.REPLACE to { model.search?.show(replace = true) },
             AppAction.PREVIOUS_LINE to { moveLine(-1) },
             AppAction.NEXT_LINE to { moveLine(1) },
             AppAction.FIRST_LINE to { model.editor?.firstLine() },

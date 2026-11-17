@@ -110,7 +110,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T082](tickets/T082-s09-review-fixes.md) | Fixes from the S09 code review | task | S09 | done |
 | [T083](tickets/T083-search-engine.md) | Search engine: one layer or the whole book, within a line | task | S10 | done |
 | [T084](tickets/T084-search-model.md) | The search model: results that arrive while it searches, and cancel | task | S10 | done |
-| [T085](tickets/T085-search-panel.md) | The search panel: Ctrl+F, Ctrl+H, options, results list, click opens the place | task | S10 | ready for development |
+| [T085](tickets/T085-search-panel.md) | The search panel: Ctrl+F, Ctrl+H, options, results list, click opens the place | task | S10 | done |
 | [T086](tickets/T086-next-previous-match.md) | Next and previous match: Enter, F3, Shift+F3 | task | S10 | ready for development |
 | [T087](tickets/T087-replace-preview.md) | Replace mode: the results as a preview, before → after, with checkboxes | task | S10 | ready for development |
 | [T088](tickets/T088-replace.md) | Replace the selected matches as one undo step, and step by step | task | S10 | ready for development |

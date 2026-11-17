@@ -93,10 +93,14 @@ class SearchModel(
     internal var compiled: Compiled.Ready? = null
         private set
 
-    /** Opens the panel and puts the cursor in its field; the replace field is shown or hidden as asked. */
+    /**
+     * Opens the panel and puts the cursor in its field. It opens with the replace field shown or hidden as asked
+     * (Ctrl+H, Ctrl+F); one that is open already keeps a field that is shown.
+     */
     fun show(replace: Boolean) {
+        // A panel that is open keeps its replace field when Ctrl+F is pressed: the toggle is what hides it.
+        showReplace = replace || (open && showReplace)
         open = true
-        showReplace = replace
         fieldRequests++
     }
 

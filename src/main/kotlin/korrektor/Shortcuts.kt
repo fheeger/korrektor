@@ -16,6 +16,8 @@ import androidx.compose.ui.input.key.type
 enum class AppAction {
     UNDO,
     REDO,
+    FIND,
+    REPLACE,
     PREVIOUS_LINE,
     NEXT_LINE,
     FIRST_LINE,
@@ -84,6 +86,18 @@ object Shortcuts {
                 "Redo",
                 "Brings back the change that was taken back last",
                 listOf(KeyCombo(Key.Y, ctrl = true), KeyCombo(Key.Z, ctrl = true, shift = true)),
+            ),
+            Shortcut(
+                AppAction.FIND,
+                "Find…",
+                "Opens the search panel: find text on this page or in the whole book",
+                listOf(KeyCombo(Key.F, ctrl = true)),
+            ),
+            Shortcut(
+                AppAction.REPLACE,
+                "Replace…",
+                "Opens the search panel with the replace field, with a preview of what changes",
+                listOf(KeyCombo(Key.H, ctrl = true)),
             ),
             Shortcut(
                 AppAction.PREVIOUS_LINE,
@@ -246,7 +260,9 @@ private val KEY_NAMES =
         Key.One to "1",
         Key.NumPad0 to "NumPad 0",
         Key.NumPad1 to "NumPad 1",
+        Key.F to "F",
         Key.G to "G",
+        Key.H to "H",
         Key.Z to "Z",
         Key.Y to "Y",
         Key.Enter to "Enter",

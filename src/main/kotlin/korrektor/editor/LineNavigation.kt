@@ -74,3 +74,14 @@ internal fun BookEditor.applyArrival(number: Int) {
         line != null -> requestFocus(line.id, 0)
     }
 }
+
+/**
+ * Puts the cursor at [focus] on page [number]: now if that page is the one shown, else when it is shown (the caller
+ * changes the page). For a place that is found, not made: a result of the search (S10).
+ */
+fun BookEditor.showPlace(
+    number: Int,
+    focus: Focus,
+) {
+    if (number == page && layer != null) requestFocus(focus.lineId, focus.index) else pendingFocus = number to focus
+}
