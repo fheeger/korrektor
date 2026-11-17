@@ -114,5 +114,5 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T086](tickets/T086-next-previous-match.md) | Next and previous match: Enter, F3, Shift+F3 | task | S10 | done |
 | [T087](tickets/T087-replace-preview.md) | Replace mode: the results as a preview, before → after, with checkboxes | task | S10 | done |
 | [T088](tickets/T088-replace.md) | Replace the selected matches as one undo step, and step by step | task | S10 | done |
-| [T089](tickets/T089-search-tests.md) | Search and replace tests: options, many pages with undo, speed in a 1000-page book | task | S10 | ready for development |
+| [T089](tickets/T089-search-tests.md) | Search and replace tests: options, many pages with undo, speed in a 1000-page book | task | S10 | done |
 | [T090](tickets/T090-s10-review-fixes.md) | Fixes from the S10 code review | task | S10 | ready for development |
