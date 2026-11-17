@@ -39,6 +39,7 @@ fun main() =
                         hasNextUnchecked =
                             viewer != null && model.editor?.uncheckedAfter(viewer.page, viewer.pageCount) != null,
                         hasPreviousUnchecked = viewer != null && model.editor?.uncheckedBefore(viewer.page) != null,
+                        hasMatches = model.search?.results?.isNotEmpty() == true,
                     )
                 for (menu in menus(state)) {
                     Menu(menu.title) {

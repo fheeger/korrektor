@@ -38,7 +38,14 @@ fun ProjectPanels(
     Column(modifier) {
         val viewer = model.viewer
         model.editor?.let { if (viewer != null) StatusBar(it, viewer.page, project.pages.size, keys::toggleStatus) }
-        model.search?.takeIf { it.open }?.let { SearchPanel(it, keys::openResult, keys::leavePageField) }
+        model.search?.takeIf { it.open }?.let {
+            SearchPanel(
+                it,
+                keys::openResult,
+                keys::stepMatch,
+                keys::leavePageField,
+            )
+        }
         val scope = rememberCoroutineScope()
         SplitPane(
             model.layout,

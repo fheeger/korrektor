@@ -2,6 +2,7 @@ package korrektor
 
 import korrektor.editor.Focus
 import korrektor.editor.showPlace
+import korrektor.search.step
 
 // What the search and replace panel does to the open project (S10): it shows a result. Extensions of the key actions,
 // because `ProjectKeys` has as many functions as the code checks allow.
@@ -20,4 +21,13 @@ fun ProjectKeys.openResult(index: Int) {
         editor.showPlace(match.page, Focus(match.lineId, match.start))
         if (viewer.page != match.page) viewer.goTo(match.page)
     }
+}
+
+/**
+ * Goes to the next (or previous) hit of the search: the one after the hit shown last, or after the cursor if none was
+ * shown yet; it wraps around at the end of the list. Nothing happens if there are no results (F3, Shift+F3, Enter in
+ * the search field).
+ */
+fun ProjectKeys.stepMatch(forward: Boolean) {
+    model.search?.step(forward)?.let { openResult(it) }
 }

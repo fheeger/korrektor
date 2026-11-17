@@ -79,6 +79,27 @@ class SearchUiTest {
         waitForIdle()
     }
 
+    private fun ComposeUiTest.press(
+        key: Key,
+        shift: Boolean = false,
+    ) {
+        onRoot().performKeyInput {
+            if (shift) keyDown(Key.ShiftLeft)
+            pressKey(key)
+            if (shift) keyUp(Key.ShiftLeft)
+        }
+        waitForIdle()
+    }
+
+    private fun ComposeUiTest.waitForPage(
+        model: AppModel,
+        page: Int,
+    ) {
+        val editor = checkNotNull(model.editor)
+        waitUntil(timeoutMillis = 10_000) { editor.page == page && editor.layer != null }
+        waitForIdle()
+    }
+
     private fun ComposeUiTest.waitForResults(
         model: AppModel,
         count: Int,
@@ -177,5 +198,83 @@ class SearchUiTest {
             node("search panel").assertExists()
             assertEquals("Eins", checkNotNull(model.search).query.text)
             assertEquals(3, checkNotNull(model.search).results.size)
+        }
+
+    @Test
+    fun f3AndShiftF3GoThroughTheHitsAndWrapAround() =
+        withOpenProject { model ->
+            val editor = checkNotNull(model.editor)
+            ctrl(Key.F)
+            node("search field").performTextInput("Zwei")
+            waitForResults(model, 3)
+            // The cursor is not in the text yet: the first F3 goes to the first hit.
+            press(Key.F3)
+            waitForPage(model, 1)
+            assertEquals(0, checkNotNull(model.search).current)
+            assertEquals("l2", editor.activeLineId)
+            press(Key.F3)
+            waitForPage(model, 2)
+            assertEquals("l2", editor.activeLineId)
+            press(Key.F3)
+            waitForPage(model, 3)
+            press(Key.F3)
+            waitForPage(model, 1)
+            assertEquals(0, checkNotNull(model.search).current, "after the last it wraps to the first")
+            press(Key.F3, shift = true)
+            waitForPage(model, 3)
+            assertEquals(2, checkNotNull(model.search).current, "before the first it wraps to the last")
+            press(Key.F3, shift = true)
+            waitForPage(model, 2)
+        }
+
+    @Test
+    fun enterInTheSearchFieldGoesOnAndTheFieldKeepsTheKeyboard() =
+        withOpenProject { model ->
+            val editor = checkNotNull(model.editor)
+            ctrl(Key.F)
+            node("search field").performTextInput("Zwei")
+            waitForResults(model, 3)
+            node("search field").performKeyInput { pressKey(Key.Enter) }
+            waitForPage(model, 1)
+            assertEquals("l2", editor.activeLineId, "the line is marked")
+            node("search field").assertIsFocused()
+            node("search field").performKeyInput { pressKey(Key.Enter) }
+            waitForPage(model, 2)
+            node("search field").assertIsFocused()
+            node("search field").performKeyInput {
+                keyDown(Key.ShiftLeft)
+                pressKey(Key.Enter)
+                keyUp(Key.ShiftLeft)
+            }
+            waitForPage(model, 1)
+            node("search field").assertIsFocused()
+            // Nothing was typed into the book: Enter in the field never splits a line.
+            assertEquals(2, editor.lines.size)
+            assertEquals(0, editor.history.undoSteps.size)
+        }
+
+    @Test
+    fun f3FromTheTextKeepsTheCursorInTheText() =
+        withOpenProject { model ->
+            ctrl(Key.F)
+            node("search field").performTextInput("Zwei")
+            waitForResults(model, 3)
+            node("result 0").performClick()
+            waitForPage(model, 1)
+            node("line text l2").assertIsFocused()
+            press(Key.F3)
+            waitForPage(model, 2)
+            node("line text l2").assertIsFocused()
+            assertEquals(1, checkNotNull(model.search).current)
+        }
+
+    @Test
+    fun f3WithNoResultsDoesNothing() =
+        withOpenProject { model ->
+            val viewer = checkNotNull(model.viewer)
+            press(Key.F3)
+            press(Key.F3, shift = true)
+            assertEquals(1, viewer.page)
+            assertEquals(-1, checkNotNull(model.search).current)
         }
 }

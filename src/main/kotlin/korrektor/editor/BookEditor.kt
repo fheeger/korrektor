@@ -56,6 +56,14 @@ class BookEditor(
     var onUnsaved: (() -> Unit)? = null
     private var serial = 0L
 
+    /**
+     * Whether something outside the text (the search field, S10) has the keyboard and keeps it: the text panel then
+     * does not take the focus when the page changes or a cursor is wanted; the line is still made the active one.
+     * Not state: nothing draws it.
+     */
+    @Volatile
+    var focusHeld: Boolean = false
+
     /** The page the cursor is wanted on when it is shown, and where on it (see [arriveAt]). */
     internal var arriving: Pair<Int, Arrival>? = null
 

@@ -16,6 +16,7 @@ class MenusTest {
             canRedo = true,
             hasNextUnchecked = true,
             hasPreviousUnchecked = true,
+            hasMatches = true,
         )
 
     private fun items(state: MenuState) = menus(state).flatMap { it.groups }.flatten()
@@ -67,6 +68,15 @@ class MenusTest {
     }
 
     @Test
+    fun theStepsBetweenHitsNeedResults() {
+        val none = open.copy(hasMatches = false).enabled()
+        assertFalse(AppAction.NEXT_MATCH in none)
+        assertFalse(AppAction.PREVIOUS_MATCH in none)
+        assertTrue(AppAction.FIND in none && AppAction.REPLACE in none)
+        assertTrue(AppAction.NEXT_MATCH in open.enabled())
+    }
+
+    @Test
     fun withoutAProjectOnlyTheListOfShortcutsCanBeUsed() {
         assertEquals(setOf(AppAction.SHOW_SHORTCUTS), MenuState().enabled())
     }
@@ -110,26 +120,19 @@ class MenusTest {
         val edit = menus(open).first()
         assertEquals("Edit", edit.title)
         assertEquals(
-            listOf(listOf(AppAction.UNDO, AppAction.REDO), listOf(AppAction.FIND, AppAction.REPLACE)),
+            listOf(
+                listOf(AppAction.UNDO, AppAction.REDO),
+                listOf(AppAction.FIND, AppAction.REPLACE, AppAction.NEXT_MATCH, AppAction.PREVIOUS_MATCH),
+            ),
             edit.groups.map { group -> group.map { it.action } },
         )
         val undoRedo = edit.groups.first()
         assertTrue(undoRedo.first().text.endsWith("Ctrl+Z"), undoRedo.first().text)
         assertTrue(undoRedo.last().text.endsWith("Ctrl+Y"), undoRedo.last().text)
-        assertTrue(
-            edit.groups
-                .last()
-                .first()
-                .text
-                .endsWith("Ctrl+F"),
-        )
-        assertTrue(
-            edit.groups
-                .last()
-                .last()
-                .text
-                .endsWith("Ctrl+H"),
-        )
+        val find = edit.groups.last()
+        for ((item, keys) in find.zip(listOf("Ctrl+F", "Ctrl+H", "F3", "Shift+F3"))) {
+            assertTrue(item.text.endsWith(keys), item.text)
+        }
     }
 
     @Test

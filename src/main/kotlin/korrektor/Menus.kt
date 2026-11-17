@@ -23,12 +23,17 @@ data class MenuState(
     val canRedo: Boolean = false,
     val hasNextUnchecked: Boolean = false,
     val hasPreviousUnchecked: Boolean = false,
+    val hasMatches: Boolean = false,
 )
 
 /** How the actions are arranged in the menus. Every action of [Shortcuts] has to be in here (tested). */
 private val MENU_LAYOUT: List<Pair<String, List<List<AppAction>>>> =
     listOf(
-        "Edit" to listOf(listOf(AppAction.UNDO, AppAction.REDO), listOf(AppAction.FIND, AppAction.REPLACE)),
+        "Edit" to
+            listOf(
+                listOf(AppAction.UNDO, AppAction.REDO),
+                listOf(AppAction.FIND, AppAction.REPLACE, AppAction.NEXT_MATCH, AppAction.PREVIOUS_MATCH),
+            ),
         "Go" to
             listOf(
                 listOf(AppAction.PREVIOUS_LINE, AppAction.NEXT_LINE, AppAction.FIRST_LINE, AppAction.LAST_LINE),
@@ -68,6 +73,8 @@ private val NEEDS: Map<AppAction, (MenuState) -> Boolean> =
         AppAction.NEXT_PAGE to { it.hasNextPage },
         AppAction.NEXT_UNCHECKED to { it.hasNextUnchecked },
         AppAction.PREVIOUS_UNCHECKED to { it.hasPreviousUnchecked },
+        AppAction.NEXT_MATCH to { it.hasMatches },
+        AppAction.PREVIOUS_MATCH to { it.hasMatches },
         AppAction.UNDO to { it.canUndo },
         AppAction.REDO to { it.canRedo },
         AppAction.PREVIOUS_LINE to { it.pageHasLines },
