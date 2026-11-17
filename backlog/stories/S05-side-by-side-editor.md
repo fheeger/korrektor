@@ -1,6 +1,6 @@
 # S05 Scan and text side by side
 
-**Features:** C1 · **Status:** in review
+**Features:** C1 · **Status:** done
 
 As a reader of historical sources, I want to see the scan and the text next to each other, kept in sync line by line
 so that I can compare each line with the original and correct it right there.
