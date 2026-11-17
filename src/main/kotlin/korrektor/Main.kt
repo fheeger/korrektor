@@ -32,6 +32,8 @@ fun main() =
                         hasPreviousPage = viewer?.hasPrevious == true,
                         hasNextPage = viewer?.hasNext == true,
                         pageHasLines = model.editor?.lines?.isNotEmpty() == true,
+                        canUndo = model.editor?.history?.canUndo == true,
+                        canRedo = model.editor?.history?.canRedo == true,
                     )
                 for (menu in menus(state)) {
                     Menu(menu.title) {

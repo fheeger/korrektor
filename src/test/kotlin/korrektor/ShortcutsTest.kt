@@ -77,6 +77,10 @@ class ShortcutsTest {
         assertEquals(AppAction.FIT_PAGE, Shortcuts.resolve(event(Key.Zero, ctrl = true)))
         assertEquals(AppAction.FIT_WIDTH, Shortcuts.resolve(event(Key.One, ctrl = true)))
         assertEquals(AppAction.SHOW_SHORTCUTS, Shortcuts.resolve(event(Key.F1)))
+        assertEquals(AppAction.UNDO, Shortcuts.resolve(event(Key.Z, ctrl = true)))
+        assertEquals(AppAction.REDO, Shortcuts.resolve(event(Key.Y, ctrl = true)))
+        assertEquals(AppAction.REDO, Shortcuts.resolve(event(Key.Z, ctrl = true, shift = true)))
+        assertEquals("Ctrl+Y", Shortcuts.of(AppAction.REDO).shown.text)
     }
 
     @Test
@@ -91,6 +95,8 @@ class ShortcutsTest {
         assertNull(Shortcuts.resolve(event(Key.Zero)), "a 0 typed in a line")
         assertNull(Shortcuts.resolve(event(Key.F1, ctrl = true)))
         assertNull(Shortcuts.resolve(event(Key.Plus)), "a + typed in a line")
+        assertNull(Shortcuts.resolve(event(Key.Z)), "a z typed in a line")
+        assertNull(Shortcuts.resolve(event(Key.Z, ctrl = true, alt = true)), "AltGr+Z")
     }
 
     @Test
