@@ -7,6 +7,8 @@ import korrektor.format.Change
 import korrektor.format.EditEntry
 import korrektor.format.HistoryEntry
 import korrektor.format.LineChange
+import korrektor.format.RedoEntry
+import korrektor.format.UndoEntry
 
 /** One undo step: what a single Ctrl+Z takes back. [seq] is the number of the history entry that made it. */
 class Step(
@@ -30,6 +32,7 @@ class Typed(
  *
  * @param firstSeq the number the next entry gets: 1 for a new book, one more than the last entry of the file.
  */
+@Suppress("TooManyFunctions") // the operations on one state (two stacks and the pending entries), each a few lines
 class UndoHistory(
     internal val lock: Any = Any(),
     firstSeq: Int = 1,
@@ -114,6 +117,38 @@ class UndoHistory(
             open = null
             pending.toList().also { pending.clear() }
         }
+
+    /** The step that undo (or redo) takes next, or null. Also closes the open typing step. */
+    fun peek(undoing: Boolean): Step? =
+        synchronized(lock) {
+            open = null
+            (if (undoing) undoStack else redoStack).lastOrNull()
+        }
+
+    /**
+     * The step [peek] gave was undone (or redone) by [applied] (an [UndoEntry] or [RedoEntry] is made): it moves to the
+     * other stack. Returns the number of the entry, which the layers of the pages it changed are to carry.
+     */
+    fun commit(
+        undoing: Boolean,
+        applied: List<Change>,
+    ): Int =
+        synchronized(lock) {
+            val step = (if (undoing) undoStack else redoStack).removeLast()
+            (if (undoing) redoStack else undoStack).addLast(step)
+            val seq = nextSeq++
+            pending += if (undoing) UndoEntry(seq, step.seq, applied) else RedoEntry(seq, step.seq, applied)
+            refresh()
+            seq
+        }
+
+    /** The step [peek] gave does not fit its pages: it is dropped (it can be neither undone nor redone). */
+    fun discard(undoing: Boolean) {
+        synchronized(lock) {
+            (if (undoing) undoStack else redoStack).removeLastOrNull()
+            refresh()
+        }
+    }
 
     private fun newStep(
         changes: List<Change>,

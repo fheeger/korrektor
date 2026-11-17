@@ -36,7 +36,7 @@ enum class LineMove { MOVED, PREVIOUS_PAGE, NEXT_PAGE, NOTHING }
  * @param readPage reads the corrected layer of a page from the project (`Project::readPage`); a seam for tests.
  */
 class BookEditor(
-    private val readPage: (Int) -> PageLayer,
+    internal val readPage: (Int) -> PageLayer,
     private val io: CoroutineDispatcher,
     /** The clock in milliseconds that decides when typing pauses (see [TypingGroups]); tests replace it. */
     internal val now: () -> Long = { System.nanoTime() / NANOS_PER_MILLI },
@@ -55,6 +55,9 @@ class BookEditor(
 
     /** The page the cursor is wanted on when it is shown, and where on it (see [arriveAt]). */
     internal var arriving: Pair<Int, Arrival>? = null
+
+    /** The page a change was made on by undo or redo and where the cursor goes when that page is shown (T069). */
+    internal var pendingFocus: Pair<Int, Focus>? = null
 
     // While `oneStep` runs: how deep it is, and the layer the first edit inside started from (see Recording.kt).
     internal var grouping = 0
@@ -103,6 +106,7 @@ class BookEditor(
     suspend fun show(number: Int) {
         // A wish for the cursor on another page is stale (the page it was for was never shown): drop it.
         if (arriving?.first != number) arriving = null
+        if (pendingFocus?.first != number) pendingFocus = null
         history.seal() // typing on the page before and typing on this one are not one step
         page = number
         layer = null
@@ -118,7 +122,7 @@ class BookEditor(
         try {
             val read = withContext(io) { readPage(number) }
             if (page == number) {
-                layer = read
+                layer = changed[number] ?: read // an undo may have changed the page while it was read
                 applyArrival(number)
             }
         } catch (e: CancellationException) {

@@ -1,6 +1,6 @@
 # T069 Undo and redo in the editor, also on another page
 
-**Type:** task · **Status:** ready for development · **Story:** S08 · **Task:** S08.3
+**Type:** task · **Status:** done · **Story:** S08 · **Task:** S08.3
 
 ## What needs doing
 - **`BookEditor.undo()` and `redo()`** (extensions in `Undo.kt`, like `LineNavigation.kt`): take the top step of the undo stack (redo stack), apply its changes in reverse (forwards) to the pages, and move the step to the other stack. Each returns an **`UndoResult`**: nothing to do, or done with the page the change is on and the `Focus` for the cursor, or the step did not fit (see Decisions). One step may change several pages (a "replace all").
@@ -26,7 +26,12 @@
 T067, T068.
 
 ## Decisions
-Written down while working.
+- **Undo makes the inverted changes in the reverse order,** redo the changes as they are; a step's changes are applied in order, each relative to the state the one before left (S10 must make its steps that way). The entry of an undo holds exactly the changes that were applied, so applying an entry forward is what it did (T072).
+- **Two kinds of failure.** A step that does not fit the pages (they were changed behind the editor's back) is dropped: it can be neither undone nor redone, and the next call works with the step below (`DoesNotFit`). A page that cannot be read leaves the step where it is (`Failed(reason)`), because the problem may pass. Nothing is changed in either case (all pages are worked out first, then put in place under the lock).
+- **A page that is not in memory is read on the UI thread** (`readPage`, one small file, a few ms), so that undo is one step with no state in between where the user could type; it is not read twice (`changed`, then the page shown, then the project).
+- **Where the cursor goes** is worked out from the change as it was made (`focusAfter`): a text change in one line: the end of what was typed or restored; lines joined: the junction; lines split or added: the start of the first new line after the first part; lines removed: the end of the line above (the start of the one below, then the first line of the page). Redo of a split lands where the split itself did (the start of the second part), redo of a join at the junction, as the edits themselves do.
+- **`pendingFocus` is used once and belongs to its page,** like `arriving`: `show` drops one for another page, `applyArrival` carries it out when the lines are there and then forgets any wish of `arriveAt` for the page.
+- **`show` prefers `changed[page]` to what it read,** so an undo that arrives while the page is still being read is not overwritten by the older text from the file.
 
 ## Progress
-Not started.
+Done. `Undo.kt` (`undo`, `redo`, `focusAfter`), `UndoResult.kt`, `UndoHistory.peek/commit/discard`, `UndoEntry` and `RedoEntry`, `pendingFocus` in `BookEditor` and `applyArrival`. Tests: `UndoTest` (15; it also covers T068's criterion that a new edit clears the redo steps). Build, tests, ktlint and Detekt are green.
