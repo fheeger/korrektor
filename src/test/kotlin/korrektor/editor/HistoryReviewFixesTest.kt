@@ -43,7 +43,7 @@ class HistoryReviewFixesTest {
             val history = UndoHistory.load(project.historyLog)
             val editor = BookEditor(project::readPage, Dispatchers.Unconfined, history = history)
             var failed: UndoResult? = null
-            // The steps that were loaded fit nothing in this book, so they are dropped one by one until older ones are read.
+            // The loaded steps fit nothing in this book: they are dropped one by one until older ones are read.
             repeat(400) { if (failed == null) editor.undo().takeIf { it is UndoResult.Failed }?.let { failed = it } }
             assertIs<UndoResult.Failed>(failed)
         }
