@@ -2,7 +2,8 @@ package korrektor.format
 
 /**
  * One change of the book's text that the history can undo and redo (S08). A step of the history is a list of changes,
- * which may lie on several pages (a "replace all"). Later kinds of change (the page status, S09) are further cases.
+ * which may lie on several pages (a "replace all"). The changes of a step are made in order, each on the state that the
+ * one before left. Later kinds of change (the page status, S09) are further cases.
  */
 sealed interface Change {
     /** The page of the book (from 1) that the change is on. */

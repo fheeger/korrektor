@@ -11,3 +11,20 @@ data class EditEntry(
     val seq: Int,
     val changes: List<Change>,
 ) : HistoryEntry
+
+/**
+ * Step [step] was undone. [changes] are what was done to the pages to undo it (the inverted changes of the step, in
+ * reverse order), so applying them forward is what the entry did.
+ */
+data class UndoEntry(
+    val seq: Int,
+    val step: Int,
+    val changes: List<Change>,
+) : HistoryEntry
+
+/** Step [step] was redone; [changes] are the changes of the step. */
+data class RedoEntry(
+    val seq: Int,
+    val step: Int,
+    val changes: List<Change>,
+) : HistoryEntry
