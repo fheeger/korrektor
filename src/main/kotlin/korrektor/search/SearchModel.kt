@@ -89,6 +89,10 @@ class SearchModel(
     var current: Int by mutableIntStateOf(-1)
         internal set
 
+    /** The indices in [results] of the hits whose box is unchecked (S10, replace mode); all are checked at first. */
+    var excluded: Set<Int> by mutableStateOf(emptySet())
+        internal set
+
     /** The compiled form of the query of the last search; what replaces needs it for `$1`. */
     internal var compiled: Compiled.Ready? = null
         private set
@@ -152,6 +156,7 @@ class SearchModel(
             cancel()
             results.clear()
             current = -1
+            excluded = emptySet()
             pagesDone = 0
             pagesWithHits = 0
             lastHitPage = 0

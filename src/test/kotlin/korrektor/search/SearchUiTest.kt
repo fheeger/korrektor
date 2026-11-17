@@ -8,7 +8,9 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -77,6 +79,17 @@ class SearchUiTest {
             keyUp(Key.CtrlLeft)
         }
         waitForIdle()
+    }
+
+    /** The row [tag] of the list has a text with [text] in it (the rows are not merged in the unmerged tree). */
+    private fun ComposeUiTest.assertRowHas(
+        tag: String,
+        text: String,
+    ) {
+        onNode(
+            hasText(text, substring = true) and hasAnyAncestor(hasTestTag(tag)),
+            useUnmergedTree = true,
+        ).assertExists()
     }
 
     private fun ComposeUiTest.press(
@@ -276,5 +289,61 @@ class SearchUiTest {
             press(Key.F3, shift = true)
             assertEquals(1, viewer.page)
             assertEquals(-1, checkNotNull(model.search).current)
+        }
+
+    @Test
+    fun inReplaceModeEveryResultHasACheckboxAndShowsBeforeAndAfter() =
+        withOpenProject { model ->
+            val search = checkNotNull(model.search)
+            val editor = checkNotNull(model.editor)
+            ctrl(Key.H)
+            node("search field").performTextInput("Zwei")
+            node("replace field").performTextInput("Drei")
+            waitForResults(model, 3)
+            node("selected count").assertTextEquals("3 of 3 selected")
+            for (i in 0..2) node("check $i").assertTextEquals("☑")
+            assertRowHas("result 0", "Zwei")
+            assertRowHas("result 0", "Drei")
+            assertEquals("Drei", search.replacement)
+
+            node("check 1").performClick()
+            node("check 1").assertTextEquals("☐")
+            node("selected count").assertTextEquals("2 of 3 selected")
+            node("select none").performClick()
+            node("selected count").assertTextEquals("0 of 3 selected")
+            node("select all").performClick()
+            node("selected count").assertTextEquals("3 of 3 selected")
+            node("check 2").performClick()
+
+            // Typing in the replace field changes the preview, and does not search again.
+            val before = search.results.toList()
+            node("replace field").performTextInput("x")
+            waitForIdle()
+            assertEquals(before, search.results.toList())
+            assertRowHas("result 0", "Dreix")
+
+            // Hiding the field shows the plain results; the boxes are kept for when it comes back.
+            node("replace toggle").performClick()
+            assertFalse(exists(node("check 0")))
+            node("replace toggle").performClick()
+            node("check 2").assertTextEquals("☐")
+            node("selected count").assertTextEquals("2 of 3 selected")
+
+            // Only a preview: the book has not changed.
+            assertEquals(0, editor.history.undoSteps.size)
+            assertTrue(editor.changed.isEmpty())
+        }
+
+    @Test
+    fun aReplacementThatIsNotValidIsSaidInsteadOfPreviewed() =
+        withOpenProject { model ->
+            ctrl(Key.H)
+            node("regex").performClick()
+            node("search field").performTextInput("(Zw)ei")
+            waitForResults(model, 3)
+            node("replace field").performTextInput("$3")
+            waitForIdle()
+            node("replacement problem").assertExists()
+            node("replace field").performTextInput("x")
         }
 }
