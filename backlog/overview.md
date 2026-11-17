@@ -20,7 +20,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [S07](stories/S07-autosave.md) | Autosave | N4 | done |
 | [S08](stories/S08-undo-redo.md) | Undo/redo | F1 | done |
 | [S09](stories/S09-page-status.md) | Page status | C5 | done |
-| [S10](stories/S10-find-and-replace.md) | Find and replace with a preview | D2 | in progress |
+| [S10](stories/S10-find-and-replace.md) | Find and replace with a preview | D2 | in review |
 | [S11](stories/S11-export-text-markdown.md) | Export plain text and Markdown | G1 | ready for development |
 
 ## Tickets
@@ -115,4 +115,4 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T087](tickets/T087-replace-preview.md) | Replace mode: the results as a preview, before → after, with checkboxes | task | S10 | done |
 | [T088](tickets/T088-replace.md) | Replace the selected matches as one undo step, and step by step | task | S10 | done |
 | [T089](tickets/T089-search-tests.md) | Search and replace tests: options, many pages with undo, speed in a 1000-page book | task | S10 | done |
-| [T090](tickets/T090-s10-review-fixes.md) | Fixes from the S10 code review | task | S10 | ready for development |
+| [T090](tickets/T090-s10-review-fixes.md) | Fixes from the S10 code review | task | S10 | done |

@@ -60,7 +60,7 @@ fun SearchPanel(
     LaunchedEffect(model.editor.page, model.editor.layer) { model.pageChanged() }
     Column(modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp).testTag("search panel")) {
         QueryRow(model, onStep, onLeave)
-        if (model.showReplace) ReplaceRow(model)
+        if (model.showReplace) ReplaceRow(model, onStep, onLeave)
         SummaryRow(model)
         if (model.showReplace) {
             SelectionRow(
@@ -156,7 +156,11 @@ private fun fieldKey(
 }
 
 @Composable
-private fun ReplaceRow(model: SearchModel) {
+private fun ReplaceRow(
+    model: SearchModel,
+    onStep: (Boolean) -> Unit,
+    onLeave: () -> Unit,
+) {
     Row(
         Modifier.padding(top = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -171,7 +175,10 @@ private fun ReplaceRow(model: SearchModel) {
                 model.replacement = it.text
             },
             "Replace with",
-            Modifier.weight(1f).testTag("replace field"),
+            Modifier
+                .weight(1f)
+                .onPreviewKeyEvent { event -> fieldKey(event, model, onStep, onLeave) }
+                .testTag("replace field"),
         )
     }
 }

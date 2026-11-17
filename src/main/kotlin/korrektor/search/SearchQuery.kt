@@ -32,7 +32,7 @@ sealed interface Compiled {
     ) : Compiled
 }
 
-private const val WORD_CHAR = "[\\p{L}\\p{N}_]"
+private const val WORD_CHAR = "[\\p{L}\\p{M}\\p{N}_]"
 
 /** Makes the query ready for searching. */
 fun SearchQuery.compile(): Compiled {
