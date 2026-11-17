@@ -6,7 +6,7 @@
 - `SearchQuery(text, matchCase, wholeWords, regex)` and its compiled form (a `Regex`, or a message why the query is not valid: an empty text finds nothing, a regex that does not compile says why).
   - Plain text is searched literally; match case is off by default, whole words only is off by default, regex is off by default.
   - Whole words: the match must not be preceded or followed by a letter, digit or underscore (`\p{L}`, `\p{N}`, `_`). It works with regex too.
-  - Case-insensitive search uses Unicode case folding of single characters (`UNICODE_CASE`), so `ä` finds `Ä`. It does not fold `ſ` to `s` (that is D5, not part of S10).
+  - Case-insensitive search of a plain text finds `ä` for `Ä` but never `s` for `ſ` (that is D5, not part of S10); a regex ignores the case of ASCII letters only (see Decisions).
 - `Match(page, lineId, lineNumber, lineText, start, end)`: a hit lies within one line, in the line's text exactly as stored (the words joined by one space). Empty matches (a regex such as `x*`) are dropped.
 - `searchLayer(page, layer, regex)`: the matches of one corrected layer, in reading order, each line of each region.
 - `searchBook(pages, regex, readLayer, onBatch)`: a suspend function, searches the pages in order and reports the matches after every chunk of pages, so that the caller can show them while it is still working. Pages are read in parallel inside a chunk, the batches come in page order. It stops at once when cancelled. A page that cannot be read is skipped and counted (reported in the result).
