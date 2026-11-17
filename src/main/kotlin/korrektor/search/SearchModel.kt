@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import korrektor.editor.BookEditor
+import korrektor.format.PageLayer
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,9 +26,10 @@ const val SEARCH_PAUSE_MS = 150L
  * window: the query, the replacement, the scope, whether the panel and its replace field are shown, and the results,
  * which fill up while a search runs in the background and can be cancelled.
  *
- * The pages are read and searched on [io], and the results arrive on [ui]. Compose state may be changed from any
- * thread, but a new search and a batch of the old one must not interleave: both change the results under [lock]. The
- * search finds what the user sees: the corrections of this session count, saved or not (`BookEditor.currentLayer`).
+ * The pages are read and searched on [io], and the results are handed over by coroutines on [ui] (a default
+ * dispatcher in the app). Compose state may be changed from any thread, but a new search and a batch of the old
+ * one must not interleave: both change the results under [lock]. The search finds what the user sees: the
+ * corrections of this session count, saved or not (`BookEditor.currentLayer`).
  */
 class SearchModel(
     internal val editor: BookEditor,
@@ -42,6 +44,7 @@ class SearchModel(
     internal val lock = Any()
     internal var generation = 0
     internal var lastHitPage = 0
+    internal var layerAfterReplace: PageLayer? = null
 
     /** Whether the panel is shown. */
     var open: Boolean by mutableStateOf(false)
@@ -137,7 +140,8 @@ class SearchModel(
 
     /** The page shown has changed or its text was edited: a search of that page is done again. */
     fun pageChanged() {
-        if (open && scopeOf == SearchScope.PAGE) search()
+        // The page that a replacement has just changed is not searched again: the results are already right.
+        if (open && scopeOf == SearchScope.PAGE && editor.layer !== layerAfterReplace) search()
     }
 
     /** Stops a running search. What it has found stays. */

@@ -45,6 +45,7 @@ private suspend fun SearchModel.replace(
     outcome = null
     try {
         val with = replacement
+        val mine = generation
         val plan = withContext(io) { planReplacement(hits, ready, with, editor.changed::get, editor::currentLayer) }
         if (plan.problem != null) {
             outcome = plan.problem
@@ -52,7 +53,9 @@ private suspend fun SearchModel.replace(
             // A page that the user changed meanwhile is not replaced in; the pages where nothing changed are done.
             val unfit = plan.pages.map { it.page }.toSet() - editor.applyPlan(plan)
             val done = plan.replaced.filter { it.match.page !in unfit }
-            synchronized(lock) { afterReplacing(plan, done, single) }
+            layerAfterReplace = editor.layer
+            // The query may have been changed while the pages were read: the results are those of a new search then.
+            synchronized(lock) { if (mine == generation) afterReplacing(plan, done, single) }
             outcome = outcomeText(done.size, done.map { it.match.page }.distinct().size, hits.size - done.size)
         }
     } finally {
@@ -67,7 +70,14 @@ private fun outcomeText(
 ): String {
     val matches = "$replaced ${if (replaced == 1) "match" else "matches"}"
     val where = "$pages ${if (pages == 1) "page" else "pages"}"
-    val left = if (skipped > 0) " $skipped not replaced: their line had changed since the search." else ""
+    val left =
+        if (skipped >
+            0
+        ) {
+            " $skipped not replaced: their line had changed since the search, or their page could not be read."
+        } else {
+            ""
+        }
     return if (replaced == 0) "Nothing replaced.$left" else "Replaced $matches on $where.$left"
 }
 
@@ -106,7 +116,7 @@ private fun SearchModel.afterReplacing(
     excluded = unchecked
     pagesWithHits = kept.map { it.page }.distinct().size
     lastHitPage = kept.lastOrNull()?.page ?: 0
-    current = if (single == null || kept.isEmpty()) -1 else (single - goneBefore).coerceIn(0, kept.size - 1)
+    current = if (single == null || kept.isEmpty()) -1 else Math.floorMod(single - goneBefore, kept.size)
 }
 
 /** [hit] in a line where the hits [done] were replaced, which made [newText] of the line (both null: not changed). */

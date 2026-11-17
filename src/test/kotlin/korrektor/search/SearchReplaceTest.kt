@@ -141,7 +141,9 @@ class SearchReplaceTest {
 
         assertEquals(listOf("zz x aa", "Seite 3"), texts(editor, 3), "the edit is kept")
         assertEquals(listOf("b x b", "Seite 4"), texts(editor, 4))
-        val said = "Replaced 22 matches on 11 pages. 2 not replaced: their line had changed since the search."
+        val said =
+            "Replaced 22 matches on 11 pages. 2 not replaced: " +
+                "their line had changed since the search, or their page could not be read."
         assertEquals(said, model.outcome)
         assertTrue(model.results.isEmpty())
     }
