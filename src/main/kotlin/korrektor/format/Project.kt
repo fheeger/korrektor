@@ -72,8 +72,13 @@ class Project private constructor(
                 .associate { it.index + 1 to it.value.status }
 
     /** The metadata, or null for a project that has none (made before S02). */
+    @Volatile
     var metadata: Metadata? = metadata
         private set
+
+    // `project.json` is written by the UI thread (metadata, import) and by the saver (statuses): one writer at a time,
+    // or one write could publish the other's temp file or leave the older list on disk.
+    private val fileLock = Any()
 
     val sourcePdf: Path get() = folder.resolve(SOURCE_PDF)
 
@@ -82,15 +87,19 @@ class Project private constructor(
 
     /** Writes `project.json` again. Without changes, the bytes are identical to what was read. */
     fun saveProjectFile() {
-        val text = ProjectFile.encode(pages, metadata, extra)
-        AtomicFile.write(folder.resolve(PROJECT_FILE), text.toByteArray(Charsets.UTF_8))
+        synchronized(fileLock) {
+            val text = ProjectFile.encode(pages, metadata, extra)
+            AtomicFile.write(folder.resolve(PROJECT_FILE), text.toByteArray(Charsets.UTF_8))
+        }
     }
 
     /** Replaces the metadata and writes `project.json`. If writing fails, the old metadata stays. */
     fun updateMetadata(new: Metadata) {
-        val old = metadata
-        metadata = new
-        saveOrRevert { metadata = old }
+        synchronized(fileLock) {
+            val old = metadata
+            metadata = new
+            saveOrRevert { metadata = old }
+        }
     }
 
     /**
@@ -98,9 +107,11 @@ class Project private constructor(
      * it to say which pages the book has before the page files are written.
      */
     fun setPages(new: List<PageInfo>) {
-        val old = pages
-        pages = new
-        saveOrRevert { pages = old }
+        synchronized(fileLock) {
+            val old = pages
+            pages = new
+            saveOrRevert { pages = old }
+        }
     }
 
     /** The corrected layer of page [n]. */
