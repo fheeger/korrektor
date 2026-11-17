@@ -14,6 +14,8 @@ class MenusTest {
             pageHasLines = true,
             canUndo = true,
             canRedo = true,
+            hasNextUnchecked = true,
+            hasPreviousUnchecked = true,
         )
 
     private fun items(state: MenuState) = menus(state).flatMap { it.groups }.flatten()
@@ -38,8 +40,30 @@ class MenusTest {
     }
 
     @Test
-    fun theMenusAreEditGoViewAndHelp() {
-        assertEquals(listOf("Edit", "Go", "View", "Help"), menus(open).map { it.title })
+    fun theJumpsToUncheckedPagesAreEnabledOnlyWhenThereIsSuchAPage() {
+        val none = open.copy(hasNextUnchecked = false, hasPreviousUnchecked = false)
+        assertFalse(AppAction.NEXT_UNCHECKED in none.enabled())
+        assertFalse(AppAction.PREVIOUS_UNCHECKED in none.enabled())
+        assertTrue(AppAction.NEXT_UNCHECKED in none.copy(hasNextUnchecked = true).enabled())
+        assertFalse(AppAction.PREVIOUS_UNCHECKED in none.copy(hasNextUnchecked = true).enabled())
+        assertTrue(AppAction.PREVIOUS_UNCHECKED in none.copy(hasPreviousUnchecked = true).enabled())
+        assertTrue(AppAction.MARK_CORRECTED in none.enabled())
+    }
+
+    @Test
+    fun theMenusAreEditGoPageViewAndHelp() {
+        assertEquals(listOf("Edit", "Go", "Page", "View", "Help"), menus(open).map { it.title })
+        val page = menus(open).first { it.title == "Page" }.groups.flatten()
+        assertEquals(
+            listOf(
+                AppAction.MARK_CORRECTED,
+                AppAction.MARK_UNCHECKED,
+                AppAction.NEXT_UNCHECKED,
+                AppAction.PREVIOUS_UNCHECKED,
+            ),
+            page.map { it.action },
+        )
+        assertTrue(page.first().text.endsWith("Ctrl+Enter"), page.first().text)
     }
 
     @Test

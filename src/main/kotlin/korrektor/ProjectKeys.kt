@@ -9,7 +9,12 @@ import korrektor.editor.focusPanel
 import korrektor.editor.lastLine
 import korrektor.editor.moveLine
 import korrektor.editor.redo
+import korrektor.editor.setStatus
+import korrektor.editor.statusOf
+import korrektor.editor.uncheckedAfter
+import korrektor.editor.uncheckedBefore
 import korrektor.editor.undo
+import korrektor.format.PageStatus
 import korrektor.viewer.fitPage
 import korrektor.viewer.fitWidth
 import korrektor.viewer.focusPageField
@@ -33,6 +38,10 @@ class ProjectKeys(
             AppAction.NEXT_PAGE to { model.viewer?.let { openPage(it.page + 1, Arrival.FIRST) } },
             AppAction.PREVIOUS_PAGE to { model.viewer?.let { openPage(it.page - 1, Arrival.FIRST) } },
             AppAction.GO_TO_PAGE to { model.viewer?.focusPageField() },
+            AppAction.MARK_CORRECTED to { markCorrected() },
+            AppAction.MARK_UNCHECKED to { markPage(PageStatus.UNCHECKED) },
+            AppAction.NEXT_UNCHECKED to { jumpToUnchecked(forward = true) },
+            AppAction.PREVIOUS_UNCHECKED to { jumpToUnchecked(forward = false) },
             AppAction.ZOOM_IN to { model.viewer?.zoomIn() },
             AppAction.ZOOM_OUT to { model.viewer?.zoomOut() },
             AppAction.FIT_PAGE to { model.viewer?.fitPage() },
@@ -70,6 +79,45 @@ class ProjectKeys(
         if (line != null) editor.requestFocus(line.id, editor.caret, keepColumn = true) else editor.focusPanel()
     }
 
+    /** Marks the page shown as corrected and opens the next page, if there is one (Ctrl+Enter, S09). */
+    private fun markCorrected() {
+        val viewer = model.viewer ?: return
+        markPage(PageStatus.CORRECTED)
+        openPage(viewer.page + 1, Arrival.FIRST)
+    }
+
+    /** Opens the next (or previous) unchecked page, with the cursor in its first line; nothing if there is none. */
+    private fun jumpToUnchecked(forward: Boolean) {
+        val viewer = model.viewer ?: return
+        val editor = model.editor ?: return
+        val target =
+            if (forward) {
+                editor.uncheckedAfter(
+                    viewer.page,
+                    viewer.pageCount,
+                )
+            } else {
+                editor.uncheckedBefore(viewer.page)
+            }
+        if (target != null) openPage(target, Arrival.FIRST)
+    }
+
+    private fun markPage(status: PageStatus) {
+        val viewer = model.viewer ?: return
+        model.editor?.setStatus(viewer.page, status)
+    }
+
+    /**
+     * The button of the status bar: a corrected page becomes unchecked and any other corrected. It stays on the page,
+     * and the cursor goes back to the text, where the click took it away from.
+     */
+    fun toggleStatus() {
+        val viewer = model.viewer ?: return
+        val corrected = model.editor?.statusOf(viewer.page) == PageStatus.CORRECTED
+        markPage(if (corrected) PageStatus.UNCHECKED else PageStatus.CORRECTED)
+        leavePageField()
+    }
+
     /**
      * Takes back (or brings back) the last change of the book. If it was on another page, that page is opened: the
      * editor keeps where the cursor is wanted and puts it there when the page is shown (T069).
@@ -77,7 +125,7 @@ class ProjectKeys(
     private fun undoOrRedo(undoing: Boolean) {
         val editor = model.editor ?: return
         when (val result = if (undoing) editor.undo() else editor.redo()) {
-            is UndoResult.Done -> model.viewer?.let { if (it.page != result.page) it.goTo(result.page) }
+            is UndoResult.Done -> model.showPageOf(result)
             UndoResult.DoesNotFit ->
                 model.notice =
                     "That change does not fit the page any more (it was changed outside the app) and is dropped."
@@ -113,4 +161,15 @@ class ProjectKeys(
             viewer.goTo(page)
         }
     }
+}
+
+/**
+ * Opens the page of an undone change if it is another one. A change without a place (a page status) has no
+ * cursor wish, so the cursor goes to the first line, as after any page change by the keyboard.
+ */
+private fun AppModel.showPageOf(result: UndoResult.Done) {
+    val viewer = viewer ?: return
+    if (viewer.page == result.page) return
+    if (result.focus == null) editor?.arriveAt(result.page, Arrival.FIRST)
+    viewer.goTo(result.page)
 }

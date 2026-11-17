@@ -23,6 +23,10 @@ enum class AppAction {
     PREVIOUS_PAGE,
     NEXT_PAGE,
     GO_TO_PAGE,
+    MARK_CORRECTED,
+    MARK_UNCHECKED,
+    NEXT_UNCHECKED,
+    PREVIOUS_UNCHECKED,
     ZOOM_IN,
     ZOOM_OUT,
     FIT_PAGE,
@@ -124,6 +128,33 @@ object Shortcuts {
                 listOf(KeyCombo(Key.G, ctrl = true)),
             ),
             Shortcut(
+                AppAction.MARK_CORRECTED,
+                "Mark corrected and go on",
+                "Marks the page as corrected and opens the next page",
+                listOf(KeyCombo(Key.Enter, ctrl = true), KeyCombo(Key.NumPadEnter, ctrl = true)),
+            ),
+            Shortcut(
+                AppAction.MARK_UNCHECKED,
+                "Mark as unchecked",
+                "Marks the page as unchecked again",
+                listOf(
+                    KeyCombo(Key.Enter, ctrl = true, shift = true),
+                    KeyCombo(Key.NumPadEnter, ctrl = true, shift = true),
+                ),
+            ),
+            Shortcut(
+                AppAction.NEXT_UNCHECKED,
+                "Next unchecked page",
+                "Opens the next page that is not marked as corrected",
+                listOf(KeyCombo(Key.DirectionDown, ctrl = true, shift = true)),
+            ),
+            Shortcut(
+                AppAction.PREVIOUS_UNCHECKED,
+                "Previous unchecked page",
+                "Opens the previous page that is not marked as corrected",
+                listOf(KeyCombo(Key.DirectionUp, ctrl = true, shift = true)),
+            ),
+            Shortcut(
                 AppAction.ZOOM_IN,
                 "Zoom in",
                 "Zooms the scan in",
@@ -218,6 +249,8 @@ private val KEY_NAMES =
         Key.G to "G",
         Key.Z to "Z",
         Key.Y to "Y",
+        Key.Enter to "Enter",
+        Key.NumPadEnter to "NumPad Enter",
         Key.F1 to "F1",
     )
 

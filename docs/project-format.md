@@ -64,7 +64,7 @@ Every JSON file is written canonically, so that opening and saving a project wit
   "version": 1,
   "metadata": {"title": "Abhandlung über den kleinen Krieg", "author": "Johann von Ewald", "year": "1785", "source": "https://books.google.de/books?id=MhRLAAAAcAAJ"},
   "pages": [
-    {"pdfPage": 1},
+    {"pdfPage": 1, "status": "corrected"},
     {"pdfPage": 2},
     {"pdfPage": 3}
   ]
@@ -78,6 +78,9 @@ Every JSON file is written canonically, so that opening and saving a project wit
 | `metadata` | object, optional | title, author, year and source of the book (see below); missing in projects made before it existed |
 | `pages` | array | one entry per book page, in page order; one entry per line |
 | `pages[].pdfPage` | integer ≥ 1 | the page of `source.pdf` |
+| `pages[].status` | string, optional | how far the page is: `"corrected"`; left out for an unchecked page (and so for every page after the import). A file that says `"unchecked"` is read, and written without the field. Other names are kept as they are, for statuses that later versions add. In the history a `status` change names both statuses, also `"unchecked"` |
+
+The status is here, in one file for the whole book, and not in the page files, so that the progress of a book of 1000 pages is known without reading any page. It is part of the undo history: a change of status is a `status` change (see "History file").
 
 ### Metadata
 
@@ -218,10 +221,11 @@ Any object (page, region, line, word object) can carry unknown fields. They are 
 {"changes": [{"index": 2, "inserted": [{"id": "l3", "words": [["Anmerkung"]]}], "page": 3, "region": "r1", "removed": [], "type": "lines"}], "seq": 2, "type": "edit"}
 {"changes": [{"index": 2, "inserted": [], "page": 3, "region": "r1", "removed": [{"id": "l3", "words": [["Anmerkung"]]}], "type": "lines"}], "seq": 3, "step": 2, "type": "undo"}
 {"changes": [{"index": 2, "inserted": [{"id": "l3", "words": [["Anmerkung"]]}], "page": 3, "region": "r1", "removed": [], "type": "lines"}], "seq": 4, "step": 2, "type": "redo"}
-{"type": "saved", "upTo": 4}
+{"changes": [{"from": "unchecked", "page": 3, "to": "corrected", "type": "status"}], "seq": 5, "type": "edit"}
+{"type": "saved", "upTo": 5}
 ```
 
-The example is the history of the corrected page above: the word `rnng` was corrected (entry 1), a line was added (2), the addition was undone (3) and redone (4); all of it was written (`saved`).
+The example is the history of the corrected page above: the word `rnng` was corrected (entry 1), a line was added (2), the addition was undone (3) and redone (4), and the page was marked as corrected (5); all of it was written (`saved`).
 
 **Entries.** The `type` says what an entry is:
 
@@ -234,7 +238,7 @@ The example is the history of the corrected page above: the word `rnng` was corr
 
 Every entry with `changes` can be applied by making its changes in order, whatever its type; `step` only says which step it undoes or redoes. A step that was undone can be redone as long as no `edit` entry comes after the `undo`; an `edit` after an undo ends the redo steps. Entries of a type that is not in this table are kept and ignored.
 
-**Changes.** A change is an object with `type`, `page` (the page of the book, from 1, as in the file names of `pages/`) and, for the one type there is so far:
+**Changes.** A change is an object with `type`, `page` (the page of the book, from 1, as in the file names of `pages/`) and the fields of its type. There are two types, `lines` and `status`. A `lines` change:
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -244,13 +248,15 @@ Every entry with `changes` can be applied by making its changes in order, whatev
 | `removed`, `inserted` | arrays of lines | written like the lines of a page file, with alphabetical keys, complete with words and boxes; either may be empty |
 | `regionBefore`, `regionAfter` | `false`, optional | the region did not exist before the change / is removed after it (a region is only made by adding the first line of a page without regions, and goes again when that is undone). Left out when true |
 
+A `status` change has `from` and `to`, the status of the page before and after (see `pages[].status`): `{"from": "unchecked", "page": 3, "to": "corrected", "type": "status"}`. It sets the status of the page in `project.json` to `to`, whatever it was, so making it again after a crash does no harm.
+
 A change of another `type` is kept and cannot be made. Typing is one `lines` change that replaces the line by the line as it is now; a split replaces one line by two, a join two by one, an added line replaces none by one, a deleted line one by none.
 
 - The file is **append-only**. Existing lines are never rewritten or removed; undoing adds an entry.
 - A line counts only once its newline is written. A **torn last line** (without newline, after a crash) is ignored by readers and cut off before the next entry is added.
 - Readers find the latest entries by reading from the end of the file; they do not need to read all of it.
 - An invalid line anywhere else is an error that names the line. It is never skipped silently.
-- **Entries and page files agree.** The app appends the entries of a save, then writes the page files, then appends `saved`. A page file carries `history`: the `seq` of the last entry that changed it. After a crash, the app makes the changes of the entries after the last `saved` that a page file does not have yet (those with a `seq` above its `history`), so that history and pages agree again.
+- **Entries and page files agree.** The app appends the entries of a save, then writes the page files and the statuses in `project.json`, then appends `saved`. A page file carries `history`: the `seq` of the last entry that changed it. After a crash, the app makes the changes of the entries after the last `saved` that a page file does not have yet (those with a `seq` above its `history`), so that history and pages agree again. The statuses in `project.json` carry no number: the app sets them to the newest `to` of each page among those entries.
 
 ## Guarantees
 

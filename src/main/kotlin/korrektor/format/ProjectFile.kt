@@ -38,9 +38,11 @@ internal object ProjectFile {
 
     private fun encodePage(page: PageInfo): String {
         val members = mutableListOf("\"pdfPage\": ${page.pdfPage}")
-        page.extra.entries
-            .sortedBy { it.key }
-            .forEach { members += "${CanonicalJson.quote(it.key)}: ${CanonicalJson.write(it.value)}" }
+        // The status is written (as a known field) among the unknown ones, all in alphabetical order; unchecked is
+        // the absence of the field.
+        val fields = page.extra.mapValues { CanonicalJson.write(it.value) }.toMutableMap()
+        if (page.status != PageStatus.UNCHECKED) fields["status"] = CanonicalJson.quote(page.status.name)
+        fields.entries.sortedBy { it.key }.forEach { members += "${CanonicalJson.quote(it.key)}: ${it.value}" }
         return "{" + members.joinToString(", ") + "}"
     }
 
@@ -115,6 +117,15 @@ internal object ProjectFile {
         }
     }
 
+    private fun decodeStatus(
+        element: JsonElement,
+        index: Int,
+    ): PageStatus {
+        val name = (element as? JsonPrimitive)?.takeIf { it.isString }?.content
+        if (name.isNullOrBlank()) throw FormatException("$FILE: pages[$index].status must be a non-blank string")
+        return PageStatus(name)
+    }
+
     private fun decodePage(
         element: JsonElement,
         index: Int,
@@ -124,6 +135,7 @@ internal object ProjectFile {
         if (pdfPage == null || pdfPage < 1) {
             throw FormatException("$FILE: pages[$index].pdfPage must be a positive integer")
         }
-        return PageInfo(pdfPage, o.filterKeys { it != "pdfPage" })
+        val status = o["status"]?.let { decodeStatus(it, index) } ?: PageStatus.UNCHECKED
+        return PageInfo(pdfPage, o.filterKeys { it != "pdfPage" && it != "status" }, status)
     }
 }

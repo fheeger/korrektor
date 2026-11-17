@@ -8,11 +8,14 @@ import korrektor.format.HistoryEntry
 import korrektor.format.HistoryLog
 import korrektor.format.LineChange
 import korrektor.format.PageLayer
+import korrektor.format.PageStatus
 import korrektor.format.Project
 import korrektor.format.RedoEntry
 import korrektor.format.SavedEntry
+import korrektor.format.StatusChange
 import korrektor.format.UndoEntry
 import korrektor.format.entrySeq
+import korrektor.format.setStatuses
 import java.io.IOException
 
 /**
@@ -23,6 +26,9 @@ import java.io.IOException
  * A page file says which entries it has: `history`, the number of the last entry that changed it. An entry after the
  * last `saved` entry is made on a page only if its number is above the page's. A change that does not fit the page
  * is skipped: nothing is forced onto a page.
+ *
+ * The page statuses are in `project.json`, which has no numbers: a status change is a value that is set, so the
+ * newest `to` of each page among the entries after the last `saved` is made the status, whatever the file has.
  */
 object HistoryRecovery {
     /** How many entries are read back at a time while looking for the last `saved` entry. */
@@ -32,6 +38,7 @@ object HistoryRecovery {
     class Result(
         val lastSeq: Int,
         val repairedPages: Set<Int>,
+        val repairedStatuses: Set<Int> = emptySet(),
     )
 
     /**
@@ -45,9 +52,10 @@ object HistoryRecovery {
             val log = project.historyLog
             val tail = entriesAfterLastSaved(log)
             val repaired = if (tail.entries.isEmpty()) emptySet() else replay(project, tail.entries)
+            val statuses = replayStatuses(project, tail.entries)
             val lastSeq = maxOf(tail.lastSeq, tail.entries.maxOfOrNull { it.entrySeq ?: 0 } ?: 0)
             if (tail.entries.isNotEmpty()) log.append(HistoryCodec.encode(SavedEntry(lastSeq)))
-            Result(lastSeq, repaired)
+            Result(lastSeq, repaired, statuses)
         } catch (e: IOException) {
             throw FormatException("The history of ${project.folder} cannot be repaired: ${e.message}", e)
         }
@@ -87,6 +95,26 @@ object HistoryRecovery {
             is RedoEntry -> entry.changes
             else -> null
         }
+
+    /** Sets the statuses the entries end with in `project.json`, if it has others; returns the pages it changed. */
+    private fun replayStatuses(
+        project: Project,
+        entries: List<HistoryEntry>,
+    ): Set<Int> {
+        val last = LinkedHashMap<Int, PageStatus>()
+        for (entry in entries) {
+            for (change in changesOf(entry).orEmpty().filterIsInstance<StatusChange>()) last[change.page] = change.to
+        }
+        val now = project.statuses
+        val wanted = now.toMutableMap()
+        for ((page, status) in last) {
+            if (page !in 1..project.pages.size) continue // a page the book does not have: nothing to set
+            if (status == PageStatus.UNCHECKED) wanted.remove(page) else wanted[page] = status
+        }
+        if (wanted == now) return emptySet()
+        project.setStatuses(wanted)
+        return (now.keys + wanted.keys).filter { now[it] != wanted[it] }.toSet()
+    }
 
     /** Makes the entries on the pages that miss them, writes those pages once; returns their numbers. */
     private fun replay(

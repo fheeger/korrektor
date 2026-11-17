@@ -44,6 +44,22 @@ data class LineChange(
         copy(removed = inserted, inserted = removed, regionBefore = regionAfter, regionAfter = regionBefore)
 }
 
+/**
+ * The status of [page] (S09) changes from [from] to [to]. A status is a value, not a place in a list: making the change
+ * twice, or after a crash on a project file that already has it, gives the same result.
+ */
+data class StatusChange(
+    override val page: Int,
+    val from: PageStatus,
+    val to: PageStatus,
+) : Change {
+    init {
+        require(page >= 1) { "page must be at least 1, was $page" }
+    }
+
+    override fun inverted(): StatusChange = copy(from = to, to = from)
+}
+
 /** A change of a kind this version does not know (a later version wrote it): kept as it is, and it cannot be made. */
 data class UnknownChange(
     override val page: Int,

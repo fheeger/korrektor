@@ -10,14 +10,36 @@ import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.readText
 
-/** One page of the book in `project.json`. [pdfPage] is the page number in the source PDF (1-based). */
+/**
+ * How far a page is (S09). An open set like [RegionType]: a name this version does not know (a later version wrote it)
+ * is kept as it is.
+ */
+@JvmInline
+value class PageStatus(
+    val name: String,
+) {
+    init {
+        require(name.isNotBlank()) { "The page status must not be blank" }
+    }
+
+    companion object {
+        val UNCHECKED = PageStatus("unchecked")
+        val CORRECTED = PageStatus("corrected")
+    }
+}
+
+/**
+ * One page of the book in `project.json`. [pdfPage] is the page number in the source PDF (1-based). The [status] is
+ * kept here and not in the page file, so that the progress of the whole book is known without reading any page.
+ */
 data class PageInfo(
     val pdfPage: Int,
     val extra: Map<String, JsonElement> = emptyMap(),
+    val status: PageStatus = PageStatus.UNCHECKED,
 ) {
     init {
         require(pdfPage >= 1) { "pdfPage must be at least 1, was $pdfPage" }
-        requireUnknownKeys(extra, setOf("pdfPage"), "Page entry $pdfPage")
+        requireUnknownKeys(extra, setOf("pdfPage", "status"), "Page entry $pdfPage")
     }
 }
 
@@ -33,13 +55,30 @@ class Project private constructor(
     metadata: Metadata?,
     private val extra: Map<String, JsonElement>,
 ) {
-    /** The pages of the book, in order. Empty until the text of the PDF is imported (S03). */
+    /**
+     * The pages of the book, in order. Empty until the text of the PDF is imported (S03). Replaced as a whole, also by
+     * the saver on another thread (a status), so a reader always sees one complete list.
+     */
+    @Volatile
     var pages: List<PageInfo> = pages
         private set
 
+    /** The status of every page that is not unchecked, by page number (from 1). */
+    val statuses: Map<Int, PageStatus>
+        get() =
+            pages
+                .withIndex()
+                .filter { it.value.status != PageStatus.UNCHECKED }
+                .associate { it.index + 1 to it.value.status }
+
     /** The metadata, or null for a project that has none (made before S02). */
+    @Volatile
     var metadata: Metadata? = metadata
         private set
+
+    // `project.json` is written by the UI thread (metadata, import) and by the saver (statuses): one writer at a time,
+    // or one write could publish the other's temp file or leave the older list on disk.
+    private val fileLock = Any()
 
     val sourcePdf: Path get() = folder.resolve(SOURCE_PDF)
 
@@ -48,15 +87,19 @@ class Project private constructor(
 
     /** Writes `project.json` again. Without changes, the bytes are identical to what was read. */
     fun saveProjectFile() {
-        val text = ProjectFile.encode(pages, metadata, extra)
-        AtomicFile.write(folder.resolve(PROJECT_FILE), text.toByteArray(Charsets.UTF_8))
+        synchronized(fileLock) {
+            val text = ProjectFile.encode(pages, metadata, extra)
+            AtomicFile.write(folder.resolve(PROJECT_FILE), text.toByteArray(Charsets.UTF_8))
+        }
     }
 
     /** Replaces the metadata and writes `project.json`. If writing fails, the old metadata stays. */
     fun updateMetadata(new: Metadata) {
-        val old = metadata
-        metadata = new
-        saveOrRevert { metadata = old }
+        synchronized(fileLock) {
+            val old = metadata
+            metadata = new
+            saveOrRevert { metadata = old }
+        }
     }
 
     /**
@@ -64,9 +107,11 @@ class Project private constructor(
      * it to say which pages the book has before the page files are written.
      */
     fun setPages(new: List<PageInfo>) {
-        val old = pages
-        pages = new
-        saveOrRevert { pages = old }
+        synchronized(fileLock) {
+            val old = pages
+            pages = new
+            saveOrRevert { pages = old }
+        }
     }
 
     /** The corrected layer of page [n]. */
@@ -235,3 +280,10 @@ class Project private constructor(
             }
     }
 }
+
+/**
+ * Sets the status of every page (S09): [all] says it for the pages that are not unchecked, every other page is
+ * unchecked. Writes `project.json` only; if that fails, the old statuses stay.
+ */
+fun Project.setStatuses(all: Map<Int, PageStatus>) =
+    setPages(pages.mapIndexed { i, page -> page.copy(status = all[i + 1] ?: PageStatus.UNCHECKED) })

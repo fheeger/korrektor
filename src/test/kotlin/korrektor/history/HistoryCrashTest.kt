@@ -12,9 +12,11 @@ import korrektor.format.HistoryEntry
 import korrektor.format.LineChange
 import korrektor.format.Metadata
 import korrektor.format.PageLayer
+import korrektor.format.PageStatus
 import korrektor.format.Project
 import korrektor.format.RedoEntry
 import korrektor.format.SavedEntry
+import korrektor.format.StatusChange
 import korrektor.format.UndoEntry
 import korrektor.format.entrySeq
 import korrektor.importer.PdfImport
@@ -134,6 +136,23 @@ class HistoryCrashTest {
         return layers
     }
 
+    /** The statuses as the history says: the newest `to` of every page's status changes, in file order. */
+    private fun replayedStatuses(project: Project): Map<Int, PageStatus> {
+        val statuses = LinkedHashMap<Int, PageStatus>()
+        for (entry in project.historyLog.readAll().map(HistoryCodec::decode)) {
+            for (change in changesOf(entry).filterIsInstance<StatusChange>()) {
+                if (change.to ==
+                    PageStatus.UNCHECKED
+                ) {
+                    statuses.remove(change.page)
+                } else {
+                    statuses[change.page] = change.to
+                }
+            }
+        }
+        return statuses
+    }
+
     private fun assertUndoWorks(
         model: AppModel,
         label: String,
@@ -184,6 +203,7 @@ class HistoryCrashTest {
                         label,
                     )
                 }
+                assertEquals(replayedStatuses(opened), opened.statuses, "kill $number: the statuses")
                 val entries = opened.historyLog.readAll().map(HistoryCodec::decode)
                 assertTrue(
                     entries.isEmpty() || entries.last() is SavedEntry,

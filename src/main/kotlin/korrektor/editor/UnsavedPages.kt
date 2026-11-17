@@ -2,6 +2,7 @@ package korrektor.editor
 
 import korrektor.format.HistoryEntry
 import korrektor.format.PageLayer
+import korrektor.format.PageStatus
 
 // What the saver needs to know about the pages with unsaved corrections (S07). Extensions, because `BookEditor` has
 // as many functions as the code checks allow.
@@ -27,15 +28,23 @@ fun BookEditor.markSaved(
     }
 }
 
-/** What a save writes: the unsaved [layers] and the history [entries] that they contain, taken together. */
+/**
+ * What a save writes: the unsaved [layers], the history [entries] that they contain and, if they changed, the page
+ * [statuses] (S09), taken together.
+ */
 class SaveSnapshot(
     val layers: Map<Int, PageLayer>,
     val entries: List<HistoryEntry>,
-)
+    val statuses: Map<Int, PageStatus>? = null,
+) {
+    /** Whether there is nothing to write. */
+    val isEmpty: Boolean get() = layers.isEmpty() && entries.isEmpty() && statuses == null
+}
 
 /**
  * The unsaved pages and the pending history entries, taken at once under the lock that every edit holds while it
  * makes its layer and its entry: so the layers contain exactly the entries, no more and no fewer (S08). The entries
  * are drained: if they cannot be written, the saver gives them back with `UndoHistory.restore`.
  */
-fun BookEditor.snapshot(): SaveSnapshot = synchronized(changedLock) { SaveSnapshot(unsaved(), history.drainPending()) }
+fun BookEditor.snapshot(): SaveSnapshot =
+    synchronized(changedLock) { SaveSnapshot(unsaved(), history.drainPending(), unsavedStatuses()) }
