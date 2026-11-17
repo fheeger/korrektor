@@ -19,7 +19,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [S06](stories/S06-keyboard-navigation.md) | Keyboard navigation | C2 | done |
 | [S07](stories/S07-autosave.md) | Autosave | N4 | done |
 | [S08](stories/S08-undo-redo.md) | Undo/redo | F1 | in review |
-| [S09](stories/S09-page-status.md) | Page status | C5 | in progress |
+| [S09](stories/S09-page-status.md) | Page status | C5 | in review |
 | [S10](stories/S10-find-and-replace.md) | Find and replace with a preview | D2 | ready for development |
 | [S11](stories/S11-export-text-markdown.md) | Export plain text and Markdown | G1 | ready for development |
 
