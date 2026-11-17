@@ -1,6 +1,6 @@
 # T070 Keys, menu and list for undo and redo
 
-**Type:** task · **Status:** ready for development · **Story:** S08 · **Task:** S08.3
+**Type:** task · **Status:** done · **Story:** S08 · **Task:** S08.3
 
 ## What needs doing
 - **`AppAction.UNDO` and `REDO`** in `Shortcuts`: Ctrl+Z; Ctrl+Y and Ctrl+Shift+Z (Ctrl+Y is the one shown). The key handler uses them up like all shortcuts, so the text field's own undo (one field at a time) never runs.
@@ -24,7 +24,11 @@
 T069.
 
 ## Decisions
-Written down while working.
+- **Ctrl+Y is the shown key,** Ctrl+Shift+Z the alternative (both resolve to Redo, a test checks the table has no key twice). Undo and Redo are the first entries of the table, so they are first on F1 too.
+- **The text field's own undo never runs:** the key handler sits above the focused field (preview phase) and uses up every key of the table, so a Ctrl+Z is the book's undo and nothing else. A test types in a line and checks that Ctrl+Z gives the text of the book's history, with nothing to undo it leaves the text as it is.
+- **Messages:** a step that does not fit is a notice ("… is dropped"), a page that cannot be read an error; both use the banners that exist. Nothing to undo says nothing.
+- **The "Edit" menu is before "Go",** as is usual. The entries are disabled when there is nothing to do (`MenuState.canUndo`, `canRedo`, from the editor's history state).
+- **Not tried by hand** (the real window, the real menu bar, a real keyboard): listed in the story report.
 
 ## Progress
-Not started.
+Done. `AppAction.UNDO`/`REDO`, the two table entries, `ProjectKeys.undoOrRedo`, the Edit menu (`Menus.kt`, `Main.kt`), README. Tests: `UndoUiTest` (3, the whole window with real key events), `ShortcutsTest`, `MenusTest`; the existing tests that the table is complete and every action has a handler cover the rest. Build, tests, ktlint and Detekt are green.

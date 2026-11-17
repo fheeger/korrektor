@@ -19,11 +19,14 @@ data class MenuState(
     val hasPreviousPage: Boolean = false,
     val hasNextPage: Boolean = false,
     val pageHasLines: Boolean = false,
+    val canUndo: Boolean = false,
+    val canRedo: Boolean = false,
 )
 
 /** How the actions are arranged in the menus. Every action of [Shortcuts] has to be in here (tested). */
 private val MENU_LAYOUT: List<Pair<String, List<List<AppAction>>>> =
     listOf(
+        "Edit" to listOf(listOf(AppAction.UNDO, AppAction.REDO)),
         "Go" to
             listOf(
                 listOf(AppAction.PREVIOUS_LINE, AppAction.NEXT_LINE, AppAction.FIRST_LINE, AppAction.LAST_LINE),
@@ -59,6 +62,8 @@ private fun enabled(
         AppAction.SHOW_SHORTCUTS -> true
         AppAction.PREVIOUS_PAGE -> state.projectOpen && state.hasPreviousPage
         AppAction.NEXT_PAGE -> state.projectOpen && state.hasNextPage
+        AppAction.UNDO -> state.projectOpen && state.canUndo
+        AppAction.REDO -> state.projectOpen && state.canRedo
         AppAction.PREVIOUS_LINE, AppAction.NEXT_LINE, AppAction.FIRST_LINE, AppAction.LAST_LINE ->
             state.projectOpen && state.pageHasLines
         else -> state.projectOpen

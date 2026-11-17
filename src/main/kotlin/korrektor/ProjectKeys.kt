@@ -2,11 +2,14 @@ package korrektor
 
 import korrektor.editor.Arrival
 import korrektor.editor.LineMove
+import korrektor.editor.UndoResult
 import korrektor.editor.arriveAt
 import korrektor.editor.firstLine
 import korrektor.editor.focusPanel
 import korrektor.editor.lastLine
 import korrektor.editor.moveLine
+import korrektor.editor.redo
+import korrektor.editor.undo
 import korrektor.viewer.fitPage
 import korrektor.viewer.fitWidth
 import korrektor.viewer.focusPageField
@@ -21,6 +24,8 @@ class ProjectKeys(
     // A table instead of one big `when`: each action is one line, and an action with nothing to do is just not here.
     private val handlers: Map<AppAction, () -> Unit> =
         mapOf(
+            AppAction.UNDO to { undoOrRedo(undoing = true) },
+            AppAction.REDO to { undoOrRedo(undoing = false) },
             AppAction.PREVIOUS_LINE to { moveLine(-1) },
             AppAction.NEXT_LINE to { moveLine(1) },
             AppAction.FIRST_LINE to { model.editor?.firstLine() },
@@ -63,6 +68,22 @@ class ProjectKeys(
         val editor = model.editor ?: return
         val line = editor.lines.firstOrNull { it.id == editor.activeLineId } ?: editor.lines.firstOrNull()
         if (line != null) editor.requestFocus(line.id, editor.caret, keepColumn = true) else editor.focusPanel()
+    }
+
+    /**
+     * Takes back (or brings back) the last change of the book. If it was on another page, that page is opened: the
+     * editor keeps where the cursor is wanted and puts it there when the page is shown (T069).
+     */
+    private fun undoOrRedo(undoing: Boolean) {
+        val editor = model.editor ?: return
+        when (val result = if (undoing) editor.undo() else editor.redo()) {
+            is UndoResult.Done -> model.viewer?.let { if (it.page != result.page) it.goTo(result.page) }
+            UndoResult.DoesNotFit ->
+                model.notice =
+                    "That change does not fit the page any more (it was changed outside the app) and is dropped."
+            is UndoResult.Failed -> model.error = "The change cannot be taken back: ${result.reason}"
+            UndoResult.NothingToDo -> Unit
+        }
     }
 
     /** Down on the last line goes to the first line of the next page, Up on the first to the last of the one before. */

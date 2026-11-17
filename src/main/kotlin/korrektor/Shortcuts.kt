@@ -14,6 +14,8 @@ import androidx.compose.ui.input.key.type
 
 /** What the keyboard can do besides typing. What each action does is decided where [KeyActions] is implemented. */
 enum class AppAction {
+    UNDO,
+    REDO,
     PREVIOUS_LINE,
     NEXT_LINE,
     FIRST_LINE,
@@ -67,6 +69,18 @@ data class Shortcut(
 object Shortcuts {
     private val table =
         listOf(
+            Shortcut(
+                AppAction.UNDO,
+                "Undo",
+                "Takes back the last change, on whatever page it was",
+                listOf(KeyCombo(Key.Z, ctrl = true)),
+            ),
+            Shortcut(
+                AppAction.REDO,
+                "Redo",
+                "Brings back the change that was taken back last",
+                listOf(KeyCombo(Key.Y, ctrl = true), KeyCombo(Key.Z, ctrl = true, shift = true)),
+            ),
             Shortcut(
                 AppAction.PREVIOUS_LINE,
                 "Previous line",
@@ -202,6 +216,8 @@ private val KEY_NAMES =
         Key.NumPad0 to "NumPad 0",
         Key.NumPad1 to "NumPad 1",
         Key.G to "G",
+        Key.Z to "Z",
+        Key.Y to "Y",
         Key.F1 to "F1",
     )
 
