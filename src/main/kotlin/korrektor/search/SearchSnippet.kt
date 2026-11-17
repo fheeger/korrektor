@@ -15,12 +15,19 @@ data class Snippet(
     val replacement: String? = null,
 )
 
-/** The snippet of this hit; [replacement] is what it would be replaced by, or null when only finding. */
-fun Match.snippet(replacement: String? = null): Snippet =
+/**
+ * The snippet of this hit; [replacement] is what it would be replaced by, or null when only finding. [contextBefore]
+ * and [contextAfter] are how many characters of the line are shown on either side.
+ */
+fun Match.snippet(
+    replacement: String? = null,
+    contextBefore: Int = CONTEXT_BEFORE,
+    contextAfter: Int = CONTEXT_AFTER,
+): Snippet =
     Snippet(
-        before = if (start > CONTEXT_BEFORE) "…" + lineText.substring(start - CONTEXT_BEFORE, start) else before,
+        before = if (start > contextBefore) "…" + lineText.substring(start - contextBefore, start) else before,
         found = found,
-        after = if (lineText.length - end > CONTEXT_AFTER) after.take(CONTEXT_AFTER) + "…" else after,
+        after = if (lineText.length - end > contextAfter) after.take(contextAfter) + "…" else after,
         replacement = replacement,
     )
 

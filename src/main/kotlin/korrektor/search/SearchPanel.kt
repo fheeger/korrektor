@@ -1,22 +1,12 @@
 package korrektor.search
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -32,8 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -43,21 +31,10 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import korrektor.editor.HistoricFonts
-
-/** The most that the list of results takes of the window; it scrolls beyond that. */
-private val RESULTS_HEIGHT = 180.dp
-private val FIELD_SHAPE = RoundedCornerShape(4.dp)
 
 /**
  * The panel for finding and replacing (S10), between the status bar and the scan and text: the search field with its
@@ -80,6 +57,7 @@ fun SearchPanel(
         QueryRow(model, onStep, onLeave)
         if (model.showReplace) ReplaceRow(model)
         SummaryRow(model)
+        if (model.showReplace) SelectionRow(model)
         ResultList(model, onOpenResult)
     }
 }
@@ -196,105 +174,20 @@ private fun SummaryRow(model: SearchModel) {
     }
 }
 
+/** In replace mode: how many hits are checked, buttons to check all or none, and why a replacement is not valid. */
 @Composable
-private fun ResultList(
-    model: SearchModel,
-    onOpenResult: (Int) -> Unit,
-) {
+private fun SelectionRow(model: SearchModel) {
     if (model.results.isEmpty()) return
-    val state = rememberLazyListState()
-    // The list follows the hit that was gone to (F3): it is scrolled to if it is not in view.
-    LaunchedEffect(model.current) {
-        val shown = state.layoutInfo.visibleItemsInfo.map { it.index }
-        if (model.current >= 0 && model.current !in shown) state.scrollToItem(maxOf(0, model.current - 1))
-    }
-    LazyColumn(Modifier.fillMaxWidth().heightIn(max = RESULTS_HEIGHT).testTag("search results"), state) {
-        itemsIndexed(model.results) { index, match ->
-            val selected = index == model.current
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .background(if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
-                    .clickable { onOpenResult(index) }
-                    .padding(horizontal = 4.dp, vertical = 2.dp)
-                    .testTag("result $index"),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(
-                    "p. ${match.page}, line ${match.lineNumber}",
-                    Modifier.width(RESULT_PLACE_WIDTH),
-                    color = MaterialTheme.colorScheme.outline,
-                    fontSize = 13.sp,
-                )
-                Text(contextOf(match.snippet()), fontFamily = HistoricFonts.family, fontSize = 14.sp, maxLines = 1)
-            }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            "${model.selectedCount} of ${model.results.size} selected",
+            Modifier.testTag("selected count"),
+            fontSize = 13.sp,
+        )
+        TextButton(model::selectAll, Modifier.testTag("select all")) { Text("Select all") }
+        TextButton(model::selectNone, Modifier.testTag("select none")) { Text("Select none") }
+        model.replacementProblem()?.let {
+            Text(it, Modifier.testTag("replacement problem"), color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
         }
     }
-}
-
-private val RESULT_PLACE_WIDTH = 110.dp
-
-@Composable
-private fun contextOf(snippet: Snippet) =
-    buildAnnotatedString {
-        append(snippet.before)
-        withStyle(SpanStyle(fontWeight = FontWeight.Bold, background = MaterialTheme.colorScheme.tertiaryContainer)) {
-            append(snippet.found)
-        }
-        append(snippet.after)
-    }
-
-/** A small button that is on or off (an option, the scope): it says so to the screen reader as a checkbox does. */
-@Composable
-private fun Toggle(
-    text: String,
-    on: Boolean,
-    tag: String,
-    onChange: (Boolean) -> Unit,
-) {
-    val colors = MaterialTheme.colorScheme
-    Box(
-        Modifier
-            .border(1.dp, if (on) colors.primary else colors.outline, FIELD_SHAPE)
-            .background(if (on) colors.primaryContainer else colors.surface, FIELD_SHAPE)
-            .toggleable(on, role = Role.Checkbox, onValueChange = onChange)
-            .padding(horizontal = 8.dp, vertical = 6.dp)
-            .testTag(tag),
-    ) {
-        Text(text, fontSize = 13.sp)
-    }
-}
-
-/** A one-line text field with a border and a hint that shows while it is empty. */
-@Composable
-private fun TextBox(
-    value: TextFieldValue,
-    onChange: (TextFieldValue) -> Unit,
-    hint: String,
-    modifier: Modifier = Modifier,
-) {
-    BasicTextField(
-        value,
-        onChange,
-        modifier
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.outline,
-                FIELD_SHAPE,
-            ).padding(horizontal = 8.dp, vertical = 6.dp),
-        singleLine = true,
-        textStyle =
-            TextStyle(
-                color = MaterialTheme.colorScheme.onSurface,
-                fontFamily = HistoricFonts.family,
-                fontSize = 15.sp,
-            ),
-        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-        decorationBox = { inner ->
-            Box {
-                if (value.text.isEmpty()) Text(hint, color = MaterialTheme.colorScheme.outline, fontSize = 15.sp)
-                inner()
-            }
-        },
-    )
 }

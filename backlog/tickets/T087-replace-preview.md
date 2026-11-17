@@ -1,6 +1,6 @@
 # T087 Replace mode: the results as a preview, before → after, with checkboxes
 
-**Type:** task · **Status:** ready for development · **Story:** S10 · **Task:** S10.5
+**Type:** task · **Status:** done · **Story:** S10 · **Task:** S10.5
 
 ## What needs doing
 - The replace field in the panel (shown by Ctrl+H or the toggle): the replacement text; with the regex option `$1` and `${name}` refer to groups, otherwise it is literal.
@@ -23,5 +23,9 @@
 T085, T083.
 
 ## Decisions
+- The checkboxes are kept as the set of unchecked indices of `results`; a new search (any change of the query or the scope) checks everything again, since the hits are new. Hits found later while a search runs are checked.
+- A replacement that is not valid (`$5` with no group 5) shows no "after" and the message "The replacement is not valid: …", checked on the first hit.
+- The checkbox is a text glyph in a toggleable box, not the Material checkbox, whose 48 dp touch area would make every row three times as high.
 
 ## Progress
+Done. `SearchSelection.kt` (`excluded`, `isSelected`, `setSelected`, `selectAll`, `selectNone`, `selectedCount`, `selectedMatches`, `preview`, `replacementProblem`), the panel split into `SearchPanel.kt`, `SearchResults.kt` (rows with checkbox and before → after) and `SearchWidgets.kt`; README. Tests: `SearchSelectionTest` (7), `SearchUiTest` (2 more). Build green.
