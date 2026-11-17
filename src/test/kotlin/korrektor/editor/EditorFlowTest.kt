@@ -91,9 +91,11 @@ class EditorFlowTest {
                 block(model)
             }
 
-            // The corrections are saved by themselves now (S07): the corrected page files may change. Everything else
+            // The corrections are saved by themselves now (S07, S08): the corrected pages and the history may change.
+            // Everything else
             // (the original OCR layers, project.json, source.pdf) must be exactly as it was.
-            fun String.isCorrectedPage() = Regex("""[\\/]pages[\\/]\d+\.json(\.tmp)?""").containsMatchIn(this)
+            fun String.isCorrectedPage() =
+                Regex("""[\\/](pages[\\/]\d+\.json|history[\\/]book\.jsonl)(\.tmp)?""").containsMatchIn(this)
             val after = snapshot().filterKeys { !it.isCorrectedPage() }
             val originals = before.filterKeys { !it.isCorrectedPage() }
             assertEquals(originals.keys, after.keys, "no file added")

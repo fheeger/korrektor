@@ -40,3 +40,13 @@ data class SavedEntry(
 data class UnknownEntry(
     val json: JsonObject,
 ) : HistoryEntry
+
+/** The number of the entry, or null for an entry that has none (`saved`, and types this version does not know). */
+val HistoryEntry.entrySeq: Int?
+    get() =
+        when (this) {
+            is EditEntry -> seq
+            is UndoEntry -> seq
+            is RedoEntry -> seq
+            else -> null
+        }

@@ -1,6 +1,6 @@
 # T072 History saved together with the pages, and recovery after a crash
 
-**Type:** task · **Status:** ready for development · **Story:** S08 · **Task:** S08.4
+**Type:** task · **Status:** done · **Story:** S08 · **Task:** S08.4
 
 The history and the pages must agree after a crash (S07).
 
@@ -26,7 +26,13 @@ The history and the pages must agree after a crash (S07).
 T068, T071.
 
 ## Decisions
-Written down while working.
+- **`HistoryRecovery` is in `korrektor.editor`, not `korrektor.format`** (the ticket said format): it needs `apply` of the change model, which lives with the editor, and the format package has no editor code. It reads and writes only through `Project`, `HistoryLog` and `HistoryCodec`.
+- **A step is made on a page completely or not at all,** and the test "does the page have this entry" uses the page's number as it was before the step, so a step with several changes on one page is not skipped after its first change.
+- **`saved` means: every entry up to `upTo` is in the page files.** The saver keeps the newest entry that has no `saved` after it (`HistoryWriter.uncommitted`), so a failed page does not lose the marker: it is written by the save that finally writes the page. A `saved` entry that cannot be written fails the save (the page is already written, so only the marker is retried).
+- **`appendAll` is all or nothing:** if the write fails half way, the file is cut back to where it was, so a retry never writes an entry twice.
+- **Save elsewhere holds the saver idle** (`AutoSaver.whileIdle`), so no save adds to the history while it is copied; the layers and the pending entries are read together under the editor's lock, as for a save but without draining, so that a failed copy loses nothing. The first version of this had `saver?.whileIdle { … } ?: copy(…)`, which copied twice (the block returns null on success); caught by `CloseTest`.
+- **The recovery runs before the old project is closed** (first in `AppModel.open`); if it fails the project is not opened and nothing changes.
+- **Not done here:** the history is not loaded into the stacks (T073); the new session only continues the numbers (`firstSeq`).
 
 ## Progress
-Not started.
+Done. `HistoryWriter`, `HistoryRecovery`, `AutoSaver` (history before pages, `saved` after, `whileIdle`), `BookEditor.snapshot()`, `UndoHistory.restore`, `HistoryLog.appendAll` (all or nothing), `Project.historyLog`, `AppModel.open` (recovery first, numbering continues), save elsewhere. Tests: `HistorySaveTest` (7), `HistoryRecoveryTest` (9: every crash point), `CloseTest` (history in the copy); `EditorFlowTest` and `AutosaveFlowTest` allow the history file. Build, tests, ktlint and Detekt are green.

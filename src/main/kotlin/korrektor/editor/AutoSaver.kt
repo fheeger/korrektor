@@ -3,6 +3,7 @@ package korrektor.editor
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import korrektor.format.HistoryEntry
 import korrektor.format.PageLayer
 import korrektor.format.reason
 import kotlinx.coroutines.CoroutineDispatcher
@@ -71,6 +72,7 @@ class AutoSaver(
     private val editor: BookEditor,
     private val io: CoroutineDispatcher = Dispatchers.IO,
     private val now: () -> Long = { System.nanoTime() / NANOS_PER_MILLI },
+    private val appendHistory: (List<HistoryEntry>) -> Unit = {},
     private val write: (Int, PageLayer) -> Unit,
 ) {
     private val one = Mutex()
@@ -175,16 +177,25 @@ class AutoSaver(
      */
     suspend fun saveNow(): SaveOutcome = one.withLock { saveLocked() }
 
+    /**
+     * Runs [block] while no save runs and none can start: for what must see the files as a save leaves them, such as
+     * copying the project to another place (S07.8).
+     */
+    suspend fun <T> whileIdle(block: suspend () -> T): T = one.withLock { block() }
+
+    // Writes the history entries of a save and the `saved` entry after its pages (S08).
+    private val history = HistoryWriter(editor, appendHistory)
+
     private suspend fun saveLocked(): SaveOutcome {
-        val snapshot = editor.unsaved()
-        if (snapshot.isEmpty()) {
+        val taken = editor.snapshot()
+        if (taken.layers.isEmpty() && taken.entries.isEmpty() && !history.hasUncommitted) {
             error = null
             warningDismissed = false
             return SaveOutcome.Done
         }
         saving = true
         try {
-            val outcome = withContext(io) { writeAll(snapshot) { ensureActive() } }
+            val outcome = withContext(io) { writeAll(taken) { ensureActive() } }
             error = (outcome as? SaveOutcome.Failed)?.reason
             if (error == null) warningDismissed = false
             return outcome
@@ -193,12 +204,17 @@ class AutoSaver(
         }
     }
 
+    /**
+     * The history entries first, then the pages, then the `saved` entry (S08): after a crash the file of a page is
+     * never ahead of the history, and the entries after the last `saved` are the ones to check (see `HistoryRecovery`).
+     */
     private fun writeAll(
-        snapshot: Map<Int, PageLayer>,
+        taken: SaveSnapshot,
         stillWanted: () -> Unit,
     ): SaveOutcome {
-        var failed: SaveOutcome.Failed? = null
-        for ((page, layer) in snapshot) {
+        var failed: SaveOutcome.Failed? = history.append(taken)
+        if (failed != null) return failed
+        for ((page, layer) in taken.layers) {
             stillWanted() // throws if the caller was cancelled: no further page is started
             try {
                 write(page, layer)
@@ -209,21 +225,22 @@ class AutoSaver(
                 @Suppress("TooGenericExceptionCaught") e: Exception,
             ) {
                 // The other pages are still written: a page that cannot be saved must not hold back the rest.
-                if (failed == null) failed = SaveOutcome.Failed(page, describe(e))
+                if (failed == null) failed = SaveOutcome.Failed(page, describeFailure(e))
                 continue
             }
             editor.markSaved(page, layer)
         }
-        return failed ?: SaveOutcome.Done
+        return failed ?: history.markSaved() ?: SaveOutcome.Done
     }
-
-    private fun describe(e: Exception): String =
-        when (e) {
-            is FileSystemException -> {
-                val name = e.file?.let { Path.of(it).fileName.toString() }
-                (name?.let { "$it: " } ?: "") + e.reason()
-            }
-            is IOException -> e.reason()
-            else -> e.message ?: e::class.simpleName ?: "unknown error"
-        }
 }
+
+/** What went wrong, for the message to the user: the file name and the reason for a file system problem. */
+internal fun describeFailure(e: Exception): String =
+    when (e) {
+        is FileSystemException -> {
+            val name = e.file?.let { Path.of(it).fileName.toString() }
+            (name?.let { "$it: " } ?: "") + e.reason()
+        }
+        is IOException -> e.reason()
+        else -> e.message ?: e::class.simpleName ?: "unknown error"
+    }
