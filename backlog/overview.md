@@ -19,8 +19,8 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [S06](stories/S06-keyboard-navigation.md) | Keyboard navigation | C2 | done |
 | [S07](stories/S07-autosave.md) | Autosave | N4 | done |
 | [S08](stories/S08-undo-redo.md) | Undo/redo | F1 | done |
-| [S09](stories/S09-page-status.md) | Page status | C5 | in review |
-| [S10](stories/S10-find-and-replace.md) | Find and replace with a preview | D2 | ready for development |
+| [S09](stories/S09-page-status.md) | Page status | C5 | done |
+| [S10](stories/S10-find-and-replace.md) | Find and replace with a preview | D2 | in progress |
 | [S11](stories/S11-export-text-markdown.md) | Export plain text and Markdown | G1 | ready for development |
 
 ## Tickets
@@ -108,3 +108,11 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T080](tickets/T080-jump-unchecked.md) | Jump to the next or previous unchecked page | task | S09 | done |
 | [T081](tickets/T081-status-tests.md) | Page status tests: undo, crash, 1000 pages | task | S09 | done |
 | [T082](tickets/T082-s09-review-fixes.md) | Fixes from the S09 code review | task | S09 | done |
+| [T083](tickets/T083-search-engine.md) | Search engine: one layer or the whole book, within a line | task | S10 | ready for development |
+| [T084](tickets/T084-search-model.md) | The search model: results that arrive while it searches, and cancel | task | S10 | ready for development |
+| [T085](tickets/T085-search-panel.md) | The search panel: Ctrl+F, Ctrl+H, options, results list, click opens the place | task | S10 | ready for development |
+| [T086](tickets/T086-next-previous-match.md) | Next and previous match: Enter, F3, Shift+F3 | task | S10 | ready for development |
+| [T087](tickets/T087-replace-preview.md) | Replace mode: the results as a preview, before → after, with checkboxes | task | S10 | ready for development |
+| [T088](tickets/T088-replace.md) | Replace the selected matches as one undo step, and step by step | task | S10 | ready for development |
+| [T089](tickets/T089-search-tests.md) | Search and replace tests: options, many pages with undo, speed in a 1000-page book | task | S10 | ready for development |
+| [T090](tickets/T090-s10-review-fixes.md) | Fixes from the S10 code review | task | S10 | ready for development |

@@ -1,6 +1,6 @@
 # S10 Find and replace with a preview
 
-**Features:** D2 · **Status:** ready for development
+**Features:** D2 · **Status:** in progress
 
 As a reader of historical sources, I want to find and replace text across the whole book, with a preview before anything changes
 so that I can fix recurring OCR errors in one go without breaking anything.
@@ -27,11 +27,12 @@ S10 searches and replaces in the corrected text, on the current page or across t
 - The shortcuts are in the menus and in the shortcut list (S06.6).
 
 ## Tasks
-- [ ] S10.1 Search engine: current page and whole book, with match case, whole words and regex, within a line
-- [ ] S10.2 Search and replace panel with an expandable replace field (Ctrl+F, Ctrl+H, toggle button) and a results list; clicking a result opens the place
-- [ ] S10.3 Next/previous match (Enter, F3, Shift+F3)
-- [ ] S10.4 Search in the background, with results appearing as they're found and a cancel option
-- [ ] S10.5 Results list in replace mode: before → after, with checkboxes
-- [ ] S10.6 Replace the selected matches as one undo step; step-by-step replace or skip
-- [ ] S10.7 Add the shortcuts to the menus and the shortcut list
-- [ ] S10.8 Tests: search options, replacing across many pages with undo, speed in a 1000-page book
+- [ ] S10.1 Search engine: current page and whole book, with match case, whole words and regex, within a line → [T083](../tickets/T083-search-engine.md)
+- [ ] S10.2 Search and replace panel with an expandable replace field (Ctrl+F, Ctrl+H, toggle button) and a results list; clicking a result opens the place → [T085](../tickets/T085-search-panel.md)
+- [ ] S10.3 Next/previous match (Enter, F3, Shift+F3) → [T086](../tickets/T086-next-previous-match.md)
+- [ ] S10.4 Search in the background, with results appearing as they're found and a cancel option → [T084](../tickets/T084-search-model.md)
+- [ ] S10.5 Results list in replace mode: before → after, with checkboxes → [T087](../tickets/T087-replace-preview.md)
+- [ ] S10.6 Replace the selected matches as one undo step; step-by-step replace or skip → [T088](../tickets/T088-replace.md)
+- [ ] S10.7 Add the shortcuts to the menus and the shortcut list → the table entries and menu entries are made in [T085](../tickets/T085-search-panel.md) and [T086](../tickets/T086-next-previous-match.md)
+- [ ] S10.8 Tests: search options, replacing across many pages with undo, speed in a 1000-page book → [T089](../tickets/T089-search-tests.md)
+- [ ] S10.9 Fixes from the code review → [T090](../tickets/T090-s10-review-fixes.md)
