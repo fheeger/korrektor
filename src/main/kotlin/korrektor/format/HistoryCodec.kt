@@ -19,6 +19,7 @@ import kotlinx.serialization.json.JsonPrimitive
  */
 object HistoryCodec {
     private const val LINES = "lines"
+    private const val STATUS = "status"
 
     fun encode(entry: HistoryEntry): JsonObject =
         when (entry) {
@@ -75,23 +76,33 @@ object HistoryCodec {
                         if (!change.regionAfter) put("regionAfter", JsonPrimitive(false))
                     },
                 )
+            is StatusChange ->
+                JsonObject(
+                    mapOf(
+                        "type" to JsonPrimitive(STATUS),
+                        "page" to JsonPrimitive(change.page),
+                        "from" to JsonPrimitive(change.from.name),
+                        "to" to JsonPrimitive(change.to.name),
+                    ),
+                )
             is UnknownChange -> change.json
         }
 
     private fun decodeChange(element: JsonElement): Change {
         val o = element.asObject("changes[]")
-        return if (o.string("type") == LINES) {
-            LineChange(
-                page = o.int("page"),
-                region = o.string("region"),
-                index = o.int("index"),
-                removed = o.lines("removed"),
-                inserted = o.lines("inserted"),
-                regionBefore = o.flag("regionBefore"),
-                regionAfter = o.flag("regionAfter"),
-            )
-        } else {
-            UnknownChange(o.int("page"), o)
+        return when (o.string("type")) {
+            LINES ->
+                LineChange(
+                    page = o.int("page"),
+                    region = o.string("region"),
+                    index = o.int("index"),
+                    removed = o.lines("removed"),
+                    inserted = o.lines("inserted"),
+                    regionBefore = o.flag("regionBefore"),
+                    regionAfter = o.flag("regionAfter"),
+                )
+            STATUS -> StatusChange(o.int("page"), PageStatus(o.string("from")), PageStatus(o.string("to")))
+            else -> UnknownChange(o.int("page"), o)
         }
     }
 

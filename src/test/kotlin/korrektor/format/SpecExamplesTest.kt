@@ -56,6 +56,7 @@ class SpecExamplesTest {
             folder.resolve("source.pdf").writeText("pdf")
             val project = Project.open(folder)
             assertEquals(3, project.pages.size)
+            assertEquals(mapOf(1 to PageStatus.CORRECTED), project.statuses)
             project.saveProjectFile()
             assertEquals(example("project"), folder.resolve("project.json").readText())
         } finally {
@@ -72,12 +73,12 @@ class SpecExamplesTest {
             file.writeText(example("history"))
             val log = HistoryLog(file)
             val entries = log.readAll()
-            assertEquals(5, entries.size)
+            assertEquals(6, entries.size)
 
             // Through the entries of the code and back: the same text.
             val decoded = entries.map(HistoryCodec::decode)
             assertEquals(
-                listOf("EditEntry", "EditEntry", "UndoEntry", "RedoEntry", "SavedEntry"),
+                listOf("EditEntry", "EditEntry", "UndoEntry", "RedoEntry", "EditEntry", "SavedEntry"),
                 decoded.map { it::class.simpleName },
             )
             val copy = HistoryLog(dir.resolve("copy.jsonl"))
@@ -110,7 +111,7 @@ class SpecExamplesTest {
                     is RedoEntry -> entry.changes
                     else -> emptyList()
                 }
-            for (change in changes) layer = korrektor.editor.apply(layer, change as LineChange)!!
+            for (change in changes.filterIsInstance<LineChange>()) layer = korrektor.editor.apply(layer, change)!!
         }
         assertEquals(corrected.copy(history = null), layer)
         assertEquals(entries.filterIsInstance<RedoEntry>().single().seq, corrected.history)
