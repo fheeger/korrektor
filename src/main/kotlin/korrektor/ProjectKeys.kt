@@ -11,6 +11,8 @@ import korrektor.editor.moveLine
 import korrektor.editor.redo
 import korrektor.editor.setStatus
 import korrektor.editor.statusOf
+import korrektor.editor.uncheckedAfter
+import korrektor.editor.uncheckedBefore
 import korrektor.editor.undo
 import korrektor.format.PageStatus
 import korrektor.viewer.fitPage
@@ -38,6 +40,8 @@ class ProjectKeys(
             AppAction.GO_TO_PAGE to { model.viewer?.focusPageField() },
             AppAction.MARK_CORRECTED to { markCorrected() },
             AppAction.MARK_UNCHECKED to { markPage(PageStatus.UNCHECKED) },
+            AppAction.NEXT_UNCHECKED to { jumpToUnchecked(forward = true) },
+            AppAction.PREVIOUS_UNCHECKED to { jumpToUnchecked(forward = false) },
             AppAction.ZOOM_IN to { model.viewer?.zoomIn() },
             AppAction.ZOOM_OUT to { model.viewer?.zoomOut() },
             AppAction.FIT_PAGE to { model.viewer?.fitPage() },
@@ -80,6 +84,22 @@ class ProjectKeys(
         val viewer = model.viewer ?: return
         markPage(PageStatus.CORRECTED)
         openPage(viewer.page + 1, Arrival.FIRST)
+    }
+
+    /** Opens the next (or previous) unchecked page, with the cursor in its first line; nothing if there is none. */
+    private fun jumpToUnchecked(forward: Boolean) {
+        val viewer = model.viewer ?: return
+        val editor = model.editor ?: return
+        val target =
+            if (forward) {
+                editor.uncheckedAfter(
+                    viewer.page,
+                    viewer.pageCount,
+                )
+            } else {
+                editor.uncheckedBefore(viewer.page)
+            }
+        if (target != null) openPage(target, Arrival.FIRST)
     }
 
     private fun markPage(status: PageStatus) {

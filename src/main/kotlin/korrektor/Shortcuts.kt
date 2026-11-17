@@ -25,6 +25,8 @@ enum class AppAction {
     GO_TO_PAGE,
     MARK_CORRECTED,
     MARK_UNCHECKED,
+    NEXT_UNCHECKED,
+    PREVIOUS_UNCHECKED,
     ZOOM_IN,
     ZOOM_OUT,
     FIT_PAGE,
@@ -139,6 +141,18 @@ object Shortcuts {
                     KeyCombo(Key.Enter, ctrl = true, shift = true),
                     KeyCombo(Key.NumPadEnter, ctrl = true, shift = true),
                 ),
+            ),
+            Shortcut(
+                AppAction.NEXT_UNCHECKED,
+                "Next unchecked page",
+                "Opens the next page that is not marked as corrected",
+                listOf(KeyCombo(Key.DirectionDown, ctrl = true, shift = true)),
+            ),
+            Shortcut(
+                AppAction.PREVIOUS_UNCHECKED,
+                "Previous unchecked page",
+                "Opens the previous page that is not marked as corrected",
+                listOf(KeyCombo(Key.DirectionUp, ctrl = true, shift = true)),
             ),
             Shortcut(
                 AppAction.ZOOM_IN,

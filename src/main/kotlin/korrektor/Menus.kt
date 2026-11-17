@@ -21,6 +21,8 @@ data class MenuState(
     val pageHasLines: Boolean = false,
     val canUndo: Boolean = false,
     val canRedo: Boolean = false,
+    val hasNextUnchecked: Boolean = false,
+    val hasPreviousUnchecked: Boolean = false,
 )
 
 /** How the actions are arranged in the menus. Every action of [Shortcuts] has to be in here (tested). */
@@ -32,7 +34,11 @@ private val MENU_LAYOUT: List<Pair<String, List<List<AppAction>>>> =
                 listOf(AppAction.PREVIOUS_LINE, AppAction.NEXT_LINE, AppAction.FIRST_LINE, AppAction.LAST_LINE),
                 listOf(AppAction.PREVIOUS_PAGE, AppAction.NEXT_PAGE, AppAction.GO_TO_PAGE),
             ),
-        "Page" to listOf(listOf(AppAction.MARK_CORRECTED, AppAction.MARK_UNCHECKED)),
+        "Page" to
+            listOf(
+                listOf(AppAction.MARK_CORRECTED, AppAction.MARK_UNCHECKED),
+                listOf(AppAction.NEXT_UNCHECKED, AppAction.PREVIOUS_UNCHECKED),
+            ),
         "View" to listOf(listOf(AppAction.ZOOM_IN, AppAction.ZOOM_OUT, AppAction.FIT_PAGE, AppAction.FIT_WIDTH)),
         "Help" to listOf(listOf(AppAction.SHOW_SHORTCUTS)),
     )
@@ -55,17 +61,22 @@ fun menus(state: MenuState): List<MenuSpec> =
         )
     }
 
+/** What else, besides an open project, an action needs; an action that is not here needs nothing else. */
+private val NEEDS: Map<AppAction, (MenuState) -> Boolean> =
+    mapOf(
+        AppAction.PREVIOUS_PAGE to { it.hasPreviousPage },
+        AppAction.NEXT_PAGE to { it.hasNextPage },
+        AppAction.NEXT_UNCHECKED to { it.hasNextUnchecked },
+        AppAction.PREVIOUS_UNCHECKED to { it.hasPreviousUnchecked },
+        AppAction.UNDO to { it.canUndo },
+        AppAction.REDO to { it.canRedo },
+        AppAction.PREVIOUS_LINE to { it.pageHasLines },
+        AppAction.NEXT_LINE to { it.pageHasLines },
+        AppAction.FIRST_LINE to { it.pageHasLines },
+        AppAction.LAST_LINE to { it.pageHasLines },
+    )
+
 private fun enabled(
     action: AppAction,
     state: MenuState,
-): Boolean =
-    when (action) {
-        AppAction.SHOW_SHORTCUTS -> true
-        AppAction.PREVIOUS_PAGE -> state.projectOpen && state.hasPreviousPage
-        AppAction.NEXT_PAGE -> state.projectOpen && state.hasNextPage
-        AppAction.UNDO -> state.projectOpen && state.canUndo
-        AppAction.REDO -> state.projectOpen && state.canRedo
-        AppAction.PREVIOUS_LINE, AppAction.NEXT_LINE, AppAction.FIRST_LINE, AppAction.LAST_LINE ->
-            state.projectOpen && state.pageHasLines
-        else -> state.projectOpen
-    }
+): Boolean = action == AppAction.SHOW_SHORTCUTS || (state.projectOpen && (NEEDS[action]?.invoke(state) ?: true))

@@ -5,6 +5,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import korrektor.editor.uncheckedAfter
+import korrektor.editor.uncheckedBefore
 import korrektor.settings.AppSettings
 import korrektor.viewer.hasNext
 import korrektor.viewer.hasPrevious
@@ -34,6 +36,9 @@ fun main() =
                         pageHasLines = model.editor?.lines?.isNotEmpty() == true,
                         canUndo = model.editor?.history?.canUndo == true,
                         canRedo = model.editor?.history?.canRedo == true,
+                        hasNextUnchecked =
+                            viewer != null && model.editor?.uncheckedAfter(viewer.page, viewer.pageCount) != null,
+                        hasPreviousUnchecked = viewer != null && model.editor?.uncheckedBefore(viewer.page) != null,
                     )
                 for (menu in menus(state)) {
                     Menu(menu.title) {
