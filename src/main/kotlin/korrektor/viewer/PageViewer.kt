@@ -128,7 +128,7 @@ private fun NavigationBar(
             Modifier.semantics { contentDescription = "Next page" },
             enabled = state.hasNext,
         ) { Text("›") }
-        Text("Page ${state.page} of ${state.pageCount}")
+        Text("Page ${state.page} of ${state.pageCount}" + (links.pageStatus(state.page)?.let { " · $it" } ?: ""))
         var typed by remember(state.page) { mutableStateOf(TextFieldValue(state.page.toString())) }
         val focus = remember { FocusRequester() }
         LaunchedEffect(state.pageFieldRequests) {
