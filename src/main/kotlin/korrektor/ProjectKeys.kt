@@ -125,7 +125,7 @@ class ProjectKeys(
     private fun undoOrRedo(undoing: Boolean) {
         val editor = model.editor ?: return
         when (val result = if (undoing) editor.undo() else editor.redo()) {
-            is UndoResult.Done -> model.viewer?.let { if (it.page != result.page) it.goTo(result.page) }
+            is UndoResult.Done -> model.showPageOf(result)
             UndoResult.DoesNotFit ->
                 model.notice =
                     "That change does not fit the page any more (it was changed outside the app) and is dropped."
@@ -161,4 +161,15 @@ class ProjectKeys(
             viewer.goTo(page)
         }
     }
+}
+
+/**
+ * Opens the page of an undone change if it is another one. A change without a place (a page status) has no
+ * cursor wish, so the cursor goes to the first line, as after any page change by the keyboard.
+ */
+private fun AppModel.showPageOf(result: UndoResult.Done) {
+    val viewer = viewer ?: return
+    if (viewer.page == result.page) return
+    if (result.focus == null) editor?.arriveAt(result.page, Arrival.FIRST)
+    viewer.goTo(result.page)
 }

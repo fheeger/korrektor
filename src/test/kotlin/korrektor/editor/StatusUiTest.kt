@@ -144,6 +144,20 @@ class StatusUiTest {
         }
 
     @Test
+    fun undoingCtrlEnterThroughTheKeyPutsTheCursorInTheFirstLineOfThePageAgain() =
+        withOpenProject { model ->
+            ctrl(Key.Enter)
+            waitForPage(model, 2)
+            ctrl(Key.Z)
+            waitForPage(model, 1)
+
+            assertEquals(emptyMap(), status(model))
+            field("l1").assertIsFocused()
+            ctrl(Key.Enter) // the keys still arrive: the focus was not lost
+            waitForPage(model, 2)
+        }
+
+    @Test
     fun ctrlEnterOnTheLastPageMarksItAndStaysAndOnACorrectedPageKeepsItCorrected() =
         withOpenProject { model ->
             checkNotNull(model.viewer).goTo(3)

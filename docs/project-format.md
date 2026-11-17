@@ -78,7 +78,7 @@ Every JSON file is written canonically, so that opening and saving a project wit
 | `metadata` | object, optional | title, author, year and source of the book (see below); missing in projects made before it existed |
 | `pages` | array | one entry per book page, in page order; one entry per line |
 | `pages[].pdfPage` | integer ≥ 1 | the page of `source.pdf` |
-| `pages[].status` | string, optional | how far the page is: `"corrected"`; left out for an unchecked page (and so for every page after the import). Other names are kept as they are, for statuses that later versions add |
+| `pages[].status` | string, optional | how far the page is: `"corrected"`; left out for an unchecked page (and so for every page after the import). A file that says `"unchecked"` is read, and written without the field. Other names are kept as they are, for statuses that later versions add. In the history a `status` change names both statuses, also `"unchecked"` |
 
 The status is here, in one file for the whole book, and not in the page files, so that the progress of a book of 1000 pages is known without reading any page. It is part of the undo history: a change of status is a `status` change (see "History file").
 
@@ -256,7 +256,7 @@ A change of another `type` is kept and cannot be made. Typing is one `lines` cha
 - A line counts only once its newline is written. A **torn last line** (without newline, after a crash) is ignored by readers and cut off before the next entry is added.
 - Readers find the latest entries by reading from the end of the file; they do not need to read all of it.
 - An invalid line anywhere else is an error that names the line. It is never skipped silently.
-- **Entries and page files agree.** The app appends the entries of a save, then writes the page files, then appends `saved`. A page file carries `history`: the `seq` of the last entry that changed it. After a crash, the app makes the changes of the entries after the last `saved` that a page file does not have yet (those with a `seq` above its `history`), so that history and pages agree again. The statuses in `project.json` carry no number: the app sets them to the newest `to` of each page among those entries.
+- **Entries and page files agree.** The app appends the entries of a save, then writes the page files and the statuses in `project.json`, then appends `saved`. A page file carries `history`: the `seq` of the last entry that changed it. After a crash, the app makes the changes of the entries after the last `saved` that a page file does not have yet (those with a `seq` above its `history`), so that history and pages agree again. The statuses in `project.json` carry no number: the app sets them to the newest `to` of each page among those entries.
 
 ## Guarantees
 

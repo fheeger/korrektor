@@ -134,4 +134,36 @@ class ProjectStatusTest {
         assertFailsWith<IllegalArgumentException> { PageStatus(" ") }
         assertFailsWith<IllegalArgumentException> { PageInfo(1, mapOf("status" to JsonPrimitive("x"))) }
     }
+
+    @Test
+    fun metadataAndStatusesWrittenAtTheSameTimeBothReachTheFile() =
+        withProject { project ->
+            val failures = java.util.concurrent.ConcurrentLinkedQueue<Throwable>()
+            val metadata =
+                Thread {
+                    runCatching { repeat(150) { project.updateMetadata(Metadata("T$it")) } }.onFailure(failures::add)
+                }
+            val statuses =
+                Thread {
+                    runCatching {
+                        repeat(150) {
+                            project.setStatuses(
+                                if (it % 2 ==
+                                    0
+                                ) {
+                                    mapOf(1 to PageStatus.CORRECTED)
+                                } else {
+                                    emptyMap()
+                                },
+                            )
+                        }
+                    }.onFailure(failures::add)
+                }
+            listOf(metadata, statuses).onEach { it.start() }.forEach { it.join() }
+
+            assertEquals(emptyList(), failures.toList())
+            val reopened = Project.open(project.folder)
+            assertEquals(project.metadata, reopened.metadata)
+            assertEquals(project.statuses, reopened.statuses)
+        }
 }
