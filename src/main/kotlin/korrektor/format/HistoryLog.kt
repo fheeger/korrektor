@@ -40,12 +40,27 @@ class HistoryLog(
                 val end = completeEnd(channel)
                 if (end < channel.size()) channel.truncate(end)
                 channel.position(end)
-                val buffer = ByteBuffer.wrap(bytes)
-                while (buffer.hasRemaining()) channel.write(buffer)
-                channel.force(true)
+                writeAt(channel, end, bytes)
             }
         } catch (e: IOException) {
             throw FormatException("Cannot write $file: ${e.reason()}", e)
+        }
+    }
+
+    /** Writes [bytes] at [end], the end of the complete lines, and flushes. On failure none of them is left behind. */
+    private fun writeAt(
+        channel: FileChannel,
+        end: Long,
+        bytes: ByteArray,
+    ) {
+        val buffer = ByteBuffer.wrap(bytes)
+        try {
+            while (buffer.hasRemaining()) channel.write(buffer)
+            channel.force(true)
+        } catch (e: IOException) {
+            // Entries must be all in or all out: a part of them left behind would be written again by a retry.
+            runCatching { channel.truncate(end) }
+            throw e
         }
     }
 

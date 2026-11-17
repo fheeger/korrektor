@@ -43,6 +43,9 @@ class Project private constructor(
 
     val sourcePdf: Path get() = folder.resolve(SOURCE_PDF)
 
+    /** The undo history of the whole book (S08): `history/book.jsonl`. It does not exist until something is saved. */
+    val historyLog: HistoryLog get() = HistoryLog(folder.resolve(HISTORY_DIR).resolve(HISTORY_FILE))
+
     /** Writes `project.json` again. Without changes, the bytes are identical to what was read. */
     fun saveProjectFile() {
         val text = ProjectFile.encode(pages, metadata, extra)
@@ -155,6 +158,8 @@ class Project private constructor(
         const val PROJECT_FILE = "project.json"
         const val SOURCE_PDF = "source.pdf"
         const val PAGES_DIR = "pages"
+        const val HISTORY_DIR = "history"
+        const val HISTORY_FILE = "book.jsonl"
 
         /**
          * Creates the project folder [folder] with a copy of [sourcePdf]. If anything fails, nothing is left behind.

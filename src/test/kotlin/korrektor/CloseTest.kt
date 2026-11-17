@@ -3,6 +3,8 @@ package korrektor
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.v2.runComposeUiTest
 import korrektor.editor.PageEdits
+import korrektor.editor.historyOf
+import korrektor.format.EditEntry
 import korrektor.format.Metadata
 import korrektor.format.PageLayer
 import korrektor.format.Project
@@ -212,7 +214,7 @@ class CloseTest {
 
             val worked = runBlocking { rig.model.saveElsewhere(parent) }
 
-            assertTrue(worked)
+            assertTrue(worked, rig.model.closeProblem)
             val copy = parent.resolve("b.korrektur")
             assertEquals(copy, rig.model.project!!.folder, "the copy is open")
             assertEquals("korrigiert", Project.open(copy).firstText(1), "with the change that could not be saved")
@@ -229,12 +231,34 @@ class CloseTest {
         }
 
     @Test
+    fun savingElsewhereCopiesTheHistoryWithTheEntriesThatWerePending() =
+        withRig { rig ->
+            rig.model.editor!!.setLineText("l1", "x") // never saved: its entry is pending
+            val parent = Files.createDirectory(rig.dir.resolve("elsewhere"))
+
+            val worked = runBlocking { rig.model.saveElsewhere(parent) }
+
+            assertTrue(worked, rig.model.closeProblem)
+            val copy = Project.open(parent.resolve("b.korrektur"))
+            // The copy has the entry, a `saved` entry after it, and its page carries the number of the entry.
+            assertEquals(listOf("EditEntry", "SavedEntry"), historyOf(copy).map { it::class.simpleName })
+            assertEquals(1, copy.readPage(1).history)
+            assertEquals("x", copy.firstText(1))
+            // The next change in the copy continues the numbers, so that they never run ahead of its history.
+            val editor = rig.model.editor!!
+            runBlocking { editor.show(1) }
+            editor.setLineText("l1", "y")
+            assertEquals(listOf(2), editor.history.pendingEntries.map { (it as EditEntry).seq })
+        }
+
+    @Test
     fun aNameThatIsTakenGetsACopySuffix() =
         withRig { rig ->
             rig.model.editor!!.setLineText("l1", "x")
             val parent = Files.createDirectory(rig.dir.resolve("elsewhere"))
             Files.createDirectory(parent.resolve("b.korrektur"))
-            assertTrue(runBlocking { rig.model.saveElsewhere(parent) })
+            val worked = runBlocking { rig.model.saveElsewhere(parent) }
+            assertTrue(worked, rig.model.closeProblem)
             assertEquals(parent.resolve("b (copy).korrektur"), rig.model.project!!.folder)
         }
 

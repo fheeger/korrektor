@@ -5,7 +5,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import korrektor.editor.AutoSaver
 import korrektor.editor.BookEditor
+import korrektor.editor.HistoryRecovery
+import korrektor.editor.UndoHistory
 import korrektor.format.FormatException
+import korrektor.format.HistoryCodec
+import korrektor.format.HistoryEntry
 import korrektor.format.Metadata
 import korrektor.format.PageLayer
 import korrektor.format.Project
@@ -29,6 +33,8 @@ class AppModel(
     val settings: AppSettings = AppSettings.inMemory(),
     /** How the corrections of a project are written; tests put a failing one in its place. */
     private val pageWriter: (Project) -> (Int, PageLayer) -> Unit = { it::writePage },
+    /** How the history entries of the open project are written; tests put a failing one in its place. */
+    private val historyWriter: (Project) -> (List<HistoryEntry>) -> Unit = ::appendToHistory,
 ) {
     /** The position of the divider between scan and text, the same for every project. */
     val layout = LayoutState(settings)
@@ -175,14 +181,19 @@ class AppModel(
         opened: Project,
         taken: ProjectLock?,
     ) {
+        // First, while the old project is still the open one: a project that crashed has history entries that its pages
+        // lack; if that cannot be repaired the project is not opened and nothing has changed (S08).
+        val recovered = HistoryRecovery.recover(opened)
         saveView() // the project that was open until now
         // Its lock is given back only now that the new project is open: if opening failed, nothing was changed.
         lock?.close()
         lock = taken
         project = opened
         viewer = ViewerState(opened.pages.size).also { state -> settings.viewOf(opened.folder)?.let(state::restore) }
-        val newEditor = BookEditor(opened::readPage, Dispatchers.IO)
-        val newSaver = AutoSaver(newEditor, Dispatchers.IO, write = pageWriter(opened))
+        val newEditor =
+            BookEditor(opened::readPage, Dispatchers.IO, history = UndoHistory(firstSeq = recovered.lastSeq + 1))
+        val newSaver =
+            AutoSaver(newEditor, Dispatchers.IO, appendHistory = historyWriter(opened), write = pageWriter(opened))
         newEditor.onUnsaved = newSaver::changed
         editor = newEditor
         saver = newSaver
@@ -206,3 +217,9 @@ fun displayTitle(
     project: Project,
     metadata: Metadata?,
 ): String = metadata?.title ?: project.folder.name.removeSuffix(".korrektur")
+
+/** Appends entries to the history file of [project]. */
+private fun appendToHistory(project: Project): (List<HistoryEntry>) -> Unit {
+    val log = project.historyLog
+    return { entries -> log.appendAll(entries.map(HistoryCodec::encode)) }
+}

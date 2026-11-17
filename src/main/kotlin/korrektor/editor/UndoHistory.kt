@@ -150,6 +150,11 @@ class UndoHistory(
         }
     }
 
+    /** The saver could not write [entries] (from [drainPending]): they are pending again, before newer ones. */
+    fun restore(entries: List<HistoryEntry>) {
+        synchronized(lock) { pending.addAll(0, entries) }
+    }
+
     private fun newStep(
         changes: List<Change>,
         typed: Typed?,
