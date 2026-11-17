@@ -183,7 +183,8 @@ class AppModel(
     ) {
         // First, while the old project is still the open one: a project that crashed has history entries that its pages
         // lack; if that cannot be repaired the project is not opened and nothing has changed (S08).
-        val recovered = HistoryRecovery.recover(opened)
+        HistoryRecovery.recover(opened)
+        val history = UndoHistory.load(opened.historyLog)
         saveView() // the project that was open until now
         // Its lock is given back only now that the new project is open: if opening failed, nothing was changed.
         lock?.close()
@@ -191,7 +192,7 @@ class AppModel(
         project = opened
         viewer = ViewerState(opened.pages.size).also { state -> settings.viewOf(opened.folder)?.let(state::restore) }
         val newEditor =
-            BookEditor(opened::readPage, Dispatchers.IO, history = UndoHistory(firstSeq = recovered.lastSeq + 1))
+            BookEditor(opened::readPage, Dispatchers.IO, history = history)
         val newSaver =
             AutoSaver(newEditor, Dispatchers.IO, appendHistory = historyWriter(opened), write = pageWriter(opened))
         newEditor.onUnsaved = newSaver::changed
