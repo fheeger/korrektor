@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import korrektor.format.HistoryEntry
 import korrektor.format.PageLayer
+import korrektor.format.PageStatus
 import korrektor.format.reason
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -67,12 +68,14 @@ sealed interface SaveOutcome {
  * Saves never overlap. [run] decides when to save: after a pause in typing, regularly during typing, and when asked.
  *
  * @param write writes the layer of a page, normally `project::writePage`; a seam for tests.
+ * @param writeStatuses writes the page statuses (S09), normally `project::setStatuses`; a seam for tests.
  */
 class AutoSaver(
     private val editor: BookEditor,
     private val io: CoroutineDispatcher = Dispatchers.IO,
     private val now: () -> Long = { System.nanoTime() / NANOS_PER_MILLI },
     private val appendHistory: (List<HistoryEntry>) -> Unit = {},
+    private val writeStatuses: (Map<Int, PageStatus>) -> Unit = {},
     private val write: (Int, PageLayer) -> Unit,
 ) {
     private val one = Mutex()
@@ -99,7 +102,7 @@ class AutoSaver(
         get() =
             when {
                 saving -> SaveStatus.SAVING
-                editor.changedPages.isNotEmpty() -> SaveStatus.NOT_SAVED
+                editor.hasUnsaved -> SaveStatus.NOT_SAVED
                 else -> SaveStatus.SAVED
             }
 
@@ -188,7 +191,7 @@ class AutoSaver(
 
     private suspend fun saveLocked(): SaveOutcome {
         val taken = editor.snapshot()
-        if (taken.layers.isEmpty() && taken.entries.isEmpty() && !history.hasUncommitted) {
+        if (taken.isEmpty && !history.hasUncommitted) {
             error = null
             warningDismissed = false
             return SaveOutcome.Done
@@ -230,7 +233,29 @@ class AutoSaver(
             }
             editor.markSaved(page, layer)
         }
+        failed = writeStatusesOf(taken, editor, writeStatuses) ?: failed
         return failed ?: history.markSaved() ?: SaveOutcome.Done
+    }
+}
+
+/** Writes the page statuses of [taken] to `project.json`, if they changed; returns the failure, if any. */
+private fun writeStatusesOf(
+    taken: SaveSnapshot,
+    editor: BookEditor,
+    write: (Map<Int, PageStatus>) -> Unit,
+): SaveOutcome.Failed? {
+    val statuses = taken.statuses ?: return null
+    return try {
+        write(statuses)
+        editor.markStatusesSaved(statuses)
+        null
+    } catch (e: CancellationException) {
+        throw e
+    } catch (
+        // Any failure of writing is a failed save, not a crash: the statuses stay in memory (S07).
+        @Suppress("TooGenericExceptionCaught") e: Exception,
+    ) {
+        SaveOutcome.Failed(0, describeFailure(e))
     }
 }
 

@@ -1,6 +1,6 @@
 # T077 Page status in the editor: recording, undo, saving, recovery
 
-**Type:** task · **Status:** ready for development · **Story:** S09 · **Task:** S09.5
+**Type:** task · **Status:** done · **Story:** S09 · **Task:** S09.5
 
 ## What needs doing
 - **`BookEditor` holds the statuses** (Compose state, from `Project.statuses` when the project is opened): `statusOf(page)`, `setStatus(page, status)`. A change is one step of the history (`StatusChange`, entry `edit`); no change if the status is the same.
@@ -29,3 +29,4 @@ T076.
 - **A status change does not touch page layers or their `history` stamp.**
 
 ## Progress
+Done. `PageStatuses.kt` (`statusOf`, `setStatus`, unsaved handling), `BookEditor.statuses`, `Undo.kt` with the change-making moved to `Applied.kt`, `SaveSnapshot.statuses`, `AutoSaver.writeStatuses`, `HistoryRecovery.replayStatuses`, `AppModel` and `ProjectClosing`. Tests: `PageStatusTest` (8), `StatusRecoveryTest` (5), a case in `CloseTest`. Build green.

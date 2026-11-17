@@ -35,6 +35,7 @@ private fun BookEditor.move(undoing: Boolean): UndoResult =
                 is Applied.Layers -> {
                     val seq = history.commit(undoing, changes)
                     for ((number, layer) in applied.layers) put(number, layer.copy(history = seq))
+                    for ((number, status) in applied.statuses) putStatus(number, status)
                     onUnsaved?.invoke()
                     done(changes, applied.layers).also { arrive(it) }
                 }
@@ -46,47 +47,6 @@ private fun BookEditor.move(undoing: Boolean): UndoResult =
             }
         }
     }
-
-/** The pages as the changes leave them, or why they cannot be made. */
-private sealed interface Applied {
-    class Layers(
-        val layers: Map<Int, PageLayer>,
-    ) : Applied
-
-    data object DoesNotFit : Applied
-
-    class Unreadable(
-        val reason: String,
-    ) : Applied
-}
-
-private fun BookEditor.applyAll(changes: List<Change>): Applied {
-    val layers = LinkedHashMap<Int, PageLayer>()
-    var failure: Applied? = null
-    for (change in changes) {
-        failure = applyOne(layers, change)
-        if (failure != null) break
-    }
-    return failure ?: Applied.Layers(layers)
-}
-
-/** Makes [change] on the layer of its page in [layers] (read first if it is not there); returns why not, or null. */
-private fun BookEditor.applyOne(
-    layers: MutableMap<Int, PageLayer>,
-    change: Change,
-): Applied? {
-    val current =
-        layers[change.page] ?: runCatching { layerOf(change.page) }.getOrElse {
-            return Applied.Unreadable(it.message ?: it::class.simpleName ?: "unknown error")
-        }
-    val made = (change as? LineChange)?.let { apply(current, it) }
-    if (made != null) layers[change.page] = made
-    return if (made == null) Applied.DoesNotFit else null
-}
-
-/** The layer of page [number] as it is now: changed in this session, the one shown, or the one in the project. */
-private fun BookEditor.layerOf(number: Int): PageLayer =
-    changed[number] ?: layer?.takeIf { number == page } ?: readPage(number)
 
 /** Where the cursor goes after the changes: at the first one, which is where the user finds the page. */
 private fun done(

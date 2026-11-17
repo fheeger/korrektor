@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import korrektor.format.Line
 import korrektor.format.PageLayer
+import korrektor.format.PageStatus
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import java.util.concurrent.CancellationException
@@ -42,6 +43,8 @@ class BookEditor(
     internal val now: () -> Long = { System.nanoTime() / NANOS_PER_MILLI },
     /** The undo and redo steps of the book (S08). */
     val history: UndoHistory = UndoHistory(),
+    /** The status of every page that is not unchecked (S09), from `Project.statuses`. */
+    initialStatuses: Map<Int, PageStatus> = emptyMap(),
 ) {
     // Every page changed in this session with its latest layer. Written on the UI thread only, read by the saver too.
     internal val changed = ConcurrentHashMap<Int, PageLayer>()
@@ -58,6 +61,17 @@ class BookEditor(
 
     /** The page a change was made on by undo or redo and where the cursor goes when that page is shown (T069). */
     internal var pendingFocus: Pair<Int, Focus>? = null
+
+    /**
+     * The status of every page that is not unchecked (S09). Every change makes a new map, so that the saver can tell
+     * by identity whether the map it wrote is still the current one (see `markStatusesSaved`).
+     */
+    var statuses: Map<Int, PageStatus> by mutableStateOf(initialStatuses)
+        internal set
+
+    /** Whether [statuses] has changes that `project.json` does not have yet. */
+    var statusesChanged: Boolean by mutableStateOf(false)
+        internal set
 
     // While `oneStep` runs: how deep it is, and the layer the first edit inside started from (see Recording.kt).
     internal var grouping = 0
