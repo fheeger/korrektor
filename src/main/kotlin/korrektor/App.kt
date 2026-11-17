@@ -37,6 +37,7 @@ fun App(
     val editor = model.editor
     val shownPage = model.viewer?.page
     LaunchedEffect(editor, shownPage) { if (editor != null && shownPage != null) editor.show(shownPage) }
+    KeepSaving(model.saver, shownPage)
     val projectKeys = remember(model) { ProjectKeys(model) }
     val keys = keyActions ?: projectKeys
     KorrektorTheme {
@@ -44,6 +45,7 @@ fun App(
             Column(if (model.project != null) Modifier.shortcutKeys(keys) else Modifier) {
                 model.error?.let { ErrorBanner(message = it, onDismiss = model::dismissError) }
                 model.notice?.let { NoticeBanner(message = it, onDismiss = model::dismissNotice) }
+                SaveWarning(model.saver)
                 val project = model.project
                 if (project == null) {
                     StartScreen(onOpenProject = openProject, onNewProject = model::openNewProject)
@@ -75,14 +77,12 @@ fun App(
                                 ProjectViewer(project, viewer, Modifier.fillMaxSize(), DefaultPageSourceFactory, links)
                             },
                             modifier = room,
-                            right = { TextPanel(checkNotNull(model.editor), Modifier.fillMaxSize()) },
+                            right = { TextPanel(checkNotNull(model.editor), Modifier.fillMaxSize(), model.saver) },
                         )
                     }
                 }
             }
-            if (model.newProjectOpen) NewProjectDialog(model, pdfPicker, folderPicker)
-            if (model.editMetadataOpen) EditMetadataDialog(model)
-            if (model.shortcutsOpen) ShortcutListDialog { model.shortcutsOpen = false }
+            Dialogs(model, folderPicker, pdfPicker)
         }
     }
 }

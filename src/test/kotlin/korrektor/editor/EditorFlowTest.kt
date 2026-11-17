@@ -67,10 +67,17 @@ class EditorFlowTest {
             PdfImport.run(project)
 
             fun snapshot() =
-                project.folder.walk().filter { Files.isRegularFile(it) }.associate {
-                    it.toString() to
-                        it.readBytes()
-                }
+                project.folder
+                    .walk()
+                    .filter {
+                        Files.isRegularFile(
+                            it,
+                        ) &&
+                            it.fileName.toString() != ".lock"
+                    }.associate {
+                        it.toString() to
+                            it.readBytes()
+                    }
             val before = snapshot()
             val model = AppModel()
             runComposeUiTest {
@@ -83,9 +90,14 @@ class EditorFlowTest {
                 waitForIdle()
                 block(model)
             }
-            val after = snapshot()
-            assertEquals(before.keys, after.keys, "no file added")
-            for ((name, bytes) in before) assertContentEquals(bytes, after.getValue(name), name)
+
+            // The corrections are saved by themselves now (S07): the corrected page files may change. Everything else
+            // (the original OCR layers, project.json, source.pdf) must be exactly as it was.
+            fun String.isCorrectedPage() = Regex("""[\\/]pages[\\/]\d+\.json(\.tmp)?""").containsMatchIn(this)
+            val after = snapshot().filterKeys { !it.isCorrectedPage() }
+            val originals = before.filterKeys { !it.isCorrectedPage() }
+            assertEquals(originals.keys, after.keys, "no file added")
+            for ((name, bytes) in originals) assertContentEquals(bytes, after.getValue(name), name)
         } finally {
             dir.toFile().walkBottomUp().forEach {
                 it.setWritable(true)
@@ -160,6 +172,7 @@ class EditorFlowTest {
             waitUntil(timeoutMillis = 10_000) { editor.page == 1 && editor.layer != null }
             waitForIdle()
             assertEquals("zweite Zeile", field("l2").text())
-            assertEquals(setOf(1), editor.changedPages)
+            // The page was saved when it was left, and the correction is on disk (S07).
+            waitUntil(timeoutMillis = 10_000) { editor.changedPages.isEmpty() }
         }
 }

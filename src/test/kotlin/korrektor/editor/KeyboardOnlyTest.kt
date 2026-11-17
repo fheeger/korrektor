@@ -180,7 +180,26 @@ class KeyboardOnlyTest {
         waitForArrival(model, page)
         assertEquals(page, model.viewer!!.page)
         assertEquals("Z" + original[0], editor.lines[0].text, "the correction is still there")
-        assertTrue(page in editor.changedPages)
+    }
+
+    /** The corrections are saved by themselves (S07): after the last flush each page has the typed "Z" on disk. */
+    private fun ComposeUiTest.assertCorrectionsAreOnDisk(
+        model: AppModel,
+        project: Project,
+        pages: List<Int>,
+    ) {
+        model.saver!!.requestFlush()
+        waitUntil(timeoutMillis = 20_000) { model.editor!!.changedPages.isEmpty() }
+        for (n in pages) {
+            assertTrue(
+                PageEdits
+                    .readingOrder(project.readPage(n))
+                    .first()
+                    .text
+                    .startsWith("Z"),
+                "page $n is saved",
+            )
+        }
     }
 
     private fun ComposeUiTest.zoomWithTheKeyboard(model: AppModel) {
@@ -206,10 +225,10 @@ class KeyboardOnlyTest {
                 listOf("Erste Zeile des Buches", "zweite Zeile mit Text", "dritte Zeile hier", "vierte und letzte")
             val page = TestPage(texts = lines.mapIndexed { i, t -> TestText(t, 30f, 250f - 30f * i, 14f) })
             TestPdfs.write(pdf, List(8) { page })
-            withProject(pdf) { model, _ ->
+            withProject(pdf) { model, project ->
                 for (n in 2..6) correctPage(model, n)
                 zoomWithTheKeyboard(model)
-                assertEquals(setOf(2, 3, 4, 5, 6), model.editor!!.changedPages)
+                assertCorrectionsAreOnDisk(model, project, (2..6).toList())
             }
         } finally {
             dir.toFile().walkBottomUp().forEach {
@@ -236,7 +255,7 @@ class KeyboardOnlyTest {
             assertEquals(5, pages.distinct().size, "five different pages: $pages")
             for (n in pages) correctPage(model, n)
             zoomWithTheKeyboard(model)
-            assertEquals(pages.toSet(), model.editor!!.changedPages)
+            assertCorrectionsAreOnDisk(model, project, pages)
         }
     }
 

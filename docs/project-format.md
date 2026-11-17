@@ -18,11 +18,12 @@ A project is a folder named `<title>.korrektur`:
 │   └── …
 ├── history/
 │   └── 0001.jsonl        undo history of page 1, append-only
-└── .lock                 present while the project is open (S07), not content
+└── .lock                 where the app takes its lock while the project is open (S07), not content
 ```
 
 - **Page numbers.** The page number `n` of a book page is its position in the `pages` list of `project.json`, starting at 1. Page files are named with `n` padded to at least four digits (`0001`, `0042`, `12345`).
 - **PDF pages.** Each page entry says which page of `source.pdf` it shows (`pdfPage`, 1-based). Today these are the same numbers in the same order, but the format does not rely on it.
+- **The lock.** An app that opens a project takes an operating system file lock on `.lock` (created if missing) and keeps it as long as the project is open, so that a project is not open twice, in two windows or two instances. The file itself means nothing: it may be there when the project is not open (the app does not delete it), and an old one left by a crash blocks nothing, because the system released its lock with the process. The content is one line for a human (process and time). Readers that do not write need no lock.
 - **Not content.** `.lock` and files ending in `.tmp` are working files. `.tmp` files are leftovers of an interrupted write; they are deleted when a project is opened and must be ignored when sharing or comparing projects.
 - Other files and folders the reader does not know are left alone; only `*.tmp` files anywhere in the project folder are deleted on opening.
 

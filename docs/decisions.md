@@ -59,7 +59,7 @@ Big decisions with their reasons. Small decisions are recorded in the tickets.
 │   └── …
 ├── history/              undo history, append-only (S08)
 │   └── 0001.jsonl        one change per line (JSON Lines)
-└── .lock                 while the project is open (S07), not part of the content
+└── .lock                 where the app takes its lock while the project is open (S07), not part of the content
 ```
 
 Rules for the files:

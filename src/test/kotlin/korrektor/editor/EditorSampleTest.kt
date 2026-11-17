@@ -13,6 +13,7 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import korrektor.App
 import korrektor.AppModel
+import korrektor.closeProject
 import korrektor.format.Box
 import korrektor.format.Line
 import korrektor.format.Metadata
@@ -199,7 +200,11 @@ class EditorSampleTest {
             waitUntil(
                 timeoutMillis = 15_000,
             ) { runCatching { onNodeWithContentDescription("Page 1").assertExists() }.isSuccess }
-            block(model)
+            try {
+                block(model)
+            } finally {
+                model.closeProject() // the next test opens the same project
+            }
         }
     }
 
