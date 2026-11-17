@@ -3,6 +3,7 @@ package korrektor
 import korrektor.editor.BookEditor
 import korrektor.editor.HistoryRecovery
 import korrektor.editor.SaveOutcome
+import korrektor.editor.hasUnsaved
 import korrektor.editor.unsaved
 import korrektor.format.FormatException
 import korrektor.format.HistoryCodec
@@ -49,13 +50,12 @@ suspend fun AppModel.requestClose(): Boolean {
         var outcome = saver?.saveNow() ?: SaveOutcome.Done
         // Typing goes on while the save runs: what was changed meanwhile is saved too, before the app exits.
         var rounds = 0
-        while (outcome is SaveOutcome.Done && editor?.changedPages?.isNotEmpty() == true && rounds++ < MAX_ROUNDS) {
+        while (outcome is SaveOutcome.Done && editor?.hasUnsaved == true && rounds++ < MAX_ROUNDS) {
             outcome = saver?.saveNow() ?: SaveOutcome.Done
         }
         if (outcome is SaveOutcome.Failed) {
-            val pages = editor?.changedPages?.size ?: 0
-            val count = if (pages == 1) "1 page" else "$pages pages"
-            closeProblem = "The changes of $count could not be saved: ${outcome.reason}"
+            closeProblem =
+                "The changes of ${editor?.let(::unsavedWhat) ?: "0 pages"} could not be saved: ${outcome.reason}"
         } else {
             saveView()
             exit()
@@ -192,4 +192,20 @@ private fun freeFolderIn(
                 }
             parent.resolve("$base$suffix.korrektur")
         }.first { !Files.exists(it) }
+}
+
+/** What is not saved, for the message to the user: "1 page", "3 pages", "the page status" or both. */
+private fun unsavedWhat(editor: BookEditor): String {
+    val pages = editor.changedPages.size
+    val text =
+        when (pages) {
+            0 -> ""
+            1 -> "1 page"
+            else -> "$pages pages"
+        }
+    return when {
+        !editor.statusesChanged -> text
+        pages == 0 -> "the page status"
+        else -> "$text and the page status"
+    }
 }

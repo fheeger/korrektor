@@ -15,6 +15,7 @@ import korrektor.format.PageLayer
 import korrektor.format.Project
 import korrektor.format.ProjectLock
 import korrektor.format.ProjectLockedException
+import korrektor.format.setStatuses
 import korrektor.settings.AppSettings
 import korrektor.viewer.ViewerState
 import korrektor.viewer.restore
@@ -197,9 +198,15 @@ class AppModel(
         project = opened
         viewer = ViewerState(opened.pages.size).also { state -> settings.viewOf(opened.folder)?.let(state::restore) }
         val newEditor =
-            BookEditor(opened::readPage, Dispatchers.IO, history = history)
+            BookEditor(opened::readPage, Dispatchers.IO, history = history, initialStatuses = opened.statuses)
         val newSaver =
-            AutoSaver(newEditor, Dispatchers.IO, appendHistory = historyWriter(opened), write = pageWriter(opened))
+            AutoSaver(
+                newEditor,
+                Dispatchers.IO,
+                appendHistory = historyWriter(opened),
+                writeStatuses = opened::setStatuses,
+                write = pageWriter(opened),
+            )
         newEditor.onUnsaved = newSaver::changed
         editor = newEditor
         saver = newSaver

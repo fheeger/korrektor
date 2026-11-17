@@ -4,6 +4,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.v2.runComposeUiTest
 import korrektor.editor.PageEdits
 import korrektor.editor.historyOf
+import korrektor.editor.setStatus
 import korrektor.format.EditEntry
 import korrektor.format.Metadata
 import korrektor.format.PageLayer
@@ -249,6 +250,20 @@ class CloseTest {
             runBlocking { editor.show(1) }
             editor.setLineText("l1", "y")
             assertEquals(listOf(2), editor.history.pendingEntries.map { (it as EditEntry).seq })
+        }
+
+    @Test
+    fun savingElsewhereKeepsAStatusThatWasNotSaved() =
+        withRig { rig ->
+            val corrected = korrektor.format.PageStatus.CORRECTED
+            rig.model.editor!!.setStatus(2, corrected) // never saved
+            val parent = Files.createDirectory(rig.dir.resolve("elsewhere"))
+
+            val worked = runBlocking { rig.model.saveElsewhere(parent) }
+
+            assertTrue(worked, rig.model.closeProblem)
+            assertEquals(mapOf(2 to corrected), Project.open(parent.resolve("b.korrektur")).statuses)
+            assertEquals(mapOf(2 to corrected), rig.model.editor!!.statuses)
         }
 
     @Test
