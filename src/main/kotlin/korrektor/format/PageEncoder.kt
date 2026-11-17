@@ -11,6 +11,7 @@ internal object PageEncoder {
         members += "  \"height\": ${CanonicalJson.formatNumber(page.height)}"
         members += "  \"regions\": " + encodeRegions(page.regions)
         page.note?.let { members += "  \"note\": ${CanonicalJson.quote(it)}" }
+        page.history?.let { members += "  \"history\": $it" }
         members += extraMembers(page.extra).map { "  $it" }
         return "{\n" + members.joinToString(",\n") + "\n}\n"
     }
@@ -36,7 +37,7 @@ internal object PageEncoder {
         return "$head$lines$extra}"
     }
 
-    private fun encodeLine(line: Line): String {
+    internal fun encodeLine(line: Line): String {
         val sb = StringBuilder("{\"id\": ${CanonicalJson.quote(line.id)}")
         line.box?.let { sb.append(", \"box\": ${encodeBox(it)}") }
         line.origin?.let { sb.append(", \"origin\": ${CanonicalJson.quote(it)}") }

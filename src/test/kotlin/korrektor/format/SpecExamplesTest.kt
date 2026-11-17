@@ -67,19 +67,54 @@ class SpecExamplesTest {
     fun historyExampleIsReadAndAppendedIdentically() {
         val dir = Files.createTempDirectory("spec")
         try {
-            val file = dir.resolve("history").resolve("0003.jsonl")
+            val file = dir.resolve("history").resolve("book.jsonl")
             file.parent.createDirectories()
             file.writeText(example("history"))
             val log = HistoryLog(file)
             val entries = log.readAll()
-            assertEquals(2, entries.size)
+            assertEquals(5, entries.size)
 
+            // Through the entries of the code and back: the same text.
+            val decoded = entries.map(HistoryCodec::decode)
+            assertEquals(
+                listOf("EditEntry", "EditEntry", "UndoEntry", "RedoEntry", "SavedEntry"),
+                decoded.map { it::class.simpleName },
+            )
             val copy = HistoryLog(dir.resolve("copy.jsonl"))
-            entries.forEach { copy.append(it) }
+            copy.appendAll(decoded.map(HistoryCodec::encode))
             assertEquals(example("history"), dir.resolve("copy.jsonl").readText())
             assertTrue(example("history").endsWith("\n"))
         } finally {
             dir.toFile().deleteRecursively()
         }
     }
+
+    @Test
+    fun theHistoryExampleBelongsToTheCorrectedPageExample() {
+        // The entries, made on the original page one after the other, give the corrected page.
+        val original = PageCodec.decode(example("page-original"))
+        val corrected = PageCodec.decode(example("page-corrected"))
+        val entries = example("history").lines().filter { it.isNotBlank() }.map { HistoryCodec.decode(parseObject(it)) }
+        var layer =
+            original.copy(
+                regions =
+                    original.regions.map { r ->
+                        r.copy(lines = r.lines.map { it.copy(origin = it.id) })
+                    },
+            )
+        for (entry in entries) {
+            val changes =
+                when (entry) {
+                    is EditEntry -> entry.changes
+                    is UndoEntry -> entry.changes
+                    is RedoEntry -> entry.changes
+                    else -> emptyList()
+                }
+            for (change in changes) layer = korrektor.editor.apply(layer, change as LineChange)!!
+        }
+        assertEquals(corrected.copy(history = null), layer)
+        assertEquals(entries.filterIsInstance<RedoEntry>().single().seq, corrected.history)
+    }
+
+    private fun parseObject(line: String) = CanonicalJson.parse(line) as kotlinx.serialization.json.JsonObject
 }

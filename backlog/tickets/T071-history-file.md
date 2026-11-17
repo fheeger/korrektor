@@ -1,6 +1,6 @@
 # T071 The history file and its entries
 
-**Type:** task · **Status:** ready for development · **Story:** S08 · **Task:** S08.4
+**Type:** task · **Status:** done · **Story:** S08 · **Task:** S08.4
 
 ## What needs doing
 - **One history for the whole book**: `history/book.jsonl` (JSON Lines, append-only, `HistoryLog` of T006). It replaces the per-page file `history/NNNN.jsonl` of the first sketch of the format, because undo across pages needs the order of all changes in one place. No version change: the layout names the new file, and the per-page files were never written.
@@ -28,7 +28,11 @@
 T067.
 
 ## Decisions
-Written down while working.
+- **A line in a history entry is what a page file has for it,** made by the page encoder and read by the page decoder (`PageEncoder.encodeLine` → JSON → keys sorted; `PageDecoder.decodeLine`), so words with unknown fields, lines without boxes and the one-decimal numbers cannot differ between the two files. The cost is one parse per line written, which is nothing next to a disk flush.
+- **Unknown things are kept at two levels:** an entry of an unknown type is an `UnknownEntry` (written back as read), a change of an unknown type inside a known entry an `UnknownChange` (it cannot be made, so undo of a step that has one says it does not fit, T069). Every change needs a `page`.
+- **`HistoryLog.readBefore(end, n)`** is the one reader of the file backwards; `readLast(n)` is `readBefore(end, n)`. The blocks are joined once into one array (the old code copied the pieces again for every block, which a 30 MB entry would have made quadratic).
+- **The region flags** (`regionBefore`, `regionAfter`) are written only when false.
+- **The spec example is one session** (edit, edit, undo, redo, saved) and belongs to the corrected page example, which now has `"history": 4`; `SpecExamplesTest` checks that the entries make the corrected page from the original one.
 
 ## Progress
-Not started.
+Done. `HistoryCodec`, `HistoryEntry` (`SavedEntry`, `UnknownEntry`), `UnknownChange`, `HistoryLog` (`appendAll`, `end`, `readBefore`), the `history` field of `PageLayer` in the page codec, spec. Tests: `HistoryCodecTest` (7), `HistoryLogTest` (6 new), `PageCodecTest` (4 new), `SpecExamplesTest` (history example and the link to the corrected page). Build, tests, ktlint and Detekt are green.

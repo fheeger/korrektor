@@ -7,7 +7,7 @@ import kotlinx.serialization.json.JsonPrimitive
 
 /** The reading half of [PageCodec]. */
 internal object PageDecoder {
-    private val PAGE_KEYS = setOf("pdfPage", "width", "height", "regions", "note")
+    private val PAGE_KEYS = setOf("pdfPage", "width", "height", "regions", "note", "history")
     private val REGION_KEYS = setOf("id", "type", "order", "box", "lines")
     private val LINE_KEYS = setOf("id", "box", "origin", "words")
     private val WORD_KEYS = setOf("t", "b")
@@ -25,6 +25,7 @@ internal object PageDecoder {
                 regions = root.array("regions", "page").mapIndexed { i, r -> decodeRegion(r, "regions[$i]") },
                 extra = root.extra(PAGE_KEYS),
                 note = root.optional("note")?.asString("page.note"),
+                history = root.optional("history")?.let { root.int("history", "page") },
             )
         } catch (e: IllegalArgumentException) {
             throw FormatException("Page file: ${e.message}", e)
@@ -46,7 +47,7 @@ internal object PageDecoder {
         )
     }
 
-    private fun decodeLine(
+    internal fun decodeLine(
         element: JsonElement,
         path: String,
     ): Line {
