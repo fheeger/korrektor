@@ -16,6 +16,7 @@ import korrektor.format.Project
 import korrektor.format.ProjectLock
 import korrektor.format.ProjectLockedException
 import korrektor.format.setStatuses
+import korrektor.search.SearchModel
 import korrektor.settings.AppSettings
 import korrektor.viewer.ViewerState
 import korrektor.viewer.restore
@@ -56,6 +57,10 @@ class AppModel(
 
     /** The corrected text of the open project in memory, shared by the scan and the text panel (S05). */
     var editor: BookEditor? by mutableStateOf(null)
+        internal set
+
+    /** Find and replace in the open project (S10): the query, the results and the panel. */
+    var search: SearchModel? by mutableStateOf(null)
         internal set
 
     /** Writes the corrections of the open project to its page files (S07); `App` runs its timer. */
@@ -208,6 +213,8 @@ class AppModel(
                 write = pageWriter(opened),
             )
         newEditor.onUnsaved = newSaver::changed
+        search?.close()
+        search = SearchModel(newEditor, opened.pages.size)
         editor = newEditor
         saver = newSaver
         metadata = opened.metadata

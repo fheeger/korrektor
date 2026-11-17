@@ -31,6 +31,8 @@ fun AppModel.closeProject() {
     lock = null
     project = null
     viewer = null
+    search?.close()
+    search = null
     editor = null
     saver = null
     metadata = null
