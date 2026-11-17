@@ -94,16 +94,6 @@ class Project private constructor(
     }
 
     /**
-     * Sets the status of every page (S09): [all] says it for the pages that are not unchecked, every other page is
-     * unchecked. Writes `project.json` only; if that fails, the old statuses stay.
-     */
-    fun setStatuses(all: Map<Int, PageStatus>) {
-        val old = pages
-        pages = old.mapIndexed { i, page -> page.copy(status = all[i + 1] ?: PageStatus.UNCHECKED) }
-        saveOrRevert { pages = old }
-    }
-
-    /**
      * Replaces the list of pages and writes `project.json`. If writing fails, the old list stays. The import uses
      * it to say which pages the book has before the page files are written.
      */
@@ -279,3 +269,10 @@ class Project private constructor(
             }
     }
 }
+
+/**
+ * Sets the status of every page (S09): [all] says it for the pages that are not unchecked, every other page is
+ * unchecked. Writes `project.json` only; if that fails, the old statuses stay.
+ */
+fun Project.setStatuses(all: Map<Int, PageStatus>) =
+    setPages(pages.mapIndexed { i, page -> page.copy(status = all[i + 1] ?: PageStatus.UNCHECKED) })
