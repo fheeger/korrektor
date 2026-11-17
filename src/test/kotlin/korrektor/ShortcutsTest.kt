@@ -117,8 +117,20 @@ class ShortcutsTest {
     fun keysThatAreNotListedAreNotShortcuts() {
         for (key in listOf(Key.Enter, Key.Backspace, Key.Delete, Key.A, Key.Escape, Key.PageDown, Key.Tab)) {
             assertNull(Shortcuts.resolve(event(key)), "$key")
-            assertNull(Shortcuts.resolve(event(key, ctrl = true)), "Ctrl+$key")
+            // Ctrl+Enter is the page status (S09); the others have no meaning with Ctrl.
+            if (key != Key.Enter) assertNull(Shortcuts.resolve(event(key, ctrl = true)), "Ctrl+$key")
         }
+    }
+
+    @Test
+    fun theStatusKeysAreCtrlEnterAndCtrlShiftEnter() {
+        assertEquals(AppAction.MARK_CORRECTED, Shortcuts.resolve(event(Key.Enter, ctrl = true)))
+        assertEquals(AppAction.MARK_CORRECTED, Shortcuts.resolve(event(Key.NumPadEnter, ctrl = true)))
+        assertEquals(AppAction.MARK_UNCHECKED, Shortcuts.resolve(event(Key.Enter, ctrl = true, shift = true)))
+        assertNull(Shortcuts.resolve(event(Key.Enter, shift = true)), "Shift+Enter is not a shortcut")
+        assertNull(Shortcuts.resolve(event(Key.Enter, ctrl = true, alt = true)), "AltGr+Enter is not one")
+        assertEquals("Ctrl+Enter", Shortcuts.of(AppAction.MARK_CORRECTED).shown.text)
+        assertEquals("Ctrl+Shift+Enter", Shortcuts.of(AppAction.MARK_UNCHECKED).shown.text)
     }
 
     @Test

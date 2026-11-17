@@ -3,6 +3,7 @@ package korrektor
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -11,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import korrektor.editor.BookEditor
+import korrektor.editor.statusOf
 import korrektor.format.PageStatus
 import kotlin.math.roundToInt
 
@@ -42,13 +44,16 @@ fun BookEditor.correctedPages(total: Int): Int =
     }
 
 /**
- * The bar between the header and the panels: the progress of the whole book. It reads the statuses of the editor, which
- * are in memory, so showing it reads no page. Test tag `progress`.
+ * The bar between the header and the panels: the progress of the whole book and the button that marks the page [page]
+ * as corrected or, if it is, as unchecked ([onToggle]). It reads the statuses of the editor, which are in memory, so
+ * showing it reads no page. Test tags `progress` and `status button`.
  */
 @Composable
 fun StatusBar(
     editor: BookEditor,
+    page: Int,
     pageCount: Int,
+    onToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val corrected = editor.correctedPages(pageCount)
@@ -58,5 +63,9 @@ fun StatusBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(progressText(corrected, pageCount), Modifier.testTag("progress"))
+        val isCorrected = editor.statusOf(page) == PageStatus.CORRECTED
+        OutlinedButton(onToggle, Modifier.testTag("status button")) {
+            Text(if (isCorrected) "Mark as unchecked" else "Mark as corrected")
+        }
     }
 }

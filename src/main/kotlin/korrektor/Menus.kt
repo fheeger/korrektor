@@ -32,6 +32,7 @@ private val MENU_LAYOUT: List<Pair<String, List<List<AppAction>>>> =
                 listOf(AppAction.PREVIOUS_LINE, AppAction.NEXT_LINE, AppAction.FIRST_LINE, AppAction.LAST_LINE),
                 listOf(AppAction.PREVIOUS_PAGE, AppAction.NEXT_PAGE, AppAction.GO_TO_PAGE),
             ),
+        "Page" to listOf(listOf(AppAction.MARK_CORRECTED, AppAction.MARK_UNCHECKED)),
         "View" to listOf(listOf(AppAction.ZOOM_IN, AppAction.ZOOM_OUT, AppAction.FIT_PAGE, AppAction.FIT_WIDTH)),
         "Help" to listOf(listOf(AppAction.SHOW_SHORTCUTS)),
     )

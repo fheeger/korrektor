@@ -38,8 +38,11 @@ class MenusTest {
     }
 
     @Test
-    fun theMenusAreEditGoViewAndHelp() {
-        assertEquals(listOf("Edit", "Go", "View", "Help"), menus(open).map { it.title })
+    fun theMenusAreEditGoPageViewAndHelp() {
+        assertEquals(listOf("Edit", "Go", "Page", "View", "Help"), menus(open).map { it.title })
+        val page = menus(open).first { it.title == "Page" }.groups.flatten()
+        assertEquals(listOf(AppAction.MARK_CORRECTED, AppAction.MARK_UNCHECKED), page.map { it.action })
+        assertTrue(page.first().text.endsWith("Ctrl+Enter"), page.first().text)
     }
 
     @Test

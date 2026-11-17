@@ -35,7 +35,8 @@ fun ProjectPanels(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier) {
-        model.editor?.let { StatusBar(it, project.pages.size) }
+        val viewer = model.viewer
+        model.editor?.let { if (viewer != null) StatusBar(it, viewer.page, project.pages.size, keys::toggleStatus) }
         val scope = rememberCoroutineScope()
         SplitPane(
             model.layout,

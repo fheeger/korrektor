@@ -1,6 +1,6 @@
 # T079 Change the status: Ctrl+Enter, menu and button
 
-**Type:** task · **Status:** ready for development · **Story:** S09 · **Task:** S09.3, S09.6 (keys of this ticket)
+**Type:** task · **Status:** done · **Story:** S09 · **Task:** S09.3, S09.6 (keys of this ticket)
 
 ## What needs doing
 - **`AppAction.MARK_CORRECTED`: Ctrl+Enter** marks the page shown as corrected and opens the next page (the cursor on its first line); on the last page it only marks. **`MARK_UNCHECKED`: Ctrl+Shift+Enter** marks it as unchecked and stays.
@@ -28,3 +28,4 @@ T077, T078.
 - **Ctrl+Shift+Enter for "unchecked"** so that the menu and the list show a key for every entry, as the table requires.
 
 ## Progress
+Done. `MARK_CORRECTED` (Ctrl+Enter, also the NumPad one) and `MARK_UNCHECKED` (Ctrl+Shift+Enter) in the table, the new *Page* menu, `ProjectKeys.markCorrected`/`toggleStatus`, the button in `StatusBar`, README. Tests: `StatusUiTest` (6 more: keys, last page, button, editing keeps the status, the key in the page field), `ShortcutsTest`, `MenusTest`. Build green.

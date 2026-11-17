@@ -9,7 +9,10 @@ import korrektor.editor.focusPanel
 import korrektor.editor.lastLine
 import korrektor.editor.moveLine
 import korrektor.editor.redo
+import korrektor.editor.setStatus
+import korrektor.editor.statusOf
 import korrektor.editor.undo
+import korrektor.format.PageStatus
 import korrektor.viewer.fitPage
 import korrektor.viewer.fitWidth
 import korrektor.viewer.focusPageField
@@ -33,6 +36,8 @@ class ProjectKeys(
             AppAction.NEXT_PAGE to { model.viewer?.let { openPage(it.page + 1, Arrival.FIRST) } },
             AppAction.PREVIOUS_PAGE to { model.viewer?.let { openPage(it.page - 1, Arrival.FIRST) } },
             AppAction.GO_TO_PAGE to { model.viewer?.focusPageField() },
+            AppAction.MARK_CORRECTED to { markCorrected() },
+            AppAction.MARK_UNCHECKED to { markPage(PageStatus.UNCHECKED) },
             AppAction.ZOOM_IN to { model.viewer?.zoomIn() },
             AppAction.ZOOM_OUT to { model.viewer?.zoomOut() },
             AppAction.FIT_PAGE to { model.viewer?.fitPage() },
@@ -68,6 +73,29 @@ class ProjectKeys(
         val editor = model.editor ?: return
         val line = editor.lines.firstOrNull { it.id == editor.activeLineId } ?: editor.lines.firstOrNull()
         if (line != null) editor.requestFocus(line.id, editor.caret, keepColumn = true) else editor.focusPanel()
+    }
+
+    /** Marks the page shown as corrected and opens the next page, if there is one (Ctrl+Enter, S09). */
+    private fun markCorrected() {
+        val viewer = model.viewer ?: return
+        markPage(PageStatus.CORRECTED)
+        openPage(viewer.page + 1, Arrival.FIRST)
+    }
+
+    private fun markPage(status: PageStatus) {
+        val viewer = model.viewer ?: return
+        model.editor?.setStatus(viewer.page, status)
+    }
+
+    /**
+     * The button of the status bar: a corrected page becomes unchecked and any other corrected. It stays on the page,
+     * and the cursor goes back to the text, where the click took it away from.
+     */
+    fun toggleStatus() {
+        val viewer = model.viewer ?: return
+        val corrected = model.editor?.statusOf(viewer.page) == PageStatus.CORRECTED
+        markPage(if (corrected) PageStatus.UNCHECKED else PageStatus.CORRECTED)
+        leavePageField()
     }
 
     /**
