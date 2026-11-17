@@ -43,7 +43,7 @@ internal fun BookEditor.recordEdit(
 ) {
     if (grouping > 0) {
         if (groupStart == null) groupStart = before
-        put(page, after) // recorded when the block ends
+        layer = after // only shown: the page and its step are put together when the block ends
     } else {
         synchronized(changedLock) {
             val stamp = history.record(diff(page, before, after), typed, now(), before.history)

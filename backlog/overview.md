@@ -18,7 +18,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [S05](stories/S05-side-by-side-editor.md) | Scan and text side by side | C1 | done |
 | [S06](stories/S06-keyboard-navigation.md) | Keyboard navigation | C2 | done |
 | [S07](stories/S07-autosave.md) | Autosave | N4 | done |
-| [S08](stories/S08-undo-redo.md) | Undo/redo | F1 | in progress |
+| [S08](stories/S08-undo-redo.md) | Undo/redo | F1 | in review |
 | [S09](stories/S09-page-status.md) | Page status | C5 | ready for development |
 | [S10](stories/S10-find-and-replace.md) | Find and replace with a preview | D2 | ready for development |
 | [S11](stories/S11-export-text-markdown.md) | Export plain text and Markdown | G1 | ready for development |
@@ -100,3 +100,4 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T072](tickets/T072-history-with-saves.md) | History saved together with the pages, and recovery after a crash | task | S08 | done |
 | [T073](tickets/T073-load-history.md) | Load the history when a project is opened, and on demand | task | S08 | done |
 | [T074](tickets/T074-history-tests.md) | History tests: across pages, after reopening, after a crash, speed | task | S08 | done |
+| [T075](tickets/T075-review-fixes.md) | Fixes from the S08 code review | task | S08 | done |

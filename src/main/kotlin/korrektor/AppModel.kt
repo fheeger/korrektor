@@ -181,9 +181,14 @@ class AppModel(
         opened: Project,
         taken: ProjectLock?,
     ) {
-        // First, while the old project is still the open one: a project that crashed has history entries that its pages
-        // lack; if that cannot be repaired the project is not opened and nothing has changed (S08).
-        HistoryRecovery.recover(opened)
+        // A project that crashed has history entries that its pages lack. If that cannot be repaired (a page that
+        // cannot be written), the project still opens, with a notice: refusing would lock the user out of it (S08).
+        var repairProblem: String? = null
+        try {
+            HistoryRecovery.recover(opened)
+        } catch (e: FormatException) {
+            repairProblem = "The last changes could not be restored from the history: ${e.message}"
+        }
         val history = UndoHistory.load(opened.historyLog)
         saveView() // the project that was open until now
         // Its lock is given back only now that the new project is open: if opening failed, nothing was changed.
@@ -200,7 +205,7 @@ class AppModel(
         saver = newSaver
         metadata = opened.metadata
         error = null
-        notice = null
+        notice = repairProblem
     }
 }
 
