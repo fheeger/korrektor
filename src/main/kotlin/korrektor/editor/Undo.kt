@@ -1,6 +1,7 @@
 package korrektor.editor
 
 import korrektor.format.Change
+import korrektor.format.FormatException
 import korrektor.format.LineChange
 import korrektor.format.PageLayer
 
@@ -18,7 +19,13 @@ fun BookEditor.redo(): UndoResult = move(undoing = false)
 
 private fun BookEditor.move(undoing: Boolean): UndoResult =
     synchronized(changedLock) {
-        val step = history.peek(undoing)
+        val step =
+            try {
+                history.peek(undoing)
+            } catch (e: FormatException) {
+                // Older history is read when the loaded steps are used up; a damaged or unreadable file is no crash.
+                return@synchronized UndoResult.Failed(e.message ?: "The history cannot be read")
+            }
         // To undo a sequence of changes, the inverted changes are made in the reverse order.
         val changes = step?.changes?.let { if (undoing) it.reversed().map(Change::inverted) else it }
         if (step == null || changes == null) {

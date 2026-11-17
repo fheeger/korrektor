@@ -58,9 +58,9 @@ internal class HistoryLoader(
         var redo: List<Step>? = null
         while (at > 0 && found.size < wanted) {
             val block = log.readBefore(at, READ_BLOCK)
+            val decoded = block.entries.map(HistoryCodec::decode) // before `at` moves: a failed read can be retried
             at = if (block.entries.isEmpty()) 0 else block.start
-            for (json in block.entries.asReversed()) {
-                val entry = HistoryCodec.decode(json)
+            for (entry in decoded.asReversed()) {
                 if (newestSeq == null) newestSeq = (entry as? SavedEntry)?.upTo ?: entry.entrySeq
                 if (entry is EditEntry && !sawEdit) redo = redoSteps()
                 absorb(entry, found)
