@@ -103,7 +103,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T075](tickets/T075-review-fixes.md) | Fixes from the S08 code review | task | S08 | done |
 | [T076](tickets/T076-page-status-format.md) | Page status in the format | task | S09 | done |
 | [T077](tickets/T077-status-in-editor.md) | Page status in the editor: recording, undo, saving, recovery | task | S09 | done |
-| [T078](tickets/T078-show-status-progress.md) | Show the page status and the progress | task | S09 | ready for development |
+| [T078](tickets/T078-show-status-progress.md) | Show the page status and the progress | task | S09 | done |
 | [T079](tickets/T079-change-status.md) | Change the status: Ctrl+Enter, menu and button | task | S09 | ready for development |
 | [T080](tickets/T080-jump-unchecked.md) | Jump to the next or previous unchecked page | task | S09 | ready for development |
 | [T081](tickets/T081-status-tests.md) | Page status tests: undo, crash, 1000 pages | task | S09 | ready for development |
