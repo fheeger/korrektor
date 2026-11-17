@@ -1,6 +1,6 @@
 # T084 The search model: results that arrive while it searches, and cancel
 
-**Type:** task · **Status:** ready for development · **Story:** S10 · **Task:** S10.4
+**Type:** task · **Status:** done · **Story:** S10 · **Task:** S10.4
 
 ## What needs doing
 `SearchModel` (Compose state, one per open project, `AppModel.search`) holds everything the panel shows and does, so that it can be tested without a window:
@@ -28,5 +28,8 @@
 T083.
 
 ## Decisions
+- `Dispatchers.Main` is not on the classpath (tests have no UI thread), so the model takes the dispatcher for its results as a parameter (default `Dispatchers.Default`). Compose state can be changed from any thread; a new search and a late batch of the old one are kept apart by a lock and a generation number (a batch of a replaced search is dropped).
+- The model is in `AppModel.search`, made when a project is opened and closed with it.
 
 ## Progress
+Done. `SearchModel` (state, `search`, `cancel`, `show`, `change`, `changeScope`, `pageChanged`), `SearchRun.kt` (the running search and the arriving batches), `BookEditor.currentLayer`, `AppModel.search`. Tests: `SearchModelTest` (9: results while searching, cancel, a new query, unsaved corrections, page scope, switching between finding and replacing, invalid regex, unreadable page, never waits for files), `SearchWiringTest`. Build green.
