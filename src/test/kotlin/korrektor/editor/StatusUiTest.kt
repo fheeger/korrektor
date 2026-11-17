@@ -2,13 +2,20 @@ package korrektor.editor
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.unit.dp
 import korrektor.App
@@ -22,6 +29,7 @@ import korrektor.pdf.TestPdfs
 import korrektor.pdf.TestText
 import java.nio.file.Files
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 /** The page status and the progress in the whole window (S09). */
 @OptIn(ExperimentalTestApi::class)
@@ -64,6 +72,30 @@ class StatusUiTest {
 
     private fun ComposeUiTest.progress() = onNode(hasTestTag("progress"))
 
+    private fun ComposeUiTest.ctrl(
+        key: Key,
+        shift: Boolean = false,
+    ) {
+        onRoot().performKeyInput {
+            keyDown(Key.CtrlLeft)
+            if (shift) keyDown(Key.ShiftLeft)
+            pressKey(key)
+            if (shift) keyUp(Key.ShiftLeft)
+            keyUp(Key.CtrlLeft)
+        }
+        waitForIdle()
+    }
+
+    private fun ComposeUiTest.waitForPage(
+        model: AppModel,
+        page: Int,
+    ) {
+        waitUntil(timeoutMillis = 10_000) { model.editor?.page == page && model.editor?.layer != null }
+        waitForIdle()
+    }
+
+    private fun ComposeUiTest.status(model: AppModel) = checkNotNull(model.editor).statuses
+
     @Test
     fun aNewBookIsUncheckedAndTheProgressIsZero() =
         withOpenProject {
@@ -90,5 +122,85 @@ class StatusUiTest {
             waitForIdle()
             progress().assertTextEquals("0 of 3 corrected (0 %)")
             onNodeWithText("Page 1 of 3 · unchecked").assertExists()
+        }
+
+    @Test
+    fun ctrlEnterMarksThePageCorrectedAndOpensTheNextOneWithTheCursorInItsFirstLine() =
+        withOpenProject { model ->
+            ctrl(Key.Enter)
+            waitForPage(model, 2)
+
+            assertEquals(mapOf(1 to PageStatus.CORRECTED), status(model))
+            onNodeWithText("Page 2 of 3 · unchecked").assertExists()
+            field("l1").assertIsFocused()
+
+            ctrl(Key.Z)
+            waitForPage(model, 1)
+            assertEquals(emptyMap(), status(model))
+            onNodeWithText("Page 1 of 3 · unchecked").assertExists()
+        }
+
+    @Test
+    fun ctrlEnterOnTheLastPageMarksItAndStaysAndOnACorrectedPageKeepsItCorrected() =
+        withOpenProject { model ->
+            checkNotNull(model.viewer).goTo(3)
+            waitForPage(model, 3)
+            ctrl(Key.Enter)
+            assertEquals(mapOf(3 to PageStatus.CORRECTED), status(model))
+            onNodeWithText("Page 3 of 3 · corrected").assertExists()
+
+            ctrl(Key.Enter)
+            assertEquals(mapOf(3 to PageStatus.CORRECTED), status(model))
+            assertEquals(1, checkNotNull(model.editor).history.undoSteps.size, "the same status is no new step")
+        }
+
+    @Test
+    fun ctrlShiftEnterMarksThePageUncheckedAndStays() =
+        withOpenProject { model ->
+            checkNotNull(model.editor).setStatus(1, PageStatus.CORRECTED)
+            waitForIdle()
+
+            ctrl(Key.Enter, shift = true)
+
+            assertEquals(emptyMap(), status(model))
+            onNodeWithText("Page 1 of 3 · unchecked").assertExists()
+            progress().assertTextEquals("0 of 3 corrected (0 %)")
+        }
+
+    @Test
+    fun theButtonChangesTheStatusInBothDirectionsAndStaysOnThePage() =
+        withOpenProject { model ->
+            onNodeWithText("Mark as corrected").performClick()
+            waitForIdle()
+            assertEquals(mapOf(1 to PageStatus.CORRECTED), status(model))
+            assertEquals(1, checkNotNull(model.viewer).page)
+            onNodeWithText("Mark as unchecked").assertExists()
+            onNodeWithText("Page 1 of 3 · corrected").assertExists()
+
+            onNodeWithText("Mark as unchecked").performClick()
+            waitForIdle()
+            assertEquals(emptyMap(), status(model))
+            onNodeWithText("Mark as corrected").assertExists()
+            field("l1").assertIsFocused()
+        }
+
+    @Test
+    fun editingACorrectedPageDoesNotChangeItsStatus() =
+        withOpenProject { model ->
+            checkNotNull(model.editor).setStatus(1, PageStatus.CORRECTED)
+            field("l1").performTextReplacement("Eins geändert")
+            waitForIdle()
+
+            assertEquals(mapOf(1 to PageStatus.CORRECTED), status(model))
+        }
+
+    @Test
+    fun theKeyWorksWithTheFocusInThePageField() =
+        withOpenProject { model ->
+            onNode(hasContentDescription("Go to page")).performClick()
+            ctrl(Key.Enter)
+            waitForPage(model, 2)
+
+            assertEquals(mapOf(1 to PageStatus.CORRECTED), status(model))
         }
 }
