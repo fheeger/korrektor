@@ -1,16 +1,16 @@
 # T067 The change model: line changes, applying them, and grouping typing
 
-**Type:** task · **Status:** ready for development · **Story:** S08 · **Task:** S08.1
+**Type:** task · **Status:** done · **Story:** S08 · **Task:** S08.1
 
 What one undo step is, as plain data with pure functions. No UI, no files yet.
 
 ## What needs doing
-In `korrektor.format` (it becomes part of the project format, T071): `HistoryEntry.kt`
-- `sealed interface Change { val page: Int }` with one case today, **`LineChange(page, region, index, removed, inserted)`**: in the region `region` of the page, the lines `removed` (the lines as they were, complete with words and boxes) that start at position `index` of the region's lines are replaced by the lines `inserted`. Every edit of S05 and S06 (typing, split, join, add, delete) is one such change, or two if a join reaches into another region. Other kinds of change (the page status, S09.5) are further cases of the sealed interface.
-- `invert(change)` swaps `removed` and `inserted`.
+In `korrektor.format` (it becomes part of the project format, T071): `Change.kt` (the entries of the file come in T071)
+- `sealed interface Change { val page: Int; fun inverted() }` with one case today, **`LineChange(page, region, index, removed, inserted, regionBefore, regionAfter)`**: in the region `region` of the page, the lines `removed` (the lines as they were, complete with words and boxes) that start at position `index` of the region's lines are replaced by the lines `inserted`. Every edit of S05 and S06 (typing, split, join, add, delete) is one such change, or two if a join reaches into another region. Other kinds of change (the page status, S09.5) are further cases of the sealed interface.
+- `inverted()` swaps `removed` and `inserted` (and `regionBefore` and `regionAfter`).
 
 In `korrektor.editor`: `Steps.kt`
-- **`diff(before: PageLayer, after: PageLayer): List<LineChange>`**: for each region whose lines differ, one change (common start and end of the two line lists cut off, the middle is `removed` and `inserted`). A region that exists only in `after` (an added line on a page without regions) gets a change on its own.
+- **`diff(page, before: PageLayer, after: PageLayer): List<LineChange>`**: for each region whose lines differ, one change (common start and end of the two line lists cut off, the middle is `removed` and `inserted`). A region that exists only in `after` (an added line on a page without regions) gets a change on its own.
 - **`apply(layer, change): PageLayer?`**: replaces the lines; null if the layer does not hold `removed` at `index` of that region (the step does not fit the page). A region that is missing is created (type `text`, the next `order`, no box) when `removed` is empty and `index` is 0. Pure; the old layer is not changed.
 - **`TypingGroups`**: decides whether a text edit of a line continues the step that is open or starts a new one (rules below).
 
@@ -34,7 +34,11 @@ Unit tests (`StepsTest`, `TypingGroupsTest`) on generated layers; no files. Test
 None (T037's `PageEdits`).
 
 ## Decisions
-Written down while working.
+- **A region that is made is a part of the change** (`regionBefore`/`regionAfter`, both true normally). The only edit that makes a region is adding the first line of a page without regions; without the flags undo would leave an empty region `r1` and the page would not be what it was. With them, applying the inverse removes the region again, so undoing everything gives the imported page byte for byte.
+- **A change that does not fit is refused, not forced** (`apply` returns null): the lines `removed` must be at `index`, the region must be as expected, and the page must stay valid (a line id twice would throw, which is caught). Used by undo (T069) and by the recovery after a crash (T072).
+- **Typing step rules** as in the criteria; a pause is less than 1000 ms (exactly 1000 ms ends the step). The position test compares the edit with the span of the run, in the text after each edit.
+- The line positions are positions in the region's list of lines, not in the reading order of the page, so a change stays valid when the regions are sorted differently.
+- Named `Change.kt` and not `HistoryEntry.kt` (the entries come in T071).
 
 ## Progress
-Not started.
+Done. `Change.kt`, `Steps.kt` (`diff`, `apply`), `TypingGroups.kt`. Tests: `StepsTest` (12), `TypingGroupsTest` (10). Build, tests, ktlint and Detekt are green.
