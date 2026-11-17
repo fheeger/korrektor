@@ -1,6 +1,6 @@
 # T080 Jump to the next or previous unchecked page
 
-**Type:** task · **Status:** ready for development · **Story:** S09 · **Task:** S09.4, S09.6 (keys of this ticket)
+**Type:** task · **Status:** done · **Story:** S09 · **Task:** S09.4, S09.6 (keys of this ticket)
 
 ## What needs doing
 - **`AppAction.NEXT_UNCHECKED`: Ctrl+Shift+Down** and **`PREVIOUS_UNCHECKED`: Ctrl+Shift+Up** open the next (previous) page whose status is unchecked, with the cursor on its first line. No wrap-around; with no such page nothing happens (the menu entry is grey).
@@ -24,3 +24,4 @@ T077, T079.
 - A page with a status this version does not know is not "unchecked": the jump skips it.
 
 ## Progress
+Done. `uncheckedAfter`/`uncheckedBefore` (`PageStatuses.kt`), `NEXT_UNCHECKED`/`PREVIOUS_UNCHECKED` in the table, the *Page* menu entries enabled by `MenuState`, `ProjectKeys.jumpToUnchecked`, README. `Menus.kt` now decides what an entry needs from a table (the `when` was too complex). Tests: `UncheckedPagesTest` (5, also 1000 pages and that no page is read), `StatusUiTest` (2 more), `ShortcutsTest`, `MenusTest`. Build green.

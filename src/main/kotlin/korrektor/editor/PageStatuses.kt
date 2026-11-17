@@ -52,3 +52,16 @@ fun BookEditor.markStatusesSaved(saved: Map<Int, PageStatus>) {
         if (statusesChanged && statuses === saved) statusesChanged = false
     }
 }
+
+/**
+ * The next page after [page] that is unchecked, in a book of [count] pages, or null. A page with a status that this
+ * version does not know is not unchecked. It looks at the statuses in memory, so a status that is not saved yet counts.
+ */
+fun BookEditor.uncheckedAfter(
+    page: Int,
+    count: Int,
+): Int? = ((page + 1)..count).firstOrNull { statusOf(it) == PageStatus.UNCHECKED }
+
+/** The nearest page before [page] that is unchecked, or null. */
+fun BookEditor.uncheckedBefore(page: Int): Int? =
+    (page - 1 downTo 1).firstOrNull { statusOf(it) == PageStatus.UNCHECKED }

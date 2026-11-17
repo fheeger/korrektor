@@ -35,13 +35,16 @@ import kotlin.test.assertEquals
 @OptIn(ExperimentalTestApi::class)
 class StatusUiTest {
     /** A book of three pages with two lines each. */
-    private fun withOpenProject(block: ComposeUiTest.(AppModel) -> Unit) {
+    private fun withOpenProject(
+        pages: Int = 3,
+        block: ComposeUiTest.(AppModel) -> Unit,
+    ) {
         val dir = Files.createTempDirectory("statusui")
         try {
             val pdf = dir.resolve("book.pdf")
             TestPdfs.write(
                 pdf,
-                List(3) { n ->
+                List(pages) { n ->
                     TestPage(
                         texts = listOf(TestText("Eins ${n + 1}", 30f, 250f, 14f), TestText("Zwei", 30f, 220f, 14f)),
                     )
@@ -202,5 +205,45 @@ class StatusUiTest {
             waitForPage(model, 2)
 
             assertEquals(mapOf(1 to PageStatus.CORRECTED), status(model))
+        }
+
+    @Test
+    fun ctrlShiftDownAndUpJumpBetweenTheUncheckedPages() =
+        withOpenProject(pages = 6) { model ->
+            val editor = checkNotNull(model.editor)
+            for (page in listOf(2, 3, 5)) editor.setStatus(page, PageStatus.CORRECTED)
+            waitForIdle()
+
+            ctrl(Key.DirectionDown, shift = true)
+            waitForPage(model, 4)
+            field("l1").assertIsFocused()
+            ctrl(Key.DirectionDown, shift = true)
+            waitForPage(model, 6)
+            ctrl(Key.DirectionDown, shift = true) // none after page 6: nothing happens
+            waitForIdle()
+            assertEquals(6, checkNotNull(model.viewer).page)
+
+            ctrl(Key.DirectionUp, shift = true)
+            waitForPage(model, 4)
+            ctrl(Key.DirectionUp, shift = true)
+            waitForPage(model, 1)
+            ctrl(Key.DirectionUp, shift = true)
+            waitForIdle()
+            assertEquals(1, checkNotNull(model.viewer).page)
+            assertEquals(3, editor.history.undoSteps.size, "the jumps are no steps and the text is not touched")
+        }
+
+    @Test
+    fun aPageThatWasJustCorrectedIsNotTheNextUncheckedOne() =
+        withOpenProject(pages = 6) { model ->
+            checkNotNull(model.viewer).goTo(4)
+            waitForPage(model, 4)
+            ctrl(Key.Enter) // page 4 corrected, page 5 shown
+            waitForPage(model, 5)
+            checkNotNull(model.viewer).goTo(4)
+            waitForPage(model, 4)
+
+            ctrl(Key.DirectionDown, shift = true)
+            waitForPage(model, 5)
         }
 }

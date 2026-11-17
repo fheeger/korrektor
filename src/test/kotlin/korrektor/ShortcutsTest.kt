@@ -85,7 +85,7 @@ class ShortcutsTest {
 
     @Test
     fun theSameKeyWithAnotherModifierIsNotAShortcut() {
-        assertNull(Shortcuts.resolve(event(Key.DirectionDown, ctrl = true, shift = true)), "Ctrl+Shift+Down selects")
+        assertNull(Shortcuts.resolve(event(Key.PageDown, ctrl = true, shift = true)), "Ctrl+Shift+PageDown")
         assertNull(Shortcuts.resolve(event(Key.DirectionDown, shift = true)), "Shift+Down")
         assertNull(Shortcuts.resolve(event(Key.DirectionDown, alt = true)), "Alt+Down")
         assertNull(Shortcuts.resolve(event(Key.DirectionDown, ctrl = true, alt = true)), "AltGr+Down")
@@ -120,6 +120,16 @@ class ShortcutsTest {
             // Ctrl+Enter is the page status (S09); the others have no meaning with Ctrl.
             if (key != Key.Enter) assertNull(Shortcuts.resolve(event(key, ctrl = true)), "Ctrl+$key")
         }
+    }
+
+    @Test
+    fun ctrlShiftUpAndDownJumpToUncheckedPagesAndCtrlUpAndDownStillMovePage() {
+        assertEquals(AppAction.NEXT_UNCHECKED, Shortcuts.resolve(event(Key.DirectionDown, ctrl = true, shift = true)))
+        assertEquals(AppAction.PREVIOUS_UNCHECKED, Shortcuts.resolve(event(Key.DirectionUp, ctrl = true, shift = true)))
+        assertEquals(AppAction.NEXT_PAGE, Shortcuts.resolve(event(Key.DirectionDown, ctrl = true)))
+        assertEquals(AppAction.PREVIOUS_PAGE, Shortcuts.resolve(event(Key.DirectionUp, ctrl = true)))
+        assertNull(Shortcuts.resolve(event(Key.DirectionDown, shift = true)), "Shift+Down selects text")
+        assertEquals("Ctrl+Shift+Down", Shortcuts.of(AppAction.NEXT_UNCHECKED).shown.text)
     }
 
     @Test
