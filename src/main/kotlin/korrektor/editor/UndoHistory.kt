@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import korrektor.format.Change
 import korrektor.format.EditEntry
 import korrektor.format.HistoryEntry
+import korrektor.format.HistoryLog
 import korrektor.format.LineChange
 import korrektor.format.RedoEntry
 import korrektor.format.UndoEntry
@@ -33,10 +34,14 @@ class Typed(
  * @param firstSeq the number the next entry gets: 1 for a new book, one more than the last entry of the file.
  */
 @Suppress("TooManyFunctions") // the operations on one state (two stacks and the pending entries), each a few lines
-class UndoHistory(
-    internal val lock: Any = Any(),
-    firstSeq: Int = 1,
+class UndoHistory internal constructor(
+    internal val lock: Any,
+    private val loader: HistoryLoader?,
+    firstSeq: Int,
 ) {
+    /** A history that starts at [firstSeq] and has nothing older in a file. */
+    constructor(lock: Any = Any(), firstSeq: Int = 1) : this(lock, null, firstSeq)
+
     private val undoStack = ArrayDeque<Step>()
     private val redoStack = ArrayDeque<Step>()
     private val pending = ArrayList<HistoryEntry>()
@@ -122,8 +127,21 @@ class UndoHistory(
     fun peek(undoing: Boolean): Step? =
         synchronized(lock) {
             open = null
+            // The steps that were read from the file are used up: the next older ones are read now.
+            if (undoing && undoStack.isEmpty() && loader?.hasMore == true) loadMore()
             (if (undoing) undoStack else redoStack).lastOrNull()
         }
+
+    /** Reads the next older steps of the history file: [HISTORY_WINDOW] that can be undone, and once the redo steps. */
+    private fun loadMore() {
+        val chunk = loader?.read(HISTORY_WINDOW) ?: return
+        undoStack.addAll(0, chunk.older)
+        chunk.redo?.let {
+            redoStack.clear()
+            redoStack.addAll(it)
+        }
+        refresh()
+    }
 
     /**
      * The step [peek] gave was undone (or redone) by [applied] (an [UndoEntry] or [RedoEntry] is made): it moves to the
@@ -196,11 +214,30 @@ class UndoHistory(
     }
 
     private fun refresh() {
-        canUndo = undoStack.isNotEmpty()
+        canUndo = undoStack.isNotEmpty() || loader?.hasMore == true
         canRedo = redoStack.isNotEmpty()
     }
 
-    private companion object {
+    companion object {
+        /** How many steps that can be undone are read from the history file at a time. */
+        const val HISTORY_WINDOW = 100
+
+        /**
+         * The history of a project from its file (T073): the newest [HISTORY_WINDOW] steps that can be undone and the
+         * steps that can be redone are read now, older ones when undo needs them. The next entry gets the number after
+         * the newest one of the file (1 for a project that has no history).
+         *
+         * @throws korrektor.format.FormatException if an entry that is read is damaged.
+         */
+        fun load(log: HistoryLog): UndoHistory {
+            val history = UndoHistory(Any(), HistoryLoader(log), 1)
+            synchronized(history.lock) {
+                history.loadMore()
+                history.nextSeq = (history.loader?.newestSeq ?: 0) + 1
+            }
+            return history
+        }
+
         /**
          * The changes of two typing edits one after the other, as one; empty if they cancel out; null if they are not
          * two replacements of one line by one line in the same place (then they are not joined).
