@@ -32,7 +32,7 @@ import kotlin.test.assertEquals
 /** Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z in the whole window with real key events (T070). */
 @OptIn(ExperimentalTestApi::class)
 class UndoUiTest {
-    /** A book of two pages with two lines each. */
+    /** A book of three pages with two lines each. */
     private fun withOpenProject(block: ComposeUiTest.(AppModel) -> Unit) {
         val dir = Files.createTempDirectory("undoui")
         try {
@@ -42,6 +42,7 @@ class UndoUiTest {
                 listOf(
                     TestPage(texts = listOf(TestText("Eins", 30f, 250f, 14f), TestText("Zwei", 30f, 220f, 14f))),
                     TestPage(texts = listOf(TestText("Drei", 30f, 250f, 14f), TestText("Vier", 30f, 220f, 14f))),
+                    TestPage(texts = listOf(TestText("Fünf", 30f, 250f, 14f), TestText("Sechs", 30f, 220f, 14f))),
                 ),
             )
             val project = Project.create(dir.resolve("b.korrektur"), pdf, emptyList(), Metadata("B"))
@@ -127,6 +128,46 @@ class UndoUiTest {
             field("l2").assertIsFocused()
             ctrl(Key.Y) // and redo goes there too
             field("l2").assertTextEquals("Zwei!")
+        }
+
+    @Test
+    fun undoAndRedoOverThreePagesOpenThePageOfEachChangeWithItsText() =
+        withOpenProject { model ->
+            field("l1").performTextReplacement("Eins!")
+            waitForIdle()
+            ctrl(Key.DirectionDown)
+            waitForPage(model, 2)
+            field("l1").performTextReplacement("Drei!")
+            waitForIdle()
+            ctrl(Key.DirectionDown)
+            waitForPage(model, 3)
+            field("l1").performTextReplacement("Fünf!")
+            waitForIdle()
+
+            // Back: page 3 (where we are), then page 2, then page 1, each with the text it had.
+            ctrl(Key.Z)
+            field("l1").assertTextEquals("Fünf")
+            ctrl(Key.Z)
+            waitForPage(model, 2)
+            assertEquals(2, model.viewer!!.page)
+            field("l1").assertTextEquals("Drei")
+            field("l1").assertIsFocused()
+            ctrl(Key.Z)
+            waitForPage(model, 1)
+            assertEquals(1, model.viewer!!.page)
+            field("l1").assertTextEquals("Eins")
+            assertEquals(false, model.editor!!.history.canUndo)
+
+            // Forward again over the same pages.
+            ctrl(Key.Y)
+            field("l1").assertTextEquals("Eins!")
+            ctrl(Key.Y)
+            waitForPage(model, 2)
+            field("l1").assertTextEquals("Drei!")
+            ctrl(Key.Y)
+            waitForPage(model, 3)
+            field("l1").assertTextEquals("Fünf!")
+            assertEquals(false, model.editor!!.history.canRedo)
         }
 
     @Test
