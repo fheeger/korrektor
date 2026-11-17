@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -16,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +38,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 
 /**
  * The panel for finding and replacing (S10), between the status bar and the scan and text: the search field with its
@@ -51,13 +55,26 @@ fun SearchPanel(
     onLeave: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val scope = rememberCoroutineScope()
     // The search of the page shown follows the page and its text.
     LaunchedEffect(model.editor.page, model.editor.layer) { model.pageChanged() }
     Column(modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp).testTag("search panel")) {
         QueryRow(model, onStep, onLeave)
         if (model.showReplace) ReplaceRow(model)
         SummaryRow(model)
-        if (model.showReplace) SelectionRow(model)
+        if (model.showReplace) {
+            SelectionRow(
+                model,
+                {
+                    scope.launch {
+                        model.replaceSelected()
+                        onLeave() // the click took the keyboard away from the text: Ctrl+Z must work again
+                    }
+                },
+                { scope.launch { model.replaceAndGoOn(onOpenResult, onStep) } },
+                { onStep(true) },
+            )
+        }
         ResultList(model, onOpenResult)
     }
 }
@@ -167,6 +184,7 @@ private fun SummaryRow(model: SearchModel) {
     Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         val summary = searchSummary(model)
         if (summary.isNotEmpty()) Text(summary, Modifier.testTag("search summary"), fontSize = 13.sp)
+        model.outcome?.let { Text(it, Modifier.testTag("replace outcome"), fontSize = 13.sp) }
         model.message?.let {
             Text(it, Modifier.testTag("search message"), color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
         }
@@ -174,18 +192,29 @@ private fun SummaryRow(model: SearchModel) {
     }
 }
 
-/** In replace mode: how many hits are checked, buttons to check all or none, and why a replacement is not valid. */
+/**
+ * In replace mode: how many hits are checked with buttons to check all or none, "Replace selected" (all checked hits
+ * in one go), and "Replace" and "Skip" for going through the hits one by one; and why a replacement is not valid.
+ */
 @Composable
-private fun SelectionRow(model: SearchModel) {
+private fun SelectionRow(
+    model: SearchModel,
+    onReplaceSelect: () -> Unit,
+    onReplace: () -> Unit,
+    onSkip: () -> Unit,
+) {
     if (model.results.isEmpty()) return
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            "${model.selectedCount} of ${model.results.size} selected",
-            Modifier.testTag("selected count"),
-            fontSize = 13.sp,
-        )
+        val count = "${model.selectedCount} of ${model.results.size} selected"
+        Text(count, Modifier.testTag("selected count"), fontSize = 13.sp)
         TextButton(model::selectAll, Modifier.testTag("select all")) { Text("Select all") }
         TextButton(model::selectNone, Modifier.testTag("select none")) { Text("Select none") }
+        val ready = !model.replacing && model.replacementProblem() == null
+        Button(onReplaceSelect, Modifier.testTag("replace selected"), enabled = ready && model.selectedCount > 0) {
+            Text("Replace selected")
+        }
+        OutlinedButton(onReplace, Modifier.testTag("replace one"), enabled = ready) { Text("Replace") }
+        OutlinedButton(onSkip, Modifier.testTag("skip"), enabled = !model.replacing) { Text("Skip") }
         model.replacementProblem()?.let {
             Text(it, Modifier.testTag("replacement problem"), color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
         }

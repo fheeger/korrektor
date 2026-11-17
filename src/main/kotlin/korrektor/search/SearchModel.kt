@@ -81,6 +81,14 @@ class SearchModel(
     var pagesWithHits: Int by mutableIntStateOf(0)
         internal set
 
+    /** Whether a replacement is being made (pages are read in the background): no second one starts meanwhile. */
+    var replacing: Boolean by mutableStateOf(false)
+        internal set
+
+    /** What the last replacement did, for the user: "Replaced 40 matches on 12 pages"; null after a new search. */
+    var outcome: String? by mutableStateOf(null)
+        internal set
+
     /** Why there are no results: the query is not valid, or pages could not be read. Null if all is well. */
     var message: String? by mutableStateOf(null)
         internal set
@@ -157,6 +165,7 @@ class SearchModel(
             results.clear()
             current = -1
             excluded = emptySet()
+            outcome = null
             pagesDone = 0
             pagesWithHits = 0
             lastHitPage = 0

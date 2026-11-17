@@ -346,4 +346,57 @@ class SearchUiTest {
             node("replacement problem").assertExists()
             node("replace field").performTextInput("x")
         }
+
+    @Test
+    fun replaceSelectedChangesAllPagesAndCtrlZTakesItBackInOneStep() =
+        withOpenProject { model ->
+            val editor = checkNotNull(model.editor)
+            ctrl(Key.H)
+            node("search field").performTextInput("Zwei")
+            node("replace field").performTextInput("Drei")
+            waitForResults(model, 3)
+            node("check 1").performClick() // the one on page 2 stays
+            node("replace selected").performClick()
+            waitUntil(timeoutMillis = 10_000) { model.search?.outcome != null }
+            waitForIdle()
+            node("replace outcome").assertTextEquals("Replaced 2 matches on 2 pages.")
+            assertEquals("Drei", editor.lines[1].text) // page 1 is shown
+            assertEquals(1, editor.history.undoSteps.size)
+            assertEquals(1, checkNotNull(model.search).results.size)
+
+            ctrl(Key.Z)
+            waitUntil(timeoutMillis = 10_000) { editor.history.undoSteps.isEmpty() }
+            waitForIdle()
+            assertEquals("Zwei", editor.lines[1].text)
+            assertEquals(setOf(1, 3), editor.changed.keys, "the pages of the step were changed, and put back")
+            ctrl(Key.Y)
+            waitUntil(timeoutMillis = 10_000) { editor.history.undoSteps.size == 1 }
+            waitForIdle()
+            assertEquals("Drei", editor.lines[1].text)
+        }
+
+    @Test
+    fun replaceAndSkipGoThroughTheHitsOneByOne() =
+        withOpenProject { model ->
+            val search = checkNotNull(model.search)
+            val editor = checkNotNull(model.editor)
+            ctrl(Key.H)
+            node("search field").performTextInput("Zwei")
+            node("replace field").performTextInput("Drei")
+            waitForResults(model, 3)
+            node("result 0").performClick()
+            waitForPage(model, 1)
+            node("replace one").performClick()
+            waitForPage(model, 2) // goes on to the next hit
+            waitUntil(timeoutMillis = 10_000) { search.outcome != null && search.results.size == 2 }
+            assertEquals(0, search.current)
+            assertEquals(1, editor.history.undoSteps.size)
+            node("skip").performClick()
+            waitForPage(model, 3)
+            assertEquals(1, search.current)
+            node("replace one").performClick()
+            waitUntil(timeoutMillis = 10_000) { search.results.size == 1 }
+            assertEquals(2, editor.history.undoSteps.size, "each replacement is a step of its own")
+            assertEquals(listOf("Drei"), listOf(editor.lines[1].text), "page 3 is shown, and replaced")
+        }
 }

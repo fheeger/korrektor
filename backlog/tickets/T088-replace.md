@@ -1,6 +1,6 @@
 # T088 Replace the selected matches as one undo step, and step by step
 
-**Type:** task · **Status:** ready for development · **Story:** S10 · **Task:** S10.6
+**Type:** task · **Status:** done · **Story:** S10 · **Task:** S10.6
 
 ## What needs doing
 - "Replace selected" changes all checked matches in one go: one step of the history (`recordStep`), so one Ctrl+Z takes back all of it, on all pages; it is saved by autosave like any correction. The page status does not change.
@@ -21,11 +21,17 @@
 8. While replacing, the UI keeps working (the pages are read and computed on the IO dispatcher).
 
 ## Approach
-`korrektor/search/Replace.kt` (pure: from the matches and a way to get layers, the new layers and the changes), `SearchModel.replaceSelected/replaceCurrent/skip`, `BookEditor.recordStep` from S08. Unit tests; the cross-ticket tests are in T089.
+`korrektor/search/ReplacePlan.kt` (pure: from the matches and a way to get layers, the new layers and the changes) and `SearchReplace.kt` (`replaceSelected`, `replaceCurrent`, `replaceAndGoOn`), `BookEditor.recordStep` from S08. Unit tests; the cross-ticket tests are in T089.
 
 ## Dependencies
 T086, T087.
 
 ## Decisions
+- The new text of a line is worked out from the old one with all its hits replaced at once (not hit by hit), so that several hits in one line do not move each other.
+- A page that the user edited between the plan and the recording is left alone (the plan was made from its old state): `applyPlan` compares the editor's layer by identity under the lock, and the hits on that page count as "not replaced".
+- After "Replace selected" the cursor goes back to the text (`leavePageField`): the click on the button took the keyboard away, and without a focused element Ctrl+Z reaches nothing.
+- The hits that were left unchecked stay in the list and stay unchecked; the hits in a changed line are moved to where they are now, so that no new search is needed.
+- "Replace" with no hit gone to yet only goes to the first hit; the replacement of a hit is its own step, and a replacement that does not change the text (the same text) counts as replaced but records no step.
 
 ## Progress
+Done. `ReplacePlan.kt` (the plan: new layers and changes per page, skipped hits; `applyPlan` records one step with `recordStep`), `SearchReplace.kt` (`replaceSelected`, `replaceCurrent`, `replaceAndGoOn`, the results after a replacement), the buttons "Replace selected", "Replace" and "Skip" and the outcome line in the panel, README. Tests: `SearchReplaceTest` (12: one step over 12 pages with undo and redo, unchecked stay and move, several hits in a line, regex groups, status unchanged, stale lines, an edit during the plan, one by one, invalid replacement, nothing to replace, replacing flag, saved and reopened with one step), `SearchUiTest` (2 more). Build green.
