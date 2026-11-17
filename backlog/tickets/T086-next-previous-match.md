@@ -1,6 +1,6 @@
 # T086 Next and previous match: Enter, F3, Shift+F3
 
-**Type:** task · **Status:** ready for development · **Story:** S10 · **Task:** S10.3, S10.7 (the keys of this ticket)
+**Type:** task · **Status:** done · **Story:** S10 · **Task:** S10.3, S10.7 (the keys of this ticket)
 
 ## What needs doing
 - `AppAction.NEXT_MATCH` (F3) and `PREVIOUS_MATCH` (Shift+F3): go to the next (previous) result after the current one, wrapping around at the end of the list, also when the focus is in the text. Enter in the search field is the same as F3, Shift+Enter as Shift+F3.
@@ -23,5 +23,9 @@
 T085.
 
 ## Decisions
+- "The cursor in the line at the hit" is the cursor at the start of the hit, not a selection of it: one rule for a click and for the keys, and typing then replaces nothing by accident.
+- A hit that is the current one is not skipped by "the next after the cursor": with no current hit the next one *after* the cursor's place is taken (a hit at the cursor is passed); with a current hit it is simply the next in the list. The current hit is forgotten when a new search starts.
+- A hit can be on a line without a box (an added line): the cursor goes there, but the scan has nothing to mark.
 
 ## Progress
+Done. `SearchNavigation.kt` (`stepIndex`, `cursorPlace`, `SearchModel.step`), `Place.kt`, `ProjectKeys.stepMatch`, `NEXT_MATCH` (F3) and `PREVIOUS_MATCH` (Shift+F3) in the table and Edit menu (`MenuState.hasMatches`), Enter/Shift+Enter in the search field, `BookEditor.focusHeld` (the text panel does not take the keyboard while the field holds it), the results list scrolls to the current hit, README. Tests: `SearchNavigationTest`, `SearchUiTest` (4 more, real keys), `MenusTest`. Build green.

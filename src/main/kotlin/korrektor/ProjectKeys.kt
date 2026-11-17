@@ -33,6 +33,8 @@ class ProjectKeys(
             AppAction.REDO to { undoOrRedo(undoing = false) },
             AppAction.FIND to { model.search?.show(replace = false) },
             AppAction.REPLACE to { model.search?.show(replace = true) },
+            AppAction.NEXT_MATCH to { stepMatch(forward = true) },
+            AppAction.PREVIOUS_MATCH to { stepMatch(forward = false) },
             AppAction.PREVIOUS_LINE to { moveLine(-1) },
             AppAction.NEXT_LINE to { moveLine(1) },
             AppAction.FIRST_LINE to { model.editor?.firstLine() },

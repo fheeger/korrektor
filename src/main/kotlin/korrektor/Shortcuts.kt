@@ -18,6 +18,8 @@ enum class AppAction {
     REDO,
     FIND,
     REPLACE,
+    NEXT_MATCH,
+    PREVIOUS_MATCH,
     PREVIOUS_LINE,
     NEXT_LINE,
     FIRST_LINE,
@@ -98,6 +100,18 @@ object Shortcuts {
                 "Replace…",
                 "Opens the search panel with the replace field, with a preview of what changes",
                 listOf(KeyCombo(Key.H, ctrl = true)),
+            ),
+            Shortcut(
+                AppAction.NEXT_MATCH,
+                "Next match",
+                "Goes to the next hit of the search (Enter in the search field does the same)",
+                listOf(KeyCombo(Key.F3)),
+            ),
+            Shortcut(
+                AppAction.PREVIOUS_MATCH,
+                "Previous match",
+                "Goes to the previous hit of the search (Shift+Enter in the search field does the same)",
+                listOf(KeyCombo(Key.F3, shift = true)),
             ),
             Shortcut(
                 AppAction.PREVIOUS_LINE,
@@ -268,6 +282,7 @@ private val KEY_NAMES =
         Key.Enter to "Enter",
         Key.NumPadEnter to "NumPad Enter",
         Key.F1 to "F1",
+        Key.F3 to "F3",
     )
 
 /**

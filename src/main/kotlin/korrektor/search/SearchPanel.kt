@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -20,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,10 +31,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
@@ -56,20 +62,22 @@ private val FIELD_SHAPE = RoundedCornerShape(4.dp)
 /**
  * The panel for finding and replacing (S10), between the status bar and the scan and text: the search field with its
  * options and the scope, the replace field if it is shown, a line that says how the search is going, and the list of
- * results. [onOpenResult] shows a result (its index in `model.results`); [onLeave] gives the cursor back to the text
- * when the panel is closed with Escape.
+ * results. [onOpenResult] shows a result (its index in `model.results`); [onStep] goes to the next (true) or the
+ * previous hit (Enter and Shift+Enter in the field); [onLeave] gives the cursor back to the text when the panel is
+ * closed with Escape.
  */
 @Composable
 fun SearchPanel(
     model: SearchModel,
     onOpenResult: (Int) -> Unit,
+    onStep: (Boolean) -> Unit,
     onLeave: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // The search of the page shown follows the page and its text.
     LaunchedEffect(model.editor.page, model.editor.layer) { model.pageChanged() }
     Column(modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp).testTag("search panel")) {
-        QueryRow(model, onLeave)
+        QueryRow(model, onStep, onLeave)
         if (model.showReplace) ReplaceRow(model)
         SummaryRow(model)
         ResultList(model, onOpenResult)
@@ -79,11 +87,13 @@ fun SearchPanel(
 @Composable
 private fun QueryRow(
     model: SearchModel,
+    onStep: (Boolean) -> Unit,
     onLeave: () -> Unit,
 ) {
     val focus = remember { FocusRequester() }
     var field by remember { mutableStateOf(TextFieldValue(model.query.text)) }
     // Ctrl+F and Ctrl+H: the cursor goes into the field and its text is selected, so that typing replaces it.
+    DisposableEffect(Unit) { onDispose { model.editor.focusHeld = false } }
     LaunchedEffect(model.fieldRequests) {
         field = field.copy(selection = TextRange(0, field.text.length))
         focus.requestFocus()
@@ -102,7 +112,9 @@ private fun QueryRow(
             Modifier
                 .weight(1f)
                 .focusRequester(focus)
-                .onPreviewKeyEvent { event -> closeOnEscape(event.type, event.key, model, onLeave) }
+                // While the field has the keyboard, stepping through the hits does not take it away (see `focusHeld`).
+                .onFocusChanged { model.editor.focusHeld = it.isFocused }
+                .onPreviewKeyEvent { event -> fieldKey(event, model, onStep, onLeave) }
                 .testTag("search field"),
         )
         val query = model.query
@@ -122,19 +134,30 @@ private fun QueryRow(
     }
 }
 
-/** Escape closes the panel and the cursor goes back to the text. */
-private fun closeOnEscape(
-    type: KeyEventType,
-    key: Key,
+/**
+ * The keys of the search field that are not typing: Escape closes the panel and the cursor goes back to the text,
+ * Enter goes to the next hit and Shift+Enter to the previous one. Returns whether the key was used.
+ */
+private fun fieldKey(
+    event: KeyEvent,
     model: SearchModel,
+    onStep: (Boolean) -> Unit,
     onLeave: () -> Unit,
 ): Boolean {
-    val escape = type == KeyEventType.KeyDown && key == Key.Escape
-    if (escape) {
-        model.hide()
-        onLeave()
+    val down = event.type == KeyEventType.KeyDown
+    val enter = event.key == Key.Enter || event.key == Key.NumPadEnter
+    return when {
+        down && event.key == Key.Escape -> {
+            model.hide()
+            onLeave()
+            true
+        }
+        down && enter && !event.isCtrlPressed -> {
+            onStep(!event.isShiftPressed)
+            true
+        }
+        else -> false
     }
-    return escape
 }
 
 @Composable
@@ -179,7 +202,13 @@ private fun ResultList(
     onOpenResult: (Int) -> Unit,
 ) {
     if (model.results.isEmpty()) return
-    LazyColumn(Modifier.fillMaxWidth().heightIn(max = RESULTS_HEIGHT).testTag("search results")) {
+    val state = rememberLazyListState()
+    // The list follows the hit that was gone to (F3): it is scrolled to if it is not in view.
+    LaunchedEffect(model.current) {
+        val shown = state.layoutInfo.visibleItemsInfo.map { it.index }
+        if (model.current >= 0 && model.current !in shown) state.scrollToItem(maxOf(0, model.current - 1))
+    }
+    LazyColumn(Modifier.fillMaxWidth().heightIn(max = RESULTS_HEIGHT).testTag("search results"), state) {
         itemsIndexed(model.results) { index, match ->
             val selected = index == model.current
             Row(
