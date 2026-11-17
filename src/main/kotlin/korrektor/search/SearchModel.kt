@@ -89,7 +89,7 @@ class SearchModel(
     var current: Int by mutableIntStateOf(-1)
         internal set
 
-    /** The indices in [results] of the hits whose checkbox is unchecked (S10, replace mode); all are checked at first. */
+    /** The indices in [results] of the hits whose box is unchecked (S10, replace mode); all are checked at first. */
     var excluded: Set<Int> by mutableStateOf(emptySet())
         internal set
 

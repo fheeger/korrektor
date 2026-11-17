@@ -1,7 +1,7 @@
 package korrektor.search
 
-// The preview of a replacement (S10, replace mode): which hits are checked, and what a hit becomes. Nothing here changes
-// the book: only "Replace selected" does that (see `Replace.kt`).
+// The preview of a replacement (S10, replace mode): which hits are checked, and what a hit becomes. Nothing here
+// changes the book: only "Replace selected" does that (see `SearchReplace.kt`).
 
 /** How much of the line is shown on either side of a hit in the preview: before and after take half the row each. */
 private const val PREVIEW_CONTEXT = 15
