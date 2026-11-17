@@ -19,7 +19,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [S06](stories/S06-keyboard-navigation.md) | Keyboard navigation | C2 | done |
 | [S07](stories/S07-autosave.md) | Autosave | N4 | done |
 | [S08](stories/S08-undo-redo.md) | Undo/redo | F1 | in review |
-| [S09](stories/S09-page-status.md) | Page status | C5 | ready for development |
+| [S09](stories/S09-page-status.md) | Page status | C5 | in progress |
 | [S10](stories/S10-find-and-replace.md) | Find and replace with a preview | D2 | ready for development |
 | [S11](stories/S11-export-text-markdown.md) | Export plain text and Markdown | G1 | ready for development |
 
@@ -101,3 +101,10 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T073](tickets/T073-load-history.md) | Load the history when a project is opened, and on demand | task | S08 | done |
 | [T074](tickets/T074-history-tests.md) | History tests: across pages, after reopening, after a crash, speed | task | S08 | done |
 | [T075](tickets/T075-review-fixes.md) | Fixes from the S08 code review | task | S08 | done |
+| [T076](tickets/T076-page-status-format.md) | Page status in the format | task | S09 | ready for development |
+| [T077](tickets/T077-status-in-editor.md) | Page status in the editor: recording, undo, saving, recovery | task | S09 | ready for development |
+| [T078](tickets/T078-show-status-progress.md) | Show the page status and the progress | task | S09 | ready for development |
+| [T079](tickets/T079-change-status.md) | Change the status: Ctrl+Enter, menu and button | task | S09 | ready for development |
+| [T080](tickets/T080-jump-unchecked.md) | Jump to the next or previous unchecked page | task | S09 | ready for development |
+| [T081](tickets/T081-status-tests.md) | Page status tests: undo, crash, 1000 pages | task | S09 | ready for development |
+| [T082](tickets/T082-s09-review-fixes.md) | Fixes from the S09 code review | task | S09 | ready for development |

@@ -1,6 +1,6 @@
 # S09 Page status
 
-**Features:** C5 · **Status:** ready for development
+**Features:** C5 · **Status:** in progress
 
 As a reader of historical sources, I want to mark each page as unchecked or corrected
 so that I know how far I've got and which pages still need work.
@@ -19,10 +19,11 @@ S09 lets you mark each page as unchecked or corrected and shows your progress. A
 - The status is part of the project format (S01). Showing the progress doesn't require loading all the pages, even in a 1000-page book (N1).
 
 ## Tasks
-- [ ] S09.1 Add page status to the format, stored so that all statuses can be read without loading the pages
-- [ ] S09.2 Show the status of the current page and the overall progress
-- [ ] S09.3 Change the status: Ctrl+Enter (mark corrected and go to the next page), menu, button
-- [ ] S09.4 Jump to the next or previous unchecked page
-- [ ] S09.5 Hook into autosave (S07) and undo (S08)
-- [ ] S09.6 Add the shortcuts to the shortcut list (S06.6)
-- [ ] S09.7 Tests: set and undo statuses, jump between unchecked pages, progress in a 1000-page book
+- [ ] S09.1 Add page status to the format, stored so that all statuses can be read without loading the pages → [T076](../tickets/T076-page-status-format.md)
+- [ ] S09.2 Show the status of the current page and the overall progress → [T078](../tickets/T078-show-status-progress.md)
+- [ ] S09.3 Change the status: Ctrl+Enter (mark corrected and go to the next page), menu, button → [T079](../tickets/T079-change-status.md)
+- [ ] S09.4 Jump to the next or previous unchecked page → [T080](../tickets/T080-jump-unchecked.md)
+- [ ] S09.5 Hook into autosave (S07) and undo (S08) → [T077](../tickets/T077-status-in-editor.md)
+- [ ] S09.6 Add the shortcuts to the shortcut list (S06.6) → the table entries are made in [T079](../tickets/T079-change-status.md) and [T080](../tickets/T080-jump-unchecked.md)
+- [ ] S09.7 Tests: set and undo statuses, jump between unchecked pages, progress in a 1000-page book → [T081](../tickets/T081-status-tests.md)
+- [ ] S09.8 Fixes from the code review → [T082](../tickets/T082-s09-review-fixes.md)
