@@ -1,6 +1,6 @@
 # T083 Search engine: one layer or the whole book, within a line
 
-**Type:** task · **Status:** ready for development · **Story:** S10 · **Task:** S10.1
+**Type:** task · **Status:** done · **Story:** S10 · **Task:** S10.1
 
 ## What needs doing
 - `SearchQuery(text, matchCase, wholeWords, regex)` and its compiled form (a `Regex`, or a message why the query is not valid: an empty text finds nothing, a regex that does not compile says why).
@@ -29,5 +29,8 @@ New package `korrektor.search` (`SearchQuery.kt`, `Match.kt`, `Search.kt`). Pure
 None.
 
 ## Decisions
+- Ignoring case is done by hand for a plain text (each letter becomes a set of its cases) and with the ASCII-only flag for a regex: Java's Unicode case folding makes `ſ` equal to `s`, so a search for `ſt` would find every `st`, which is the opposite of "exactly as stored". The price: a regex with match case off does not find `Ä` for `ä`; it says `[äÄ]`.
+- Empty hits are no hits; a regex such as `x*` lists only the real ones.
 
 ## Progress
+Done. `SearchQuery.kt`, `Match.kt`, `Search.kt` in `korrektor.search`; `SearchTest` (16 tests, also a regex that backtracks forever is cancelled). Build green.
