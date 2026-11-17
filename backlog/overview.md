@@ -18,7 +18,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [S05](stories/S05-side-by-side-editor.md) | Scan and text side by side | C1 | in review |
 | [S06](stories/S06-keyboard-navigation.md) | Keyboard navigation | C2 | in review |
 | [S07](stories/S07-autosave.md) | Autosave | N4 | in review |
-| [S08](stories/S08-undo-redo.md) | Undo/redo | F1 | ready for development |
+| [S08](stories/S08-undo-redo.md) | Undo/redo | F1 | in progress |
 | [S09](stories/S09-page-status.md) | Page status | C5 | ready for development |
 | [S10](stories/S10-find-and-replace.md) | Find and replace with a preview | D2 | ready for development |
 | [S11](stories/S11-export-text-markdown.md) | Export plain text and Markdown | G1 | ready for development |
@@ -92,3 +92,11 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T064](tickets/T064-project-lock.md) | Lock the project so that it cannot be opened twice | task | S07 | done |
 | [T065](tickets/T065-autosave-tests.md) | Crash tests, failed saves and speed | task | S07 | done |
 | [T066](tickets/T066-review-fixes.md) | Fixes from the S07 code review | task | S07 | done |
+| [T067](tickets/T067-change-model.md) | The change model: line changes, applying them, and grouping typing | task | S08 | ready for development |
+| [T068](tickets/T068-record-steps.md) | Record steps: the undo and redo stacks of the editor | task | S08 | ready for development |
+| [T069](tickets/T069-undo-redo-logic.md) | Undo and redo in the editor, also on another page | task | S08 | ready for development |
+| [T070](tickets/T070-undo-keys-menu.md) | Keys, menu and list for undo and redo | task | S08 | ready for development |
+| [T071](tickets/T071-history-file.md) | The history file and its entries | task | S08 | ready for development |
+| [T072](tickets/T072-history-with-saves.md) | History saved together with the pages, and recovery after a crash | task | S08 | ready for development |
+| [T073](tickets/T073-load-history.md) | Load the history when a project is opened, and on demand | task | S08 | ready for development |
+| [T074](tickets/T074-history-tests.md) | History tests: across pages, after reopening, after a crash, speed | task | S08 | ready for development |
