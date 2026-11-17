@@ -1,6 +1,6 @@
 # S07 Autosave
 
-**Features:** N4 · **Status:** in review
+**Features:** N4 · **Status:** done
 
 As a reader of historical sources, I want my corrections to be saved automatically
 so that I never lose work, even if the app crashes.

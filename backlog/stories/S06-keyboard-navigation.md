@@ -1,6 +1,6 @@
 # S06 Keyboard navigation
 
-**Features:** C2 · **Status:** in review
+**Features:** C2 · **Status:** done
 
 As a reader of historical sources, I want to move between lines and pages with the keyboard
 so that I can correct quickly without reaching for the mouse.
