@@ -1,8 +1,11 @@
 package korrektor
 
+import korrektor.editor.BookEditor
+import korrektor.editor.HistoryRecovery
 import korrektor.editor.SaveOutcome
 import korrektor.editor.unsaved
 import korrektor.format.FormatException
+import korrektor.format.HistoryCodec
 import korrektor.format.PageLayer
 import korrektor.format.Project
 import korrektor.format.ProjectLock
@@ -119,13 +122,18 @@ private suspend fun AppModel.copyAndOpen(
     open: Project,
     parent: Path,
 ): Boolean {
-    val unsaved = editor?.unsaved() ?: emptyMap()
     val target = freeFolderIn(parent, open.folder.fileName.toString())
     val problem =
         if (isInside(parent, open.folder)) {
             "${open.folder.fileName} cannot be saved into itself: choose a folder outside of it"
         } else {
-            copyWithChanges(open, target, unsaved)
+            // No save may run meanwhile: it would add to the history that is being copied.
+            val idle = saver
+            if (idle != null) {
+                idle.whileIdle { copyWithChanges(open, target, editor) }
+            } else {
+                copyWithChanges(open, target, editor)
+            }
         }
     if (problem == null) {
         closeProject()
@@ -139,17 +147,27 @@ private suspend fun AppModel.copyAndOpen(
     return problem == null
 }
 
-/** Copies [open] to [target] and writes [unsaved] into the copy. Returns why it failed, or null. */
+/**
+ * Copies [open] to [target], and writes the unsaved pages of [editor] and its pending history entries into the copy
+ * (the entries first, as a save does), so that the copy's pages and history agree and what was typed can be undone
+ * there. Returns why it failed, or null.
+ */
 private suspend fun copyWithChanges(
     open: Project,
     target: Path,
-    unsaved: Map<Int, PageLayer>,
+    editor: BookEditor?,
 ): String? =
     try {
         withContext(Dispatchers.IO) {
             open.copyTo(target)
             val copy = Project.open(target)
+            // The layers and the entries they contain are taken together, as for a save (but not drained).
+            val (unsaved, entries) =
+                editor?.let { synchronized(it.changedLock) { it.unsaved() to it.history.pendingEntries } }
+                    ?: (emptyMap<Int, PageLayer>() to emptyList())
+            if (entries.isNotEmpty()) copy.historyLog.appendAll(entries.map(HistoryCodec::encode))
             for ((page, layer) in unsaved) copy.writePage(page, layer)
+            HistoryRecovery.recover(copy) // nothing to repair; it adds the `saved` entry
         }
         null
     } catch (e: FormatException) {

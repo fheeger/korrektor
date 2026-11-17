@@ -17,7 +17,7 @@ A project is a folder named `<title>.korrektur`:
 │   ├── 0001.json         corrected layer of page 1
 │   └── …
 ├── history/
-│   └── 0001.jsonl        undo history of page 1, append-only
+│   └── book.jsonl        undo history of the whole book, append-only
 └── .lock                 where the app takes its lock while the project is open (S07), not content
 ```
 
@@ -129,7 +129,8 @@ Corrected layer of the same page: `rnng` is corrected to `rung`, and a line was 
       {"id": "l2", "box": [40.0, 64.0, 227.4, 10.2], "origin": "l2", "words": [["rung", 40.0, 64.0, 26.0, 10.2], ["iſt", 70.0, 64.0, 12.0, 10.2], ["nuͤtzlich", 86.0, 64.0, 42.0, 10.2]]},
       {"id": "l3", "words": [["Anmerkung"]]}
     ]}
-  ]
+  ],
+  "history": 4
 }
 ```
 
@@ -141,6 +142,7 @@ Corrected layer of the same page: `rnng` is corrected to `rung`, and a line was 
 | `width`, `height` | number > 0 | page size in points |
 | `regions` | array | the regions; written one region per block. An empty page is `"regions": []` |
 | `note` | string, optional | a short message about the page for the user, written after `regions` and kept in both layers; the import sets it on a page it could not get text from (see below) |
+| `history` | integer, optional | the number (`seq`) of the last entry of the [history](#history-file) that changed this page and is in this file; left out for a page that was never changed since the import. Written after `note` |
 
 A page the import found no text on, or could not read, is an empty page with a note:
 
@@ -207,21 +209,48 @@ Any object (page, region, line, word object) can carry unknown fields. They are 
 }
 ```
 
-## History files
+## History file
 
-`history/NNNN.jsonl` holds the undo history of one page as [JSON Lines](https://jsonlines.org/): one JSON object per line, written compactly with alphabetical keys, each line ending in LF. What an entry contains is defined by the undo feature (S08); this format only fixes the framing:
+`history/book.jsonl` holds the undo history of the **whole book** as [JSON Lines](https://jsonlines.org/): one JSON object per line, written compactly with alphabetical keys, each line ending in LF. One file for the book (not one per page) because undo goes back through the changes in the order they were made, over all pages. Its entries are counted: every entry that changes pages has a `seq`, which starts at 1 and goes up by one over all entries of the book.
 
 ```json history
-{"line": "l2", "new": "rung", "old": "rnng", "seq": 1, "type": "replace-word"}
-{"line": "l3", "seq": 2, "type": "add-line"}
+{"changes": [{"index": 1, "inserted": [{"box": [40.0, 64.0, 227.4, 10.2], "id": "l2", "origin": "l2", "words": [["rung", 40.0, 64.0, 26.0, 10.2], ["iſt", 70.0, 64.0, 12.0, 10.2], ["nuͤtzlich", 86.0, 64.0, 42.0, 10.2]]}], "page": 3, "region": "r1", "removed": [{"box": [40.0, 64.0, 227.4, 10.2], "id": "l2", "origin": "l2", "words": [["rnng", 40.0, 64.0, 26.0, 10.2], ["iſt", 70.0, 64.0, 12.0, 10.2], ["nuͤtzlich", 86.0, 64.0, 42.0, 10.2]]}], "type": "lines"}], "seq": 1, "type": "edit"}
+{"changes": [{"index": 2, "inserted": [{"id": "l3", "words": [["Anmerkung"]]}], "page": 3, "region": "r1", "removed": [], "type": "lines"}], "seq": 2, "type": "edit"}
+{"changes": [{"index": 2, "inserted": [], "page": 3, "region": "r1", "removed": [{"id": "l3", "words": [["Anmerkung"]]}], "type": "lines"}], "seq": 3, "step": 2, "type": "undo"}
+{"changes": [{"index": 2, "inserted": [{"id": "l3", "words": [["Anmerkung"]]}], "page": 3, "region": "r1", "removed": [], "type": "lines"}], "seq": 4, "step": 2, "type": "redo"}
+{"type": "saved", "upTo": 4}
 ```
 
-(The entries above only illustrate the framing.)
+The example is the history of the corrected page above: the word `rnng` was corrected (entry 1), a line was added (2), the addition was undone (3) and redone (4); all of it was written (`saved`).
 
-- The file is **append-only**. Existing lines are never rewritten or removed; an undo adds an entry.
+**Entries.** The `type` says what an entry is:
+
+| `type` | Fields | Meaning |
+|---|---|---|
+| `edit` | `seq`, `changes` | a step: the user changed the text. It is what one press of undo takes back |
+| `undo` | `seq`, `step`, `changes` | step `step` (the `seq` of an `edit`) was undone. `changes` are what was done to the pages to undo it: the inverted changes of the step, in reverse order |
+| `redo` | `seq`, `step`, `changes` | step `step` was redone. `changes` are the changes of the step |
+| `saved` | `upTo` | all entries with a `seq` up to `upTo` are in the page files |
+
+Every entry with `changes` can be applied by making its changes in order, whatever its type; `step` only says which step it undoes or redoes. A step that was undone can be redone as long as no `edit` entry comes after the `undo`; an `edit` after an undo ends the redo steps. Entries of a type that is not in this table are kept and ignored.
+
+**Changes.** A change is an object with `type`, `page` (the page of the book, from 1, as in the file names of `pages/`) and, for the one type there is so far:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `type` | `"lines"` | in the region `region` of the page, replace the lines `removed` that start at position `index` of the region's `lines` with the lines `inserted` |
+| `region` | string | the `id` of the region |
+| `index` | integer ≥ 0 | the position (from 0) in the region's lines, counted in the state the changes before it in the same entry left |
+| `removed`, `inserted` | arrays of lines | written like the lines of a page file, with alphabetical keys, complete with words and boxes; either may be empty |
+| `regionBefore`, `regionAfter` | `false`, optional | the region did not exist before the change / is removed after it (a region is only made by adding the first line of a page without regions, and goes again when that is undone). Left out when true |
+
+A change of another `type` is kept and cannot be made. Typing is one `lines` change that replaces the line by the line as it is now; a split replaces one line by two, a join two by one, an added line replaces none by one, a deleted line one by none.
+
+- The file is **append-only**. Existing lines are never rewritten or removed; undoing adds an entry.
 - A line counts only once its newline is written. A **torn last line** (without newline, after a crash) is ignored by readers and cut off before the next entry is added.
 - Readers find the latest entries by reading from the end of the file; they do not need to read all of it.
 - An invalid line anywhere else is an error that names the line. It is never skipped silently.
+- **Entries and page files agree.** The app appends the entries of a save, then writes the page files, then appends `saved`. A page file carries `history`: the `seq` of the last entry that changed it. After a crash, the app makes the changes of the entries after the last `saved` that a page file does not have yet (those with a `seq` above its `history`), so that history and pages agree again.
 
 ## Guarantees
 
@@ -229,7 +258,7 @@ Any object (page, region, line, word object) can carry unknown fields. They are 
 - The original OCR layer of a page is written once and never changed.
 - Opening and saving without changes leaves every file byte-for-byte identical.
 - Reading one page reads only that page's files, not the whole book.
-- An interrupted save leaves each file either old or new, never broken. The history can lose at most its last, unfinished line.
+- An interrupted save leaves each file either old or new, never broken. The history can lose at most its last, unfinished line, and after a crash the history and the pages agree again (see "History file").
 - Unknown fields survive opening and saving.
 
 ## Extending the format

@@ -95,7 +95,8 @@ class AutosaveFlowTest {
             .walk()
             .filter { Files.isRegularFile(it) }
             .filter { it.fileName.toString() != ".lock" }
-            .filter { !Regex("""\d+\.json(\.tmp)?""").matches(it.fileName.toString()) } // the corrected layers
+            // the corrected layers and the history
+            .filter { !Regex("""(\d+\.json|book\.jsonl)(\.tmp)?""").matches(it.fileName.toString()) }
             .associate { folder.relativize(it).toString() to it.readBytes() }
 
     @Test

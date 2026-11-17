@@ -6,7 +6,15 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class MenusTest {
-    private val open = MenuState(projectOpen = true, hasPreviousPage = true, hasNextPage = true, pageHasLines = true)
+    private val open =
+        MenuState(
+            projectOpen = true,
+            hasPreviousPage = true,
+            hasNextPage = true,
+            pageHasLines = true,
+            canUndo = true,
+            canRedo = true,
+        )
 
     private fun items(state: MenuState) = menus(state).flatMap { it.groups }.flatten()
 
@@ -30,8 +38,8 @@ class MenusTest {
     }
 
     @Test
-    fun theMenusAreGoViewAndHelp() {
-        assertEquals(listOf("Go", "View", "Help"), menus(open).map { it.title })
+    fun theMenusAreEditGoViewAndHelp() {
+        assertEquals(listOf("Edit", "Go", "View", "Help"), menus(open).map { it.title })
     }
 
     @Test
@@ -67,6 +75,31 @@ class MenusTest {
         }
         assertTrue(AppAction.NEXT_PAGE in enabled)
         assertTrue(AppAction.ZOOM_IN in enabled)
+    }
+
+    @Test
+    fun undoAndRedoAreEnabledOnlyWhenThereIsSomethingToDo() {
+        assertFalse(AppAction.UNDO in open.copy(canUndo = false).enabled())
+        assertTrue(AppAction.REDO in open.copy(canUndo = false).enabled())
+        assertFalse(AppAction.REDO in open.copy(canRedo = false).enabled())
+        assertTrue(AppAction.UNDO in open.copy(canRedo = false).enabled())
+        val edit = menus(open).first()
+        assertEquals("Edit", edit.title)
+        assertEquals(listOf(AppAction.UNDO, AppAction.REDO), edit.groups.flatten().map { it.action })
+        assertTrue(
+            edit.groups
+                .flatten()
+                .first()
+                .text
+                .endsWith("Ctrl+Z"),
+        )
+        assertTrue(
+            edit.groups
+                .flatten()
+                .last()
+                .text
+                .endsWith("Ctrl+Y"),
+        )
     }
 
     @Test

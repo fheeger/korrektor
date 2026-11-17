@@ -160,4 +160,87 @@ class HistoryLogTest {
                 previous = now
             }
         }
+
+    @Test
+    fun appendAllWritesSeveralEntriesInOrderAndMatchesSingleAppends() =
+        withFile { file ->
+            val log = HistoryLog(file)
+            log.append(entry(1))
+            log.appendAll((2..6).map { entry(it) })
+            log.appendAll(emptyList()) // nothing, and the file is not touched
+            val single = HistoryLog(file.resolveSibling("single.jsonl"))
+            (1..6).forEach { single.append(entry(it)) }
+            assertContentEquals(file.readBytes(), file.resolveSibling("single.jsonl").readBytes())
+            assertEquals((1..6).map { entry(it) }, log.readAll())
+        }
+
+    @Test
+    fun aTornLineIsCutOffBeforeAppendAllToo() =
+        withFile { file ->
+            val log = HistoryLog(file)
+            log.appendAll((1..3).map { entry(it) })
+            file.writeBytes(file.readBytes() + "{\"seq\": 4, \"te".toByteArray())
+            log.appendAll(listOf(entry(4), entry(5)))
+            assertEquals((1..5).map { entry(it) }, log.readAll())
+        }
+
+    @Test
+    fun endIsTheOffsetAfterTheLastCompleteLine() =
+        withFile { file ->
+            val log = HistoryLog(file)
+            assertEquals(0L, log.end)
+            log.append(entry(1))
+            assertEquals(file.readBytes().size.toLong(), log.end)
+            val complete = log.end
+            file.writeBytes(file.readBytes() + "{\"seq\": 2".toByteArray())
+            assertEquals(complete, log.end, "a torn line does not count")
+        }
+
+    @Test
+    fun readBeforeGoesBackwardsInPiecesToTheStart() =
+        withFile { file ->
+            val log = HistoryLog(file)
+            val all = (1..250).map { entry(it, "uͤber ${"x".repeat(it % 40)}") }
+            log.appendAll(all)
+            val seen = ArrayDeque<JsonObject>()
+            var at = log.end
+            while (true) {
+                val block = log.readBefore(at, 37)
+                if (block.entries.isEmpty()) break
+                assertEquals(
+                    all.subList(all.size - seen.size - block.entries.size, all.size - seen.size),
+                    block.entries,
+                )
+                block.entries.reversed().forEach { seen.addFirst(it) }
+                at = block.start
+            }
+            assertEquals(all, seen)
+            assertEquals(0L, at)
+            assertEquals(emptyList(), log.readBefore(0, 5).entries)
+        }
+
+    @Test
+    fun readBeforeReadsOnlyWhatTheEntriesNeed() =
+        withFile { file ->
+            val log = HistoryLog(file)
+            log.appendAll((1..100_000).map { entry(it) })
+            val total = file.readBytes().size
+            val reader = HistoryLog(file)
+            val first = reader.readBefore(reader.end, 100)
+            assertEquals((99_901..100_000).map { entry(it) }, first.entries)
+            val second = reader.readBefore(first.start, 100)
+            assertEquals((99_801..99_900).map { entry(it) }, second.entries)
+            assertTrue(reader.bytesRead < total / 50, "read ${reader.bytesRead} of $total bytes")
+        }
+
+    @Test
+    fun readBeforeHandlesEntriesLargerThanABlock() =
+        withFile { file ->
+            val log = HistoryLog(file)
+            val big = (1..5).map { entry(it, "ſ".repeat(20_000 + it)) }
+            log.appendAll(big)
+            val block = log.readBefore(log.end, 2)
+            assertEquals(big.takeLast(2), block.entries)
+            assertEquals(big.dropLast(2).takeLast(3), log.readBefore(block.start, 3).entries)
+        }
 }

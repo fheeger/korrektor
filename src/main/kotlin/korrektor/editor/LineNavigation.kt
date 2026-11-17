@@ -54,11 +54,23 @@ fun BookEditor.arriveAt(
     arriving = number to arrival
 }
 
-/** Carries out the wish of [arriveAt] if it is for page [number], once the page's lines are there. */
+/**
+ * Carries out the wish for the cursor on page [number], once the page's lines are there: the place of an undo or redo
+ * (`pendingFocus`) or the first or last line ([arriveAt]), whichever was asked for. It is used once.
+ */
 internal fun BookEditor.applyArrival(number: Int) {
-    val (target, arrival) = arriving ?: return
-    if (target != number) return
-    arriving = null
-    val line = if (arrival == Arrival.LAST) lines.lastOrNull() else lines.firstOrNull()
-    if (line != null) requestFocus(line.id, 0)
+    val place = pendingFocus?.takeIf { it.first == number }?.second
+    pendingFocus = null
+    val (target, arrival) = arriving ?: (null to null)
+    val line =
+        when {
+            place != null || target != number -> null
+            arrival == Arrival.LAST -> lines.lastOrNull()
+            else -> lines.firstOrNull()
+        }
+    if (target == number) arriving = null
+    when {
+        place != null -> requestFocus(place.lineId, place.index)
+        line != null -> requestFocus(line.id, 0)
+    }
 }

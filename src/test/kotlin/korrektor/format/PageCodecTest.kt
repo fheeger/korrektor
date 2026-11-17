@@ -243,4 +243,34 @@ class PageCodecTest {
         assertInvalid("{$head, \"note\": 5}", "page.note")
         assertInvalid("{$head, \"note\": [\"a\"]}", "page.note")
     }
+
+    @Test
+    fun theHistoryNumberOfAPageIsWrittenAfterTheNoteAndReadBack() {
+        val page = samplePage().copy(note = "No text on this page.", history = 17)
+        val text = PageCodec.encode(page)
+        assertTrue(text.contains("  \"note\": \"No text on this page.\",\n  \"history\": 17\n}"), text)
+        assertEquals(page, PageCodec.decode(text))
+        assertEquals(text, PageCodec.encode(PageCodec.decode(text)))
+    }
+
+    @Test
+    fun aPageWithoutAHistoryNumberIsWrittenAsBefore() {
+        val page = samplePage()
+        assertEquals(null, page.history)
+        assertTrue(!PageCodec.encode(page).contains("history"))
+        assertEquals(page, PageCodec.decode(PageCodec.encode(page)))
+    }
+
+    @Test
+    fun aPageWithoutAHistoryNumberButWithOtherUnknownFieldsKeepsThem() {
+        val page = extraPage().copy(history = 3)
+        assertEquals(page, PageCodec.decode(PageCodec.encode(page)))
+    }
+
+    @Test
+    fun aHistoryNumberThatIsNotAnIntegerIsAnError() {
+        val text = PageCodec.encode(samplePage()).replace("\n}\n", ",\n  \"history\": \"x\"\n}\n")
+        val e = assertFailsWith<FormatException> { PageCodec.decode(text) }
+        assertTrue("history" in e.message!!, e.message)
+    }
 }

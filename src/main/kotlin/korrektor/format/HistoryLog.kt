@@ -24,8 +24,15 @@ class HistoryLog(
         private set
 
     /** Adds [entry] as a new last line and flushes it to disk. Existing lines are never rewritten. */
-    fun append(entry: JsonObject) {
-        val line = (CanonicalJson.write(entry) + "\n").toByteArray(Charsets.UTF_8)
+    fun append(entry: JsonObject) = appendAll(listOf(entry))
+
+    /**
+     * Adds [entries] as new last lines, in one write and one flush: either all of them are in the file afterwards or,
+     * after a crash, a part of them (a torn last line is ignored). Existing lines are never rewritten.
+     */
+    fun appendAll(entries: List<JsonObject>) {
+        if (entries.isEmpty()) return
+        val bytes = entries.joinToString("") { CanonicalJson.write(it) + "\n" }.toByteArray(Charsets.UTF_8)
         try {
             file.parent?.createDirectories()
             val options = setOf(StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE)
@@ -33,40 +40,95 @@ class HistoryLog(
                 val end = completeEnd(channel)
                 if (end < channel.size()) channel.truncate(end)
                 channel.position(end)
-                val buffer = ByteBuffer.wrap(line)
-                while (buffer.hasRemaining()) channel.write(buffer)
-                channel.force(true)
+                writeAt(channel, end, bytes)
             }
         } catch (e: IOException) {
             throw FormatException("Cannot write $file: ${e.reason()}", e)
         }
     }
 
+    /** Writes [bytes] at [end], the end of the complete lines, and flushes. On failure none of them is left behind. */
+    private fun writeAt(
+        channel: FileChannel,
+        end: Long,
+        bytes: ByteArray,
+    ) {
+        val buffer = ByteBuffer.wrap(bytes)
+        try {
+            while (buffer.hasRemaining()) channel.write(buffer)
+            channel.force(true)
+        } catch (e: IOException) {
+            // Entries must be all in or all out: a part of them left behind would be written again by a retry.
+            runCatching { channel.truncate(end) }
+            throw e
+        }
+    }
+
+    /** The offset after the last complete line: where the next entry goes, and where reading backwards starts. */
+    val end: Long
+        get() {
+            if (!file.exists()) return 0
+            try {
+                return FileChannel.open(file, StandardOpenOption.READ).use { completeEnd(it) }
+            } catch (e: IOException) {
+                throw FormatException("Cannot read $file: ${e.reason()}", e)
+            }
+        }
+
+    /** Entries read backwards: those just before an offset (oldest first), and the offset where the first begins. */
+    class Block(
+        val entries: List<JsonObject>,
+        val start: Long,
+    )
+
     /** The last [n] entries, oldest first. Reads blocks from the end of the file, never the whole file. */
-    fun readLast(n: Int): List<JsonObject> {
+    fun readLast(n: Int): List<JsonObject> = readBefore(end, n).entries
+
+    /**
+     * Up to [n] complete entries that end at [end] (an offset that follows a newline: [end] itself, or the `start` of
+     * a [Block]), oldest first, and the offset where the first of them begins, so that the next call can go on from
+     * there. Reads blocks backwards from [end], never more than the entries need.
+     */
+    fun readBefore(
+        end: Long,
+        n: Int,
+    ): Block {
         require(n >= 0) { "n must not be negative" }
-        if (n == 0 || !file.exists()) return emptyList()
+        if (n == 0 || end <= 0 || !file.exists()) return Block(emptyList(), end)
         try {
             FileChannel.open(file, StandardOpenOption.READ).use { channel ->
-                val end = completeEnd(channel)
                 var start = end
                 val chunks = ArrayDeque<ByteArray>()
-                var newlines = 0
+                var seen = 0
                 // n complete lines need n + 1 newlines (the one before the oldest wanted line), or the file start.
-                while (start > 0 && newlines <= n) {
+                while (start > 0 && seen <= n) {
                     val size = minOf(BLOCK_SIZE.toLong(), start).toInt()
                     start -= size
                     val chunk = ByteArray(size)
                     channel.position(start)
                     channel.read(ByteBuffer.wrap(chunk)).also { bytesRead += it }
-                    newlines += chunk.count { it == NEWLINE }
+                    seen += chunk.count { it == NEWLINE }
                     chunks.addFirst(chunk)
                 }
-                val text = CanonicalJson.decodeUtf8(chunks.fold(ByteArray(0)) { a, b -> a + b }, file)
-                var lines = text.split('\n').dropLast(1) // the text ends with a newline
-                if (start > 0) lines = lines.drop(1) // the first line may be cut by the block
-                val wanted = lines.takeLast(n)
-                return wanted.mapIndexed { i, l -> parse(l, "${wanted.size - i} from the end") }
+                val all = ByteArray(chunks.sumOf { it.size })
+                var position = 0
+                for (chunk in chunks) {
+                    chunk.copyInto(all, position)
+                    position += chunk.size
+                }
+                // Where each line starts in [all]; the piece before the first newline is cut by the block, unless the
+                // file starts there. The last element is the end of [all]: the start of no line.
+                val newlines = all.indices.filter { all[it] == NEWLINE }.map { it + 1 }
+                val starts = (if (start == 0L) listOf(0) else emptyList()) + newlines
+                val wanted = starts.zipWithNext { from, next -> from to next - 1 }.takeLast(n)
+                val entries =
+                    wanted.mapIndexed { i, (from, to) ->
+                        parse(
+                            CanonicalJson.decodeUtf8(all.copyOfRange(from, to), file),
+                            "${wanted.size - i} before $end",
+                        )
+                    }
+                return Block(entries, start + (wanted.firstOrNull()?.first ?: all.size))
             }
         } catch (e: IOException) {
             throw FormatException("Cannot read $file: ${e.reason()}", e)
