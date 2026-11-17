@@ -1,6 +1,6 @@
 # T068 Record steps: the undo and redo stacks of the editor
 
-**Type:** task · **Status:** ready for development · **Story:** S08 · **Task:** S08.2
+**Type:** task · **Status:** done · **Story:** S08 · **Task:** S08.2
 
 Every change of the text becomes a step in the history of the open book.
 
@@ -28,7 +28,11 @@ Every change of the text becomes a step in the history of the open book.
 T067.
 
 ## Decisions
-Written down while working.
+- **One lock for history and layers.** `UndoHistory` owns the lock and `BookEditor.changedLock` is that same lock (the editor exposes it), so history and unsaved layers are guarded together. An edit records its step and puts its layer in one `synchronized` block, so the saver (T072) that takes the unsaved layers and `drainPending()` together never gets an entry without its layer or the other way round.
+- **A dropped step gives its number back and its stamp back.** If typing and deleting cancel out, the step is removed, `nextSeq` goes back (it was the newest entry) and the layer gets the `history` it had before the typing began (kept in the open step), so no page file can ever carry a number that the history file lacks.
+- **Typing only merges into the step that is on top and open;** a drain, a page change, another kind of edit, an undo or a redo close it. Because a saved step cannot be changed (the file is append-only), continuous typing across a save starts a new step.
+- **`PageLayer.history` exists now, the file does not write it yet:** T071 adds it to the codec and the spec. Tests compare layers with `copy(history = null)` where a layer after an undo is compared with the one before.
+- **Criterion 3 (redo steps are cleared by a new edit) is tested in T069,** when there is an undo that fills the redo stack; `UndoHistory.record` clears it and `UndoTest` checks it.
 
 ## Progress
-Not started.
+Done. `UndoHistory`, `Recording.kt` (`oneStep`, `recordStep`, `recordEdit`, `put`), `HistoryEntry.kt` (`EditEntry`), `PageLayer.history`, changes in `BookEditor` (constructor takes a clock and the history) and `TextPanel` (Enter). Tests: `RecordingTest` (13). Build, tests, ktlint and Detekt are green; the new files are covered (lines 77/78 in `UndoHistory`, the rest fully).

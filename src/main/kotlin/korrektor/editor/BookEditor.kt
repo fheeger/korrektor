@@ -11,6 +11,8 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.CancellationException
 import java.util.concurrent.ConcurrentHashMap
 
+private const val NANOS_PER_MILLI = 1_000_000L
+
 /** A request to put the cursor at [focus]. A new request has a new [serial], also if the place is the same. */
 class FocusRequest(
     val focus: Focus,
@@ -36,12 +38,16 @@ enum class LineMove { MOVED, PREVIOUS_PAGE, NEXT_PAGE, NOTHING }
 class BookEditor(
     private val readPage: (Int) -> PageLayer,
     private val io: CoroutineDispatcher,
+    /** The clock in milliseconds that decides when typing pauses (see [TypingGroups]); tests replace it. */
+    internal val now: () -> Long = { System.nanoTime() / NANOS_PER_MILLI },
+    /** The undo and redo steps of the book (S08). */
+    val history: UndoHistory = UndoHistory(),
 ) {
     // Every page changed in this session with its latest layer. Written on the UI thread only, read by the saver too.
     internal val changed = ConcurrentHashMap<Int, PageLayer>()
 
-    // Guards the changes of [changedPages], which the UI thread (an edit) and the saver (markSaved) both make.
-    internal val changedLock = Any()
+    // Guards the changes of [changedPages] and of the history, which the UI thread (an edit) and the saver both make.
+    internal val changedLock: Any get() = history.lock
 
     /** Called after every edit that changed a layer (the saver starts its timer here); not by [show]. */
     var onUnsaved: (() -> Unit)? = null
@@ -49,6 +55,10 @@ class BookEditor(
 
     /** The page the cursor is wanted on when it is shown, and where on it (see [arriveAt]). */
     internal var arriving: Pair<Int, Arrival>? = null
+
+    // While `oneStep` runs: how deep it is, and the layer the first edit inside started from (see Recording.kt).
+    internal var grouping = 0
+    internal var groupStart: PageLayer? = null
 
     /** Counts the requests to give the text panel itself the focus (no line to put the cursor in). */
     internal var panelFocusRequests: Int by mutableIntStateOf(0)
@@ -65,7 +75,7 @@ class BookEditor(
 
     /** The corrected layer of the page shown, or null while it is being read or if it could not be read. */
     var layer: PageLayer? by mutableStateOf(null)
-        private set
+        internal set
 
     /** Why the page could not be read, if it could not. */
     var error: String? by mutableStateOf(null)
@@ -93,6 +103,7 @@ class BookEditor(
     suspend fun show(number: Int) {
         // A wish for the cursor on another page is stale (the page it was for was never shown): drop it.
         if (arriving?.first != number) arriving = null
+        history.seal() // typing on the page before and typing on this one are not one step
         page = number
         layer = null
         error = null
@@ -128,7 +139,12 @@ class BookEditor(
     fun setLineText(
         lineId: String,
         text: String,
-    ) = edit { PageEdits.setLineText(it, lineId, text) }
+    ) {
+        val current = layer ?: return
+        // Typing is grouped into steps by what the edit did to the text, which the layer before it knows.
+        val typed = Typed(page, lineId, TypingGroups.textEdit(find(current, lineId).text, text))
+        edit(typed) { PageEdits.setLineText(it, lineId, text) }
+    }
 
     fun splitLine(
         lineId: String,
@@ -162,15 +178,14 @@ class BookEditor(
         focusRequest = FocusRequest(Focus(lineId, index), ++serial)
     }
 
-    private fun edit(change: (PageLayer) -> EditResult) {
+    private fun edit(
+        typed: Typed? = null,
+        change: (PageLayer) -> EditResult,
+    ) {
         val current = layer ?: return
         val result = change(current)
         if (result.layer !== current) {
-            layer = result.layer
-            synchronized(changedLock) {
-                changed[page] = result.layer
-                changedPages = changedPages + page
-            }
+            recordEdit(current, result.layer, typed)
             onUnsaved?.invoke()
         }
         val focus = result.focus
