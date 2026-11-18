@@ -18,6 +18,8 @@ class MenusTest {
             hasPreviousUnchecked = true,
             hasMatches = true,
             replaceShown = true,
+            hasCurrentMatch = true,
+            hasCheckedMatches = true,
         )
 
     private fun items(state: MenuState) = menus(state).flatMap { it.groups }.flatten()
@@ -83,7 +85,15 @@ class MenusTest {
         val all = setOf(replacing.first, replacing.second, AppAction.REPLACE_MARKED)
         assertTrue(open.enabled().containsAll(all))
         assertTrue(open.copy(replaceShown = false).enabled().none { it in all }, "the replace field is hidden")
-        assertTrue(open.copy(hasMatches = false).enabled().none { it in all })
+        assertTrue(
+            open.copy(hasMatches = false, hasCurrentMatch = false, hasCheckedMatches = false).enabled().none {
+                it in
+                    all
+            },
+        )
+        assertFalse(AppAction.TOGGLE_MARK in open.copy(hasCurrentMatch = false).enabled())
+        assertFalse(AppAction.REPLACE_MARKED in open.copy(hasCheckedMatches = false).enabled())
+        assertTrue(AppAction.REPLACE_ONE in open.copy(hasCurrentMatch = false).enabled(), "it goes to the first hit")
     }
 
     @Test

@@ -38,6 +38,7 @@ S10 searches and replaces in the corrected text, on the current page or across t
 - [x] S10.8 Tests: search options, replacing across many pages with undo, speed in a 1000-page book → [T089](../tickets/T089-search-tests.md)
 - [x] S10.9 Fixes from the code review → [T090](../tickets/T090-s10-review-fixes.md)
 - [x] S10.10 Review feedback: replace mode with keyboard shortcuts and nothing checked by default; Ctrl+F back to search mode → [T091](../tickets/T091-replace-mode-keyboard.md)
+- [x] S10.11 Fixes from the second code review → [T092](../tickets/T092-s10-second-review-fixes.md)
 
 ## Report
 
@@ -48,7 +49,8 @@ S10 searches and replaces in the corrected text, on the current page or across t
 - **Next / previous** (T086): Enter, F3, Shift+Enter, Shift+F3, wrapping; the search field keeps the keyboard while stepping; Edit menu entries and the F1 list.
 - **Preview** (T087): with the replace field shown each result has a checkbox and shows before → after; `$1` works for a regex; nothing changes until confirmed.
 - **Replace** (T088): *Replace selected* is one undo step over all pages (`recordStep`), saved by autosave, statuses untouched; *Replace* and *Skip* go through hits one by one.
-- **Tests** (T089) and **review fixes** (T090).
+- **Replace mode by keyboard** (T091, from the user's review): nothing is checked by default; Ctrl+M checks the hit shown, Ctrl+R is *Replace*, Ctrl+Shift+R is *Replace selected*; Ctrl+F in replace mode goes back to searching, keeping everything.
+- **Tests** (T089) and **review fixes** (T090, T092).
 
 ### Decisions
 - `s` does not find `ſ`: a plain search folds case per letter by hand; a regex folds ASCII only (Java's Unicode folding would equate them).
@@ -66,12 +68,14 @@ S10 searches and replaces in the corrected text, on the current page or across t
 - **Preview and checkboxes:** `SearchSelectionTest`, `SearchUiTest`.
 - **One undo step, autosave, status:** `SearchReplaceTest`, `SearchFlowTest` (save, reopen, simulated crash), `HistoryCrashTest` (12 kills with a replace on all pages every sixth round), `SearchPerfTest` (1000 hits on 1000 pages in 0.4 s, undo 75 ms). The sample (165 pages): "Krieg" 14 hits in 389 ms, replaced by "Kampf" on 13 pages, one undo puts all back.
 - **Step by step:** `SearchReplaceTest`, `SearchUiTest`.
+- **Replace keys, nothing checked, Ctrl+F back (T091):** `SearchUiTest` (real keys), `SearchSelectionTest`, `MenusTest`.
 - **Shortcuts in menus and list:** `MenusTest`, `ShortcutsTest`, `ShortcutListTest`.
 
 ### Code review (Opus 5.5, whole story)
 One high finding, fixed in T090: in "This page" scope a step-by-step Replace jumped over a hit, because the replacement made the panel search the page again. Two medium, fixed: a new query typed during a replacement could leave wrongly moved hits in the new results; "Whole words" treated a combining mark (`zuͤ`) as a word boundary. Low ones fixed: wrap-around after replacing the last hit, Enter and Escape in the replace field, wording of the outcome, docs. Not fixed (listed below).
 
 ### Known gaps
+- Second review (T092), left as is: in *This page* scope the checks are lost when the page's text changes or the panel is reopened (a new search starts); cancelling a search while a replace runs leaves the old results in the list; Ctrl+R pressed again while a replace is still running is dropped; the older tickets T085 and T087 still describe the behaviour before T091.
 - Not tried by hand: the real window (how the panel looks and fits, the width of the before → after rows, the colours, the keyboard flow with Enter and F3, clicking results).
 - The preview runs the regex on already-found hits on the UI thread (not interruptible); closing the panel during a long replace cancels it without a message; plain-text case folding is not symmetric for `ẞ`/`ß`.
 - A regex with match case off ignores the case of ASCII letters only (`[äÄ]` for umlauts).
@@ -80,4 +84,4 @@ One high finding, fixed in T090: in "This page" scope a step-by-step Replace jum
 - The scan marks the line only if it has a box (an added line has none).
 
 ### How to try it
-Open the sample project and press **Ctrl+F**; type `ſ`: the hits are listed with page and line; click one, press **F3** to go on. Switch to *Whole book*, try *Regex* with `[sſ]t`. Press **Ctrl+H**, type a replacement, uncheck a hit, press *Replace selected*, then **Ctrl+Z**: everything comes back in one step. Try *Replace* and *Skip* one by one.
+Open the sample project and press **Ctrl+F**; type `ſ`: the hits are listed with page and line; click one, press **F3** to go on. Switch to *Whole book*, try *Regex* with `[sſ]t`. Press **Ctrl+H**, type a replacement, check a few hits (click, or **F3** then **Ctrl+M**), press *Replace selected* (**Ctrl+Shift+R**), then **Ctrl+Z**: everything comes back in one step. Try *Replace* (**Ctrl+R**) and *Skip* one by one; **Ctrl+F** goes back to searching.

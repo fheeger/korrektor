@@ -25,6 +25,8 @@ data class MenuState(
     val hasPreviousUnchecked: Boolean = false,
     val hasMatches: Boolean = false,
     val replaceShown: Boolean = false,
+    val hasCurrentMatch: Boolean = false,
+    val hasCheckedMatches: Boolean = false,
 )
 
 /** How the actions are arranged in the menus. Every action of [Shortcuts] has to be in here (tested). */
@@ -77,9 +79,9 @@ private val NEEDS: Map<AppAction, (MenuState) -> Boolean> =
         AppAction.PREVIOUS_UNCHECKED to { it.hasPreviousUnchecked },
         AppAction.NEXT_MATCH to { it.hasMatches },
         AppAction.PREVIOUS_MATCH to { it.hasMatches },
-        AppAction.TOGGLE_MARK to { it.replaceShown && it.hasMatches },
+        AppAction.TOGGLE_MARK to { it.replaceShown && it.hasCurrentMatch },
         AppAction.REPLACE_ONE to { it.replaceShown && it.hasMatches },
-        AppAction.REPLACE_MARKED to { it.replaceShown && it.hasMatches },
+        AppAction.REPLACE_MARKED to { it.replaceShown && it.hasCheckedMatches },
         AppAction.UNDO to { it.canUndo },
         AppAction.REDO to { it.canRedo },
         AppAction.PREVIOUS_LINE to { it.pageHasLines },
