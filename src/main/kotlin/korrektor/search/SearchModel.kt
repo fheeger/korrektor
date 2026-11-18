@@ -100,23 +100,41 @@ class SearchModel(
     var current: Int by mutableIntStateOf(-1)
         internal set
 
-    /** The indices in [results] of the hits whose box is unchecked (S10, replace mode); all are checked at first. */
-    var excluded: Set<Int> by mutableStateOf(emptySet())
+    /** The indices in [results] of the hits whose box is checked (S10, replace mode); none is checked at first. */
+    var marked: Set<Int> by mutableStateOf(emptySet())
         internal set
+
+    /**
+     * Counts the requests by key to replace the hit that is shown and go on, and to replace the checked hits (T091).
+     * The panel carries them out on the UI thread, where replacing is done; the shortcut only asks.
+     */
+    var replaceOneRequests: Int by mutableIntStateOf(0)
+        private set
+    var replaceMarkedRequests: Int by mutableIntStateOf(0)
+        private set
 
     /** The compiled form of the query of the last search; what replaces needs it for `$1`. */
     internal var compiled: Compiled.Ready? = null
         private set
 
     /**
-     * Opens the panel and puts the cursor in its field. It opens with the replace field shown or hidden as asked
-     * (Ctrl+H, Ctrl+F); one that is open already keeps a field that is shown.
+     * Opens the panel and puts the cursor in its field, with the replace field shown (Ctrl+H) or hidden (Ctrl+F: in
+     * replace mode it goes back to searching). Query, options, scope and results are kept (T091).
      */
     fun show(replace: Boolean) {
-        // A panel that is open keeps its replace field when Ctrl+F is pressed: the toggle is what hides it.
-        showReplace = replace || (open && showReplace)
+        showReplace = replace
         open = true
         fieldRequests++
+    }
+
+    /** Asks the panel to replace the hit that is shown and go on; only in replace mode. */
+    fun requestReplaceOne() {
+        if (open && showReplace) replaceOneRequests++
+    }
+
+    /** Asks the panel to replace the checked hits; only in replace mode. */
+    fun requestReplaceMarked() {
+        if (open && showReplace) replaceMarkedRequests++
     }
 
     /** Closes the panel; the query and the results are kept for the next time. */
@@ -168,7 +186,7 @@ class SearchModel(
             cancel()
             results.clear()
             current = -1
-            excluded = emptySet()
+            marked = emptySet()
             outcome = null
             pagesDone = 0
             pagesWithHits = 0

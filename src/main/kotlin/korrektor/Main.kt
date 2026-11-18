@@ -40,6 +40,7 @@ fun main() =
                             viewer != null && model.editor?.uncheckedAfter(viewer.page, viewer.pageCount) != null,
                         hasPreviousUnchecked = viewer != null && model.editor?.uncheckedBefore(viewer.page) != null,
                         hasMatches = model.search?.results?.isNotEmpty() == true,
+                        replaceShown = model.search?.let { it.open && it.showReplace } == true,
                     )
                 for (menu in menus(state)) {
                     Menu(menu.title) {

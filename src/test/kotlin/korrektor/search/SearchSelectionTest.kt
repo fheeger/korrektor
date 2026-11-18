@@ -8,7 +8,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -26,35 +25,48 @@ class SearchSelectionTest {
     }
 
     @Test
-    fun allHitsAreCheckedAtFirstAndTheCheckboxesCanBeChanged() =
+    fun noHitIsCheckedAtFirstAndTheCheckboxesCanBeChanged() =
         withHistoryProject(pages = 4) { project ->
             val model = searched(BookEditor(project::readPage, Dispatchers.Unconfined), 4, SearchQuery("Seite"))
             assertEquals(4, model.results.size)
-            assertEquals(4, model.selectedCount)
-            assertTrue((0..3).all { model.isSelected(it) })
+            assertEquals(0, model.selectedCount)
+            assertTrue((0..3).none { model.isSelected(it) })
 
-            model.setSelected(1, false)
-            model.setSelected(3, false)
-            assertEquals(2, model.selectedCount)
-            assertEquals(listOf(1, 3), model.selectedMatches().map { it.page })
             model.setSelected(1, true)
-            assertEquals(listOf(1, 2, 3), model.selectedMatches().map { it.page })
+            model.setSelected(3, true)
+            assertEquals(2, model.selectedCount)
+            assertEquals(listOf(2, 4), model.selectedMatches().map { it.page })
+            model.setSelected(1, false)
+            assertEquals(listOf(4), model.selectedMatches().map { it.page })
 
+            model.selectAll()
+            assertEquals(4, model.selectedCount)
             model.selectNone()
             assertEquals(0, model.selectedCount)
             assertEquals(emptyList(), model.selectedMatches())
-            model.selectAll()
-            assertEquals(4, model.selectedCount)
         }
 
     @Test
-    fun aNewSearchChecksEverythingAgain() =
+    fun toggleCurrentChecksAndUnchecksTheHitThatIsShown() =
         withHistoryProject(pages = 4) { project ->
             val model = searched(BookEditor(project::readPage, Dispatchers.Unconfined), 4, SearchQuery("Seite"))
-            model.selectNone()
+            model.toggleCurrent()
+            assertEquals(0, model.selectedCount, "no hit is shown: nothing happens")
+            model.current = 2
+            model.toggleCurrent()
+            assertEquals(setOf(2), model.marked)
+            model.toggleCurrent()
+            assertEquals(emptySet(), model.marked)
+        }
+
+    @Test
+    fun aNewSearchStartsUncheckedAgain() =
+        withHistoryProject(pages = 4) { project ->
+            val model = searched(BookEditor(project::readPage, Dispatchers.Unconfined), 4, SearchQuery("Seite"))
+            model.selectAll()
             model.change(SearchQuery("unten"))
             runBlocking { withTimeout(10_000) { while (model.searching) delay(2) } }
-            assertEquals(4, model.selectedCount)
+            assertEquals(0, model.selectedCount)
         }
 
     @Test
@@ -62,11 +74,11 @@ class SearchSelectionTest {
         withHistoryProject(pages = 4) { project ->
             val model = searched(BookEditor(project::readPage, Dispatchers.Unconfined), 4, SearchQuery("Seite"))
             model.show(replace = true)
-            model.setSelected(2, false)
+            model.setSelected(2, true)
             model.showReplace = false
             model.show(replace = true)
-            assertFalse(model.isSelected(2))
-            assertEquals(3, model.selectedCount)
+            assertTrue(model.isSelected(2))
+            assertEquals(1, model.selectedCount)
         }
 
     @Test

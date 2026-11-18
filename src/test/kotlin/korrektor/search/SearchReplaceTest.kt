@@ -43,6 +43,7 @@ class SearchReplaceTest {
         val model = SearchModel(editor, pages, Dispatchers.Unconfined, Dispatchers.IO, pause = 0, chunk = 4)
         model.change(query)
         runBlocking { withTimeout(10_000) { while (model.searching) delay(2) } }
+        model.selectAll() // nothing is checked by default (T091); most tests here replace everything
         return model
     }
 
@@ -87,7 +88,7 @@ class SearchReplaceTest {
         assertEquals(listOf("b x aa", "Seite 3"), texts(editor, 3))
         assertEquals(listOf("b x b", "Seite 2"), texts(editor, 2))
         assertEquals(2, model.results.size)
-        assertEquals(setOf(0, 1), model.excluded, "what was unchecked still is")
+        assertEquals(emptySet(), model.marked, "what was unchecked still is")
         val (first, second) = model.results
         assertEquals(1, first.page)
         assertEquals("aa x b", first.lineText)
@@ -273,6 +274,7 @@ class SearchReplaceTest {
             runBlocking { withTimeout(10_000) { while (search.searching) delay(2) } }
             assertEquals(5, search.results.size)
             search.replacement = "Blatt"
+            search.selectAll()
             runBlocking { search.replaceSelected() }
             assertEquals(SaveOutcome.Done, runBlocking { checkNotNull(first.saver).saveNow() })
             first.closeProject()

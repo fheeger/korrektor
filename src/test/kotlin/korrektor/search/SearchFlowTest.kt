@@ -39,6 +39,7 @@ class SearchFlowTest {
         search.change(SearchQuery(from, matchCase = true))
         runBlocking { withTimeout(10_000) { while (search.searching) delay(2) } }
         search.replacement = to
+        search.selectAll()
         runBlocking { search.replaceSelected() }
         return search
     }

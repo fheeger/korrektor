@@ -62,6 +62,7 @@ class SearchSampleTest {
             val kampf = count(search, SearchQuery("Kampf", matchCase = true, wholeWords = true))
             count(search, SearchQuery("Krieg", matchCase = true, wholeWords = true))
             search.replacement = "Kampf"
+            search.selectAll()
             runBlocking { search.replaceSelected() }
             println("sample: ${search.outcome}")
             assertEquals(0, count(search, SearchQuery("Krieg", matchCase = true, wholeWords = true)))

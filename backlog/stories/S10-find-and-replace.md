@@ -19,8 +19,9 @@ S10 searches and replaces in the corrected text, on the current page or across t
 - A match must lie within a single line.
 - Results are listed with the page, the line and some surrounding text. Clicking a result opens that place, puts the cursor on the match and highlights the line on the scan (S05).
 - Enter or F3 goes to the next match, and Shift+F3 to the previous one.
+- In replace mode, Ctrl+M checks or unchecks the match that is shown, Ctrl+R replaces it and goes on (the Replace button), and Ctrl+Shift+R replaces all checked matches. Ctrl+F goes back to search mode (T091).
 - Searching the whole book runs in the background: results appear while it's still searching, and it can be cancelled. A 1000-page book is fully searched within a few seconds and the UI never freezes (N1).
-- While the replace field is shown, the results list is the preview: each result appears as before → after, with a checkbox. All checkboxes are checked by default. Nothing changes before you confirm.
+- While the replace field is shown, the results list is the preview: each result appears as before → after, with a checkbox. No checkbox is checked by default (T091); the user chooses what is replaced. Nothing changes before you confirm.
 - "Replace selected" changes all checked matches in one go. It counts as one undo step (S08) and is saved by autosave (S07).
 - You can also step through matches one by one, choosing replace or skip for each.
 - Page status doesn't change when text is replaced (S09).
@@ -36,6 +37,7 @@ S10 searches and replaces in the corrected text, on the current page or across t
 - [x] S10.7 Add the shortcuts to the menus and the shortcut list → the table entries and menu entries are made in [T085](../tickets/T085-search-panel.md) and [T086](../tickets/T086-next-previous-match.md)
 - [x] S10.8 Tests: search options, replacing across many pages with undo, speed in a 1000-page book → [T089](../tickets/T089-search-tests.md)
 - [x] S10.9 Fixes from the code review → [T090](../tickets/T090-s10-review-fixes.md)
+- [x] S10.10 Review feedback: replace mode with keyboard shortcuts and nothing checked by default; Ctrl+F back to search mode → [T091](../tickets/T091-replace-mode-keyboard.md)
 
 ## Report
 

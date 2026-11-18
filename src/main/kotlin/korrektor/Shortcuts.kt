@@ -20,6 +20,9 @@ enum class AppAction {
     REPLACE,
     NEXT_MATCH,
     PREVIOUS_MATCH,
+    TOGGLE_MARK,
+    REPLACE_ONE,
+    REPLACE_MARKED,
     PREVIOUS_LINE,
     NEXT_LINE,
     FIRST_LINE,
@@ -92,7 +95,7 @@ object Shortcuts {
             Shortcut(
                 AppAction.FIND,
                 "Find…",
-                "Opens the search panel: find text on this page or in the whole book",
+                "Opens the search panel to find text (in replace mode: goes back to searching)",
                 listOf(KeyCombo(Key.F, ctrl = true)),
             ),
             Shortcut(
@@ -112,6 +115,24 @@ object Shortcuts {
                 "Previous match",
                 "Goes to the previous hit of the search (Shift+Enter in the search field does the same)",
                 listOf(KeyCombo(Key.F3, shift = true)),
+            ),
+            Shortcut(
+                AppAction.TOGGLE_MARK,
+                "Mark match for replacing",
+                "In replace mode: checks or unchecks the hit that is shown, so that Replace marked takes it along",
+                listOf(KeyCombo(Key.M, ctrl = true)),
+            ),
+            Shortcut(
+                AppAction.REPLACE_ONE,
+                "Replace match",
+                "In replace mode: replaces the hit that is shown (the Replace button) and goes to the next one",
+                listOf(KeyCombo(Key.R, ctrl = true)),
+            ),
+            Shortcut(
+                AppAction.REPLACE_MARKED,
+                "Replace marked matches",
+                "In replace mode: replaces all checked hits in one step (the Replace selected button)",
+                listOf(KeyCombo(Key.R, ctrl = true, shift = true)),
             ),
             Shortcut(
                 AppAction.PREVIOUS_LINE,
@@ -277,6 +298,8 @@ private val KEY_NAMES =
         Key.F to "F",
         Key.G to "G",
         Key.H to "H",
+        Key.M to "M",
+        Key.R to "R",
         Key.Z to "Z",
         Key.Y to "Y",
         Key.Enter to "Enter",
