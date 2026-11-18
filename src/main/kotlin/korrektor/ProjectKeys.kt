@@ -15,6 +15,7 @@ import korrektor.editor.uncheckedAfter
 import korrektor.editor.uncheckedBefore
 import korrektor.editor.undo
 import korrektor.format.PageStatus
+import korrektor.search.toggleCurrent
 import korrektor.viewer.fitPage
 import korrektor.viewer.fitWidth
 import korrektor.viewer.focusPageField
@@ -24,13 +25,20 @@ import korrektor.viewer.focusPageField
  * actions of the lines (T050), the pages (T051) and the zoom (T053) are here; F1 shows the list.
  */
 class ProjectKeys(
-    private val model: AppModel,
+    internal val model: AppModel,
 ) : KeyActions {
     // A table instead of one big `when`: each action is one line, and an action with nothing to do is just not here.
     private val handlers: Map<AppAction, () -> Unit> =
         mapOf(
             AppAction.UNDO to { undoOrRedo(undoing = true) },
             AppAction.REDO to { undoOrRedo(undoing = false) },
+            AppAction.FIND to { model.search?.show(replace = false) },
+            AppAction.REPLACE to { model.search?.show(replace = true) },
+            AppAction.NEXT_MATCH to { stepMatch(forward = true) },
+            AppAction.PREVIOUS_MATCH to { stepMatch(forward = false) },
+            AppAction.TOGGLE_MARK to { model.search?.let { if (it.open && it.showReplace) it.toggleCurrent() } },
+            AppAction.REPLACE_ONE to { model.search?.requestReplaceOne() },
+            AppAction.REPLACE_MARKED to { model.search?.requestReplaceMarked() },
             AppAction.PREVIOUS_LINE to { moveLine(-1) },
             AppAction.NEXT_LINE to { moveLine(1) },
             AppAction.FIRST_LINE to { model.editor?.firstLine() },

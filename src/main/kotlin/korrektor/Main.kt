@@ -7,6 +7,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import korrektor.editor.uncheckedAfter
 import korrektor.editor.uncheckedBefore
+import korrektor.search.selectedCount
 import korrektor.settings.AppSettings
 import korrektor.viewer.hasNext
 import korrektor.viewer.hasPrevious
@@ -39,6 +40,10 @@ fun main() =
                         hasNextUnchecked =
                             viewer != null && model.editor?.uncheckedAfter(viewer.page, viewer.pageCount) != null,
                         hasPreviousUnchecked = viewer != null && model.editor?.uncheckedBefore(viewer.page) != null,
+                        hasMatches = model.search?.results?.isNotEmpty() == true,
+                        replaceShown = model.search?.let { it.open && it.showReplace } == true,
+                        hasCurrentMatch = model.search?.let { it.current in it.results.indices } == true,
+                        hasCheckedMatches = model.search?.let { it.selectedCount > 0 && !it.replacing } == true,
                     )
                 for (menu in menus(state)) {
                     Menu(menu.title) {

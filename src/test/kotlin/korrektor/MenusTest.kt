@@ -16,6 +16,10 @@ class MenusTest {
             canRedo = true,
             hasNextUnchecked = true,
             hasPreviousUnchecked = true,
+            hasMatches = true,
+            replaceShown = true,
+            hasCurrentMatch = true,
+            hasCheckedMatches = true,
         )
 
     private fun items(state: MenuState) = menus(state).flatMap { it.groups }.flatten()
@@ -67,6 +71,32 @@ class MenusTest {
     }
 
     @Test
+    fun theStepsBetweenHitsNeedResults() {
+        val none = open.copy(hasMatches = false).enabled()
+        assertFalse(AppAction.NEXT_MATCH in none)
+        assertFalse(AppAction.PREVIOUS_MATCH in none)
+        assertTrue(AppAction.FIND in none && AppAction.REPLACE in none)
+        assertTrue(AppAction.NEXT_MATCH in open.enabled())
+    }
+
+    @Test
+    fun theReplaceKeysNeedTheReplaceFieldAndResults() {
+        val replacing = AppAction.TOGGLE_MARK to AppAction.REPLACE_ONE
+        val all = setOf(replacing.first, replacing.second, AppAction.REPLACE_MARKED)
+        assertTrue(open.enabled().containsAll(all))
+        assertTrue(open.copy(replaceShown = false).enabled().none { it in all }, "the replace field is hidden")
+        assertTrue(
+            open.copy(hasMatches = false, hasCurrentMatch = false, hasCheckedMatches = false).enabled().none {
+                it in
+                    all
+            },
+        )
+        assertFalse(AppAction.TOGGLE_MARK in open.copy(hasCurrentMatch = false).enabled())
+        assertFalse(AppAction.REPLACE_MARKED in open.copy(hasCheckedMatches = false).enabled())
+        assertTrue(AppAction.REPLACE_ONE in open.copy(hasCurrentMatch = false).enabled(), "it goes to the first hit")
+    }
+
+    @Test
     fun withoutAProjectOnlyTheListOfShortcutsCanBeUsed() {
         assertEquals(setOf(AppAction.SHOW_SHORTCUTS), MenuState().enabled())
     }
@@ -109,21 +139,21 @@ class MenusTest {
         assertTrue(AppAction.UNDO in open.copy(canRedo = false).enabled())
         val edit = menus(open).first()
         assertEquals("Edit", edit.title)
-        assertEquals(listOf(AppAction.UNDO, AppAction.REDO), edit.groups.flatten().map { it.action })
-        assertTrue(
-            edit.groups
-                .flatten()
-                .first()
-                .text
-                .endsWith("Ctrl+Z"),
+        assertEquals(
+            listOf(
+                listOf(AppAction.UNDO, AppAction.REDO),
+                listOf(AppAction.FIND, AppAction.REPLACE, AppAction.NEXT_MATCH, AppAction.PREVIOUS_MATCH),
+                listOf(AppAction.TOGGLE_MARK, AppAction.REPLACE_ONE, AppAction.REPLACE_MARKED),
+            ),
+            edit.groups.map { group -> group.map { it.action } },
         )
-        assertTrue(
-            edit.groups
-                .flatten()
-                .last()
-                .text
-                .endsWith("Ctrl+Y"),
-        )
+        val undoRedo = edit.groups.first()
+        assertTrue(undoRedo.first().text.endsWith("Ctrl+Z"), undoRedo.first().text)
+        assertTrue(undoRedo.last().text.endsWith("Ctrl+Y"), undoRedo.last().text)
+        val find = edit.groups[1]
+        for ((item, keys) in find.zip(listOf("Ctrl+F", "Ctrl+H", "F3", "Shift+F3"))) {
+            assertTrue(item.text.endsWith(keys), item.text)
+        }
     }
 
     @Test

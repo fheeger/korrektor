@@ -1,6 +1,6 @@
 # S09 Page status
 
-**Features:** C5 · **Status:** in review
+**Features:** C5 · **Status:** done
 
 As a reader of historical sources, I want to mark each page as unchecked or corrected
 so that I know how far I've got and which pages still need work.
