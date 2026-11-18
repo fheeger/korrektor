@@ -117,6 +117,7 @@ class SearchPerfTest {
             model.replacement = "Esel"
 
             val started = System.nanoTime()
+            model.selectAll()
             runBlocking { withContext(Dispatchers.Default) { model.replaceSelected() } }
             val millis = (System.nanoTime() - started) / 1_000_000
             println("replacing $pages hits on $pages pages took $millis ms")

@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -58,22 +59,43 @@ fun SearchPanel(
     val scope = rememberCoroutineScope()
     // The search of the page shown follows the page and its text.
     LaunchedEffect(model.editor.page, model.editor.layer) { model.pageChanged() }
+    val replaceMarked: () -> Unit = {
+        // Like the disabled button: nothing happens (and the cursor stays where it is) with nothing checked.
+        if (!model.replacing && model.selectedCount > 0) {
+            scope.launch {
+                model.replaceSelected()
+                onLeave() // the click took the keyboard away from the text: Ctrl+Z must work again
+            }
+        }
+    }
+    val replaceOne: () -> Unit = {
+        scope.launch {
+            model.replaceAndGoOn(onOpenResult, onStep)
+            // After the last hit there is no result to go to, and the button is gone: the keyboard goes to the text.
+            if (model.current < 0 && model.results.isEmpty()) onLeave()
+        }
+    }
+    // The shortcuts ask through the model; requests from before this panel was shown are not ours.
+    var handledOne by remember { mutableIntStateOf(model.replaceOneRequests) }
+    var handledMarked by remember { mutableIntStateOf(model.replaceMarkedRequests) }
+    LaunchedEffect(model.replaceOneRequests) {
+        if (model.replaceOneRequests != handledOne) {
+            handledOne = model.replaceOneRequests
+            replaceOne()
+        }
+    }
+    LaunchedEffect(model.replaceMarkedRequests) {
+        if (model.replaceMarkedRequests != handledMarked) {
+            handledMarked = model.replaceMarkedRequests
+            replaceMarked()
+        }
+    }
     Column(modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp).testTag("search panel")) {
         QueryRow(model, onStep, onLeave)
         if (model.showReplace) ReplaceRow(model, onStep, onLeave)
         SummaryRow(model)
         if (model.showReplace) {
-            SelectionRow(
-                model,
-                {
-                    scope.launch {
-                        model.replaceSelected()
-                        onLeave() // the click took the keyboard away from the text: Ctrl+Z must work again
-                    }
-                },
-                { scope.launch { model.replaceAndGoOn(onOpenResult, onStep) } },
-                { onStep(true) },
-            )
+            SelectionRow(model, replaceMarked, replaceOne) { onStep(true) }
         }
         ResultList(model, onOpenResult)
     }

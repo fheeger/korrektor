@@ -15,6 +15,7 @@ import korrektor.editor.uncheckedAfter
 import korrektor.editor.uncheckedBefore
 import korrektor.editor.undo
 import korrektor.format.PageStatus
+import korrektor.search.toggleCurrent
 import korrektor.viewer.fitPage
 import korrektor.viewer.fitWidth
 import korrektor.viewer.focusPageField
@@ -35,6 +36,9 @@ class ProjectKeys(
             AppAction.REPLACE to { model.search?.show(replace = true) },
             AppAction.NEXT_MATCH to { stepMatch(forward = true) },
             AppAction.PREVIOUS_MATCH to { stepMatch(forward = false) },
+            AppAction.TOGGLE_MARK to { model.search?.let { if (it.open && it.showReplace) it.toggleCurrent() } },
+            AppAction.REPLACE_ONE to { model.search?.requestReplaceOne() },
+            AppAction.REPLACE_MARKED to { model.search?.requestReplaceMarked() },
             AppAction.PREVIOUS_LINE to { moveLine(-1) },
             AppAction.NEXT_LINE to { moveLine(1) },
             AppAction.FIRST_LINE to { model.editor?.firstLine() },

@@ -72,10 +72,15 @@ class SearchUiTest {
 
     private fun exists(node: SemanticsNodeInteraction) = runCatching { node.assertExists() }.isSuccess
 
-    private fun ComposeUiTest.ctrl(key: Key) {
+    private fun ComposeUiTest.ctrl(
+        key: Key,
+        shift: Boolean = false,
+    ) {
         onRoot().performKeyInput {
             keyDown(Key.CtrlLeft)
+            if (shift) keyDown(Key.ShiftLeft)
             pressKey(key)
+            if (shift) keyUp(Key.ShiftLeft)
             keyUp(Key.CtrlLeft)
         }
         waitForIdle()
@@ -142,7 +147,7 @@ class SearchUiTest {
             node("replace toggle").performClick()
             node("replace field").assertExists()
             ctrl(Key.F)
-            node("replace field").assertExists() // Ctrl+F does not hide a field that is shown
+            assertFalse(exists(node("replace field"))) // Ctrl+F in replace mode goes back to searching (T091)
         }
 
     @Test
@@ -300,19 +305,19 @@ class SearchUiTest {
             node("search field").performTextInput("Zwei")
             node("replace field").performTextInput("Drei")
             waitForResults(model, 3)
-            node("selected count").assertTextEquals("3 of 3 selected")
-            for (i in 0..2) node("check $i").assertTextEquals("☑")
+            node("selected count").assertTextEquals("0 of 3 selected")
+            for (i in 0..2) node("check $i").assertTextEquals("☐")
             assertRowHas("result 0", "Zwei")
             assertRowHas("result 0", "Drei")
             assertEquals("Drei", search.replacement)
 
             node("check 1").performClick()
-            node("check 1").assertTextEquals("☐")
-            node("selected count").assertTextEquals("2 of 3 selected")
-            node("select none").performClick()
-            node("selected count").assertTextEquals("0 of 3 selected")
+            node("check 1").assertTextEquals("☑")
+            node("selected count").assertTextEquals("1 of 3 selected")
             node("select all").performClick()
             node("selected count").assertTextEquals("3 of 3 selected")
+            node("select none").performClick()
+            node("selected count").assertTextEquals("0 of 3 selected")
             node("check 2").performClick()
 
             // Typing in the replace field changes the preview, and does not search again.
@@ -326,8 +331,8 @@ class SearchUiTest {
             node("replace toggle").performClick()
             assertFalse(exists(node("check 0")))
             node("replace toggle").performClick()
-            node("check 2").assertTextEquals("☐")
-            node("selected count").assertTextEquals("2 of 3 selected")
+            node("check 2").assertTextEquals("☑")
+            node("selected count").assertTextEquals("1 of 3 selected")
 
             // Only a preview: the book has not changed.
             assertEquals(0, editor.history.undoSteps.size)
@@ -355,7 +360,8 @@ class SearchUiTest {
             node("search field").performTextInput("Zwei")
             node("replace field").performTextInput("Drei")
             waitForResults(model, 3)
-            node("check 1").performClick() // the one on page 2 stays
+            node("check 0").performClick() // only the ones on pages 1 and 3 are checked
+            node("check 2").performClick()
             node("replace selected").performClick()
             waitUntil(timeoutMillis = 10_000) { model.search?.outcome != null }
             waitForIdle()
@@ -398,5 +404,80 @@ class SearchUiTest {
             waitUntil(timeoutMillis = 10_000) { search.results.size == 1 }
             assertEquals(2, editor.history.undoSteps.size, "each replacement is a step of its own")
             assertEquals(listOf("Drei"), listOf(editor.lines[1].text), "page 3 is shown, and replaced")
+        }
+
+    @Test
+    fun theReplaceShortcutsWorkWithoutTheMouse() =
+        withOpenProject { model ->
+            val search = checkNotNull(model.search)
+            val editor = checkNotNull(model.editor)
+            ctrl(Key.H)
+            node("search field").performTextInput("Zwei")
+            node("replace field").performTextInput("Drei")
+            waitForResults(model, 3)
+            assertEquals(emptySet(), search.marked)
+
+            press(Key.F3) // the first hit, on page 1
+            ctrl(Key.M)
+            node("check 0").assertTextEquals("☑")
+            press(Key.F3)
+            press(Key.F3) // page 3
+            ctrl(Key.M)
+            node("check 2").assertTextEquals("☑")
+            ctrl(Key.M)
+            node("check 2").assertTextEquals("☐")
+            ctrl(Key.M)
+            node("selected count").assertTextEquals("2 of 3 selected")
+
+            ctrl(Key.R, shift = true) // replace the marked hits
+            waitUntil(timeoutMillis = 10_000) { search.outcome != null }
+            waitForIdle()
+            node("replace outcome").assertTextEquals("Replaced 2 matches on 2 pages.")
+            assertEquals(1, editor.history.undoSteps.size)
+            assertEquals(1, search.results.size)
+
+            ctrl(Key.R) // no hit is shown yet: like the button, it goes to the first one
+            waitForIdle()
+            assertEquals(0, search.current)
+            ctrl(Key.R) // replace the hit that is shown and go on
+            waitUntil(timeoutMillis = 10_000) { search.results.isEmpty() }
+            assertEquals(2, editor.history.undoSteps.size)
+        }
+
+    @Test
+    fun ctrlFInReplaceModeGoesBackToSearchingAndKeepsEverything() =
+        withOpenProject { model ->
+            val search = checkNotNull(model.search)
+            ctrl(Key.H)
+            node("search field").performTextInput("Zwei")
+            node("replace field").performTextInput("Drei")
+            waitForResults(model, 3)
+            node("check 1").performClick()
+            ctrl(Key.F)
+            waitForIdle()
+            assertFalse(exists(node("replace field")))
+            assertTrue(search.open)
+            assertEquals("Zwei", search.query.text)
+            assertEquals("Drei", search.replacement)
+            assertEquals(3, search.results.size)
+            node("search field").assertIsFocused()
+            ctrl(Key.H)
+            node("check 1").assertTextEquals("☑")
+        }
+
+    @Test
+    fun theReplaceShortcutsDoNothingWhileOnlySearching() =
+        withOpenProject { model ->
+            val search = checkNotNull(model.search)
+            val editor = checkNotNull(model.editor)
+            ctrl(Key.F)
+            node("search field").performTextInput("Zwei")
+            waitForResults(model, 3)
+            press(Key.F3)
+            ctrl(Key.M)
+            ctrl(Key.R)
+            ctrl(Key.R, shift = true)
+            assertEquals(emptySet(), search.marked)
+            assertEquals(0, editor.history.undoSteps.size)
         }
 }

@@ -65,6 +65,7 @@ class SearchReviewFixesTest {
         model.replacement = "bbbb"
         block.set(true)
         runBlocking {
+            model.selectAll()
             val replacing = async(Dispatchers.Default) { model.replaceSelected() }
             assertTrue(reading.await(10, TimeUnit.SECONDS))
             model.change(SearchQuery("Seite")) // the user types a new query meanwhile

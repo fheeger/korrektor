@@ -1,3 +1,5 @@
+> Changed by [T091](T091-replace-mode-keyboard.md): no hit is checked by default.
+
 # T087 Replace mode: the results as a preview, before → after, with checkboxes
 
 **Type:** task · **Status:** done · **Story:** S10 · **Task:** S10.5

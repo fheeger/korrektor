@@ -1,3 +1,5 @@
+> Changed by [T091](T091-replace-mode-keyboard.md): Ctrl+F in replace mode hides the replace field again.
+
 # T085 The search panel: Ctrl+F, Ctrl+H, options, results list, click opens the place
 
 **Type:** task · **Status:** done · **Story:** S10 · **Task:** S10.2, S10.7 (the keys of this ticket)

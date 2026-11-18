@@ -1,37 +1,42 @@
 package korrektor.search
 
-// The preview of a replacement (S10, replace mode): which hits are checked, and what a hit becomes. Nothing here
-// changes the book: only "Replace selected" does that (see `SearchReplace.kt`).
+// The preview of a replacement (S10, replace mode): which hits are checked (none at first, T091), and what a hit
+// becomes. Nothing here changes the book: only "Replace selected" does that (see `SearchReplace.kt`).
 
 /** How much of the line is shown on either side of a hit in the preview: before and after take half the row each. */
 private const val PREVIEW_CONTEXT = 15
 
 /** Whether the hit at [index] is checked. */
-fun SearchModel.isSelected(index: Int): Boolean = index !in excluded
+fun SearchModel.isSelected(index: Int): Boolean = index in marked
 
 /** Checks or unchecks the hit at [index]. */
 fun SearchModel.setSelected(
     index: Int,
     on: Boolean,
 ) {
-    excluded = if (on) excluded - index else excluded + index
+    marked = if (on) marked + index else marked - index
 }
 
-/** Checks all the hits found so far. */
+/** Checks the hit that is shown if it is unchecked, and unchecks it if it is checked; nothing if none is shown. */
+fun SearchModel.toggleCurrent() {
+    if (current in results.indices) setSelected(current, current !in marked)
+}
+
+/** Checks all the hits found so far (hits that are found later are not checked). */
 fun SearchModel.selectAll() {
-    excluded = emptySet()
+    marked = results.indices.toSet()
 }
 
-/** Unchecks all the hits found so far (hits that are found later are checked, as always). */
+/** Unchecks all the hits. */
 fun SearchModel.selectNone() {
-    excluded = results.indices.toSet()
+    marked = emptySet()
 }
 
 /** How many of the hits are checked. */
-val SearchModel.selectedCount: Int get() = results.size - excluded.count { it < results.size }
+val SearchModel.selectedCount: Int get() = marked.count { it < results.size }
 
 /** The hits that are checked, in order. */
-fun SearchModel.selectedMatches(): List<Match> = results.filterIndexed { index, _ -> index !in excluded }
+fun SearchModel.selectedMatches(): List<Match> = results.filterIndexed { index, _ -> index in marked }
 
 /**
  * What [match] becomes with the replacement of the model: the snippet with the hit replaced, shown next to the one with

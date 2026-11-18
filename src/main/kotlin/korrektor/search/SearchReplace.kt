@@ -83,7 +83,7 @@ private fun outcomeText(
 
 /**
  * The results after a replacement: the hits that were replaced or skipped are gone, the others stay, and those in a
- * line that was changed are moved to where the hit is now. A hit that was unchecked stays unchecked. After a single
+ * line that was changed are moved to where the hit is now. A hit that was checked stays checked. After a single
  * replacement ([single] is its index) the hit after it is the current one.
  */
 private fun SearchModel.afterReplacing(
@@ -100,20 +100,20 @@ private fun SearchModel.afterReplacing(
         for (key in moved.keys) if (key.first == page.page) lines[key.second]?.let { texts[key] = it }
     }
     val kept = ArrayList<Match>()
-    val unchecked = HashSet<Int>()
+    val stillMarked = HashSet<Int>()
     var goneBefore = 0
     results.forEachIndexed { index, hit ->
         if (hit in gone) {
             if (single != null && index < single) goneBefore++
         } else {
-            if (index in excluded) unchecked += kept.size
+            if (index in marked) stillMarked += kept.size
             val key = hit.page to hit.lineId
             kept += moveHit(hit, moved[key], texts[key])
         }
     }
     results.clear()
     results.addAll(kept)
-    excluded = unchecked
+    marked = stillMarked
     pagesWithHits = kept.map { it.page }.distinct().size
     lastHitPage = kept.lastOrNull()?.page ?: 0
     current = if (single == null || kept.isEmpty()) -1 else Math.floorMod(single - goneBefore, kept.size)
