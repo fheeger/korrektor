@@ -1,6 +1,6 @@
 # T093 Export text: the renderer for plain text, with page markers, header and line breaks
 
-**Type:** task · **Status:** ready for development · **Story:** S11 · **Task:** S11.2, S11.4
+**Type:** task · **Status:** done · **Story:** S11 · **Task:** S11.2, S11.4
 
 ## What needs doing
 - A pure renderer in `korrektor/export/`: from the metadata, the pages (the PDF page number and the lines of the corrected layer in reading order) and the options, it writes the text of the export.
@@ -26,7 +26,10 @@
 None.
 
 ## Decisions
-(none yet)
+- A page is one block: marker, line break, lines (in Markdown, T094, the marker will be a paragraph of its own). Blocks are separated by one blank line.
+- Lines with no text are left out in both modes: they carry nothing, and in Markdown a blank line would split the paragraph.
+- The renderer is built around an `ExportStyle` (escaping, marker, header, hard break), so that Markdown only adds a style.
+- The title of the header is the first line, then `Author:`, `Year:`, `Source:` (English labels, the app is English).
 
 ## Progress
-Not started.
+Done. `ExportOptions.kt` (format, options, defaults), `TextExport.kt` (`renderText`, `render`, `ExportStyle`, `PlainStyle`). `TextExportTest`: 11 tests. Build green.
