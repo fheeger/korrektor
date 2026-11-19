@@ -89,6 +89,12 @@ class AppModel(
     var editMetadataOpen: Boolean by mutableStateOf(false)
         private set
 
+    /** Whether the "Export" dialog is showing (S11); see `openExport` and `closeExport`. */
+    var exportOpen: Boolean by mutableStateOf(false)
+
+    /** Asks where an export goes; tests put another one in its place. */
+    var exportPicker: ExportPicker = AwtExportPicker
+
     /** Whether the list of keyboard shortcuts is showing: F1 opens it, F1 again closes it. */
     var shortcutsOpen: Boolean by mutableStateOf(false)
 

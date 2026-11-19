@@ -30,6 +30,7 @@ class ProjectKeys(
     // A table instead of one big `when`: each action is one line, and an action with nothing to do is just not here.
     private val handlers: Map<AppAction, () -> Unit> =
         mapOf(
+            AppAction.EXPORT to { model.openExport() },
             AppAction.UNDO to { undoOrRedo(undoing = true) },
             AppAction.REDO to { undoOrRedo(undoing = false) },
             AppAction.FIND to { model.search?.show(replace = false) },

@@ -14,6 +14,7 @@ import androidx.compose.ui.input.key.type
 
 /** What the keyboard can do besides typing. What each action does is decided where [KeyActions] is implemented. */
 enum class AppAction {
+    EXPORT,
     UNDO,
     REDO,
     FIND,
@@ -80,6 +81,12 @@ data class Shortcut(
 object Shortcuts {
     private val table =
         listOf(
+            Shortcut(
+                AppAction.EXPORT,
+                "Export…",
+                "Opens the dialog to export the corrected text as plain text or Markdown",
+                listOf(KeyCombo(Key.E, ctrl = true)),
+            ),
             Shortcut(
                 AppAction.UNDO,
                 "Undo",
@@ -295,6 +302,7 @@ private val KEY_NAMES =
         Key.One to "1",
         Key.NumPad0 to "NumPad 0",
         Key.NumPad1 to "NumPad 1",
+        Key.E to "E",
         Key.F to "F",
         Key.G to "G",
         Key.H to "H",
