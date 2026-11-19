@@ -1,0 +1,19 @@
+# Der kleine Krieg
+
+Author: Ewald\
+Year: 1785\
+Source: Google Books
+
+\[Page 12\]
+
+Abhandlung über den klei-\
+nen Krieg, ſo wie ſie ſich\
+zu Muͤnſter zutrug.
+
+\[Page 13\]
+
+\[Page 14\]
+
+1\. Von den Streifcorps\
+\*Anmerkung\* \_ſo\_ \[a\](b) \\ \<b\>\
+Zuſatz des Bearbeiters
