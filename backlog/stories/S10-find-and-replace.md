@@ -1,6 +1,6 @@
 # S10 Find and replace with a preview
 
-**Features:** D2 · **Status:** in review
+**Features:** D2 · **Status:** done
 
 As a reader of historical sources, I want to find and replace text across the whole book, with a preview before anything changes
 so that I can fix recurring OCR errors in one go without breaking anything.

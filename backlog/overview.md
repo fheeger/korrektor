@@ -20,8 +20,8 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [S07](stories/S07-autosave.md) | Autosave | N4 | done |
 | [S08](stories/S08-undo-redo.md) | Undo/redo | F1 | done |
 | [S09](stories/S09-page-status.md) | Page status | C5 | done |
-| [S10](stories/S10-find-and-replace.md) | Find and replace with a preview | D2 | in review |
-| [S11](stories/S11-export-text-markdown.md) | Export plain text and Markdown | G1 | ready for development |
+| [S10](stories/S10-find-and-replace.md) | Find and replace with a preview | D2 | done |
+| [S11](stories/S11-export-text-markdown.md) | Export plain text and Markdown | G1 | in progress |
 
 ## Tickets
 | ID | Ticket | Type | Story | Status |
@@ -118,3 +118,9 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T090](tickets/T090-s10-review-fixes.md) | Fixes from the S10 code review | task | S10 | done |
 | [T091](tickets/T091-replace-mode-keyboard.md) | Replace mode: keyboard shortcuts and nothing marked by default | task | S10 | done |
 | [T092](tickets/T092-s10-second-review-fixes.md) | Fixes from the second S10 code review | task | S10 | done |
+| [T093](tickets/T093-text-renderer.md) | Export text: the renderer for plain text, with page markers, header and line breaks | task | S11 | ready for development |
+| [T094](tickets/T094-markdown-export.md) | Markdown export with escaping | task | S11 | ready for development |
+| [T095](tickets/T095-export-job.md) | The export runs in the background and writes crash-safely | task | S11 | ready for development |
+| [T096](tickets/T096-export-settings.md) | Remember the export choices per format in the app settings | task | S11 | ready for development |
+| [T097](tickets/T097-export-dialog.md) | The export dialog: File menu, Ctrl+E, format, range, options, file, note about unchecked pages | task | S11 | ready for development |
+| [T098](tickets/T098-export-tests.md) | Export tests: the sample, both formats with options on and off, a Markdown renderer, speed in a 1000-page book | task | S11 | ready for development |

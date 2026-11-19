@@ -1,6 +1,6 @@
 # S11 Export plain text and Markdown
 
-**Features:** G1 · **Status:** ready for development
+**Features:** G1 · **Status:** in progress
 
 As a reader of historical sources, I want to export the corrected text as plain text or Markdown
 so that I can read, search and reuse it outside the app.
@@ -22,13 +22,13 @@ S11 exports the corrected text as `.txt` or `.md`. The export never changes the 
 - Exporting a 1000-page book runs in the background, takes a few seconds, and doesn't freeze the UI (N1).
 
 ## Tasks
-- [ ] S11.1 Export dialog: format, page range, options with defaults per format, file location; remember last choices per format in the app settings
-- [ ] S11.2 Plain text export
-- [ ] S11.3 Markdown export with escaping
-- [ ] S11.4 Options: page markers, header from the project metadata, printed line breaks kept or joined
-- [ ] S11.5 Note about unchecked pages
-- [ ] S11.6 Run in the background, writing crash-safely
-- [ ] S11.7 Tests:
+- [ ] S11.1 Export dialog: format, page range, options with defaults per format, file location; remember last choices per format in the app settings → [T096](../tickets/T096-export-settings.md) (remembering), [T097](../tickets/T097-export-dialog.md) (dialog)
+- [ ] S11.2 Plain text export → [T093](../tickets/T093-text-renderer.md)
+- [ ] S11.3 Markdown export with escaping → [T094](../tickets/T094-markdown-export.md)
+- [ ] S11.4 Options: page markers, header from the project metadata, printed line breaks kept or joined → [T093](../tickets/T093-text-renderer.md)
+- [ ] S11.5 Note about unchecked pages → [T097](../tickets/T097-export-dialog.md)
+- [ ] S11.6 Run in the background, writing crash-safely → [T095](../tickets/T095-export-job.md)
+- [ ] S11.7 Tests: → [T098](../tickets/T098-export-tests.md)
   - Export the sample PDF in both formats with options on and off, and compare with expected results.
   - Escaping edge cases.
   - Check the Markdown in a renderer.
