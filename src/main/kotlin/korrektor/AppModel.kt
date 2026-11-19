@@ -82,8 +82,11 @@ class AppModel(
     var creating: Boolean by mutableStateOf(false)
         internal set
 
+    /** True while an export is being written. The window must not be closed then: a temp file could stay behind. */
+    var exporting: Boolean by mutableStateOf(false)
+
     /** Whether the window may be closed now. */
-    val canClose: Boolean get() = !creating
+    val canClose: Boolean get() = !creating && !exporting
 
     /** Whether the "Edit metadata" dialog is showing. */
     var editMetadataOpen: Boolean by mutableStateOf(false)

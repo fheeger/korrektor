@@ -213,4 +213,14 @@ class ExportModelTest {
         model.selectFormat(ExportFormat.MARKDOWN)
         assertEquals("Der kleine Krieg.md", model.suggestedName { it })
     }
+
+    @Test
+    fun theWindowCannotBeClosedWhileAnExportIsWritten() {
+        val app = korrektor.AppModel()
+        assertTrue(app.canClose)
+        app.exporting = true
+        assertFalse(app.canClose)
+        app.exporting = false
+        assertTrue(app.canClose)
+    }
 }

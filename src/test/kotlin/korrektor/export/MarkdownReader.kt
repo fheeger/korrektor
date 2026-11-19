@@ -1,5 +1,7 @@
 package korrektor.export
 
+import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
+import org.commonmark.ext.gfm.tables.TablesExtension
 import org.commonmark.node.Document
 import org.commonmark.node.HardLineBreak
 import org.commonmark.node.Heading
@@ -15,7 +17,13 @@ import org.commonmark.parser.Parser
  * rule, HTML), the text was not escaped enough, and this fails.
  */
 fun readMarkdown(markdown: String): List<String> {
-    val document = Parser.builder().build().parse(markdown)
+    val document =
+        Parser
+            .builder()
+            .extensions(
+                listOf(TablesExtension.create(), StrikethroughExtension.create()),
+            ).build()
+            .parse(markdown)
     check(document is Document)
     return generateSequence(document.firstChild) { it.next }.map(::blockText).toList()
 }
