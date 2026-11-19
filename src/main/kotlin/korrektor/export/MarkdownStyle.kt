@@ -37,7 +37,7 @@ internal object MarkdownEscape {
 
     /** [text] with its markup escaped, for use inside a line (a title, a field of the header). */
     fun inline(text: String): String {
-        val result = StringBuilder(text.length + 8)
+        val result = StringBuilder()
         for ((i, c) in text.withIndex()) {
             val entity = c == '&' && ENTITY.matchesAt(text, i)
             if (c in INLINE_MARKUP || entity) result.append('\\')
