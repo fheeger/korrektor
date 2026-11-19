@@ -1,6 +1,6 @@
 # T095 The export runs in the background and writes crash-safely
 
-**Type:** task · **Status:** ready for development · **Story:** S11 · **Task:** S11.6
+**Type:** task · **Status:** done · **Story:** S11 · **Task:** S11.6
 
 ## What needs doing
 - `BookExport` (in `korrektor/export/`): for a project and its editor, a page range and the options, it reads the pages (`currentLayer`: what the user sees, also what is not saved yet), renders them and writes the file with `AtomicFile`, on the IO dispatcher, never on the UI thread.
@@ -22,7 +22,9 @@
 T093, T094.
 
 ## Decisions
-(none yet)
+- The whole text is built in memory and written in one go: `AtomicFile.write` takes bytes, a 1000-page book is a few MB, and the file is replaced only when all of it is ready, so a failure or cancel never leaves half a file.
+- A page that cannot be read stops the export (no partial file) and the message names the page: a gap in a text that is meant to be complete is worse than no file.
+- The range is positions in the book (1..pages); the marker uses the `pdfPage` of the layer.
 
 ## Progress
-Not started.
+Done. `BookExport.kt` (`BookExport.run`, `ExportException`), `BookExportTest` (7 tests: output bytes, unsaved corrections, project unchanged, unreadable page, failing write, cancel, threads), architecture overview. Build green.
