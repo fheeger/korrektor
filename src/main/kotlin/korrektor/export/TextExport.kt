@@ -69,6 +69,25 @@ fun renderText(
     out: Appendable,
 ) = render(PlainStyle, metadata, pages, options, out)
 
+/** The export of [pages] as Markdown, written to [out] (see [render]). */
+fun renderMarkdown(
+    metadata: Metadata?,
+    pages: Sequence<ExportPage>,
+    options: ExportOptions,
+    out: Appendable,
+) = render(MarkdownStyle, metadata, pages, options, out)
+
+/** The export of [pages] in the format of [options], written to [out]. */
+fun renderExport(
+    metadata: Metadata?,
+    pages: Sequence<ExportPage>,
+    options: ExportOptions,
+    out: Appendable,
+) = when (options.format) {
+    ExportFormat.TEXT -> renderText(metadata, pages, options, out)
+    ExportFormat.MARKDOWN -> renderMarkdown(metadata, pages, options, out)
+}
+
 /**
  * Writes the export of [pages] to [out], page by page, so that a whole book is never one string. A page is a block:
  * its marker (if wanted), then its lines, either each as a line of the file or joined by spaces; blocks are separated
