@@ -118,7 +118,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T090](tickets/T090-s10-review-fixes.md) | Fixes from the S10 code review | task | S10 | done |
 | [T091](tickets/T091-replace-mode-keyboard.md) | Replace mode: keyboard shortcuts and nothing marked by default | task | S10 | done |
 | [T092](tickets/T092-s10-second-review-fixes.md) | Fixes from the second S10 code review | task | S10 | done |
-| [T093](tickets/T093-text-renderer.md) | Export text: the renderer for plain text, with page markers, header and line breaks | task | S11 | ready for development |
+| [T093](tickets/T093-text-renderer.md) | Export text: the renderer for plain text, with page markers, header and line breaks | task | S11 | done |
 | [T094](tickets/T094-markdown-export.md) | Markdown export with escaping | task | S11 | ready for development |
 | [T095](tickets/T095-export-job.md) | The export runs in the background and writes crash-safely | task | S11 | ready for development |
 | [T096](tickets/T096-export-settings.md) | Remember the export choices per format in the app settings | task | S11 | ready for development |
