@@ -1,6 +1,6 @@
 # T094 Markdown export with escaping
 
-**Type:** task · **Status:** ready for development · **Story:** S11 · **Task:** S11.3
+**Type:** task · **Status:** done · **Story:** S11 · **Task:** S11.3
 
 ## What needs doing
 - The Markdown format of the renderer of T093: hard break `\` for kept line breaks, the title as `# heading` in the header, the page marker as its own paragraph.
@@ -22,7 +22,10 @@
 T093.
 
 ## Decisions
-(none yet)
+- Over-escaping is accepted for the characters that mean markup anywhere (`*`, `_`, `` ` ``, `[`, `]`, `<`, `>`, `~`, `\`): the file is for reading and reuse, and a wrong italic is worse than a backslash. The line-start rules (`#`, `-`, `+`, `=`, `|`, `:-`, a number before `.` or `)`) only apply at the start of a paragraph or of a kept line.
+- A space or tab at the start or end of a line is written as `&#32;` or `&#9;`: a Markdown reader would strip it (or take four spaces for code).
+- `|` and `:-` at the start are escaped too, so that no two lines of the book can make a table.
+- The tests use commonmark-java (test scope only, BSD 2-clause, listed in `docs/third-party.md`): a strict reader that fails on anything but plain paragraphs and headings, and 300 random lines of markup characters are read back as the typed text.
 
 ## Progress
-Not started.
+Done. `MarkdownStyle.kt` (`MarkdownStyle`, `MarkdownEscape`), `renderMarkdown` and `renderExport` in `TextExport.kt`, `MarkdownReader.kt` and `MarkdownExportTest` (10 tests incl. the random one). Build green.

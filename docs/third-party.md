@@ -24,3 +24,4 @@ korrektor is released under the GPL-3.0. It uses the following components, all w
 ## For development only
 
 - **Apache PDFBox** (Apache 2.0): used by the tests to generate small PDFs and as an independent check of PDF contents. It is not part of the app.
+- **commonmark-java** (BSD 2-clause): used by the tests to read the exported Markdown back and check that it comes out as the exported text. It is not part of the app.
