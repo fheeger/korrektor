@@ -21,7 +21,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [S08](stories/S08-undo-redo.md) | Undo/redo | F1 | done |
 | [S09](stories/S09-page-status.md) | Page status | C5 | done |
 | [S10](stories/S10-find-and-replace.md) | Find and replace with a preview | D2 | done |
-| [S11](stories/S11-export-text-markdown.md) | Export plain text and Markdown | G1 | in progress |
+| [S11](stories/S11-export-text-markdown.md) | Export plain text and Markdown | G1 | in review |
 
 ## Tickets
 | ID | Ticket | Type | Story | Status |
