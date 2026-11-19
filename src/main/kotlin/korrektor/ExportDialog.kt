@@ -16,6 +16,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -64,6 +66,8 @@ fun ExportDialog(
                 app.closeExport()
             }
         }
+    LaunchedEffect(model.busy) { app.exporting = model.busy }
+    DisposableEffect(Unit) { onDispose { app.exporting = false } }
     Dialog(onDismissRequest = { if (!model.busy) app.closeExport() }) {
         Surface(modifier.testTag("export dialog"), shape = MaterialTheme.shapes.large, tonalElevation = 6.dp) {
             Column(Modifier.padding(24.dp).width(520.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

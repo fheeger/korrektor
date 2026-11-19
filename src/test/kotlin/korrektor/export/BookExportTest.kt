@@ -222,4 +222,16 @@ class BookExportTest {
             assertTrue(Files.exists(target))
             assertEquals("", target.readText())
         }
+
+    @Test
+    fun aPageThatCannotBeReadBecauseOfTheFileSystemNamesThePageToo() =
+        withTarget { target ->
+            val read = { _: Int -> throw java.nio.file.AccessDeniedException("x") }
+            val failure =
+                assertFailsWith<ExportException> {
+                    runBlocking { BookExport(read, Dispatchers.IO).run(target, null, 1..2, options) }
+                }
+            assertTrue(failure.message!!.contains("Page 1") && failure.message!!.contains("access denied"))
+            assertFalse(target.exists())
+        }
 }
