@@ -19,7 +19,7 @@ import kotlin.test.assertTrue
 /**
  * The export of the real sample (the Abhandlung, 165 pages) in both formats with the options on and off. The sample's
  * text is too long to keep a copy of it: the expected file is worked out again here, in the simplest way, from the
- * stored lines, and a few stable points are checked. Skipped when the sample is missing, which is always the case on CI.
+ * stored lines, and a few stable points are checked. Skipped when the sample is missing, which is the case on CI.
  */
 class ExportSampleTest {
     private val sample = Path.of("samples", "Abhandlung_über_den_kleinen_Krieg.pdf")
