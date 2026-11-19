@@ -122,5 +122,5 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T094](tickets/T094-markdown-export.md) | Markdown export with escaping | task | S11 | done |
 | [T095](tickets/T095-export-job.md) | The export runs in the background and writes crash-safely | task | S11 | done |
 | [T096](tickets/T096-export-settings.md) | Remember the export choices per format in the app settings | task | S11 | done |
-| [T097](tickets/T097-export-dialog.md) | The export dialog: File menu, Ctrl+E, format, range, options, file, note about unchecked pages | task | S11 | ready for development |
+| [T097](tickets/T097-export-dialog.md) | The export dialog: File menu, Ctrl+E, format, range, options, file, note about unchecked pages | task | S11 | done |
 | [T098](tickets/T098-export-tests.md) | Export tests: the sample, both formats with options on and off, a Markdown renderer, speed in a 1000-page book | task | S11 | ready for development |

@@ -32,6 +32,7 @@ data class MenuState(
 /** How the actions are arranged in the menus. Every action of [Shortcuts] has to be in here (tested). */
 private val MENU_LAYOUT: List<Pair<String, List<List<AppAction>>>> =
     listOf(
+        "File" to listOf(listOf(AppAction.EXPORT)),
         "Edit" to
             listOf(
                 listOf(AppAction.UNDO, AppAction.REDO),

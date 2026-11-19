@@ -36,6 +36,7 @@ fun ProjectScreen(
         ) {
             Text(displayTitle(project, metadata), Modifier.weight(1f), style = MaterialTheme.typography.headlineSmall)
             Button(onClick = actions.editMetadata) { Text("Edit metadata…") }
+            Button(onClick = actions.export) { Text("Export…") }
             Button(onClick = actions.newProject) { Text("New project…") }
             Button(onClick = actions.openProject) { Text("Open another project…") }
         }

@@ -55,8 +55,8 @@ class MenusTest {
     }
 
     @Test
-    fun theMenusAreEditGoPageViewAndHelp() {
-        assertEquals(listOf("Edit", "Go", "Page", "View", "Help"), menus(open).map { it.title })
+    fun theMenusAreFileEditGoPageViewAndHelp() {
+        assertEquals(listOf("File", "Edit", "Go", "Page", "View", "Help"), menus(open).map { it.title })
         val page = menus(open).first { it.title == "Page" }.groups.flatten()
         assertEquals(
             listOf(
@@ -68,6 +68,22 @@ class MenusTest {
             page.map { it.action },
         )
         assertTrue(page.first().text.endsWith("Ctrl+Enter"), page.first().text)
+    }
+
+    @Test
+    fun exportIsInTheFileMenuAndNeedsAProject() {
+        val file = menus(open).first()
+        assertEquals("File", file.title)
+        assertEquals(listOf(AppAction.EXPORT), file.groups.flatten().map { it.action })
+        assertTrue(
+            file.groups
+                .flatten()
+                .single()
+                .text
+                .endsWith("Ctrl+E"),
+        )
+        assertTrue(AppAction.EXPORT in open.enabled())
+        assertFalse(AppAction.EXPORT in MenuState().enabled())
     }
 
     @Test
@@ -137,7 +153,7 @@ class MenusTest {
         assertTrue(AppAction.REDO in open.copy(canUndo = false).enabled())
         assertFalse(AppAction.REDO in open.copy(canRedo = false).enabled())
         assertTrue(AppAction.UNDO in open.copy(canRedo = false).enabled())
-        val edit = menus(open).first()
+        val edit = menus(open).first { it.title == "Edit" }
         assertEquals("Edit", edit.title)
         assertEquals(
             listOf(

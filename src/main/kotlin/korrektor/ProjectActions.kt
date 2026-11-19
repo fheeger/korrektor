@@ -5,4 +5,5 @@ class ProjectActions(
     val newProject: () -> Unit,
     val openProject: () -> Unit,
     val editMetadata: () -> Unit,
+    val export: () -> Unit = {},
 )

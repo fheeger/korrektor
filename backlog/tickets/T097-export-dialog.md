@@ -1,6 +1,6 @@
 # T097 The export dialog: File menu, Ctrl+E, format, range, options, file, note about unchecked pages
 
-**Type:** task · **Status:** ready for development · **Story:** S11 · **Task:** S11.1, S11.5
+**Type:** task · **Status:** done · **Story:** S11 · **Task:** S11.1, S11.5
 
 ## What needs doing
 - A new menu "File" with "Export…" (Ctrl+E, in the shortcut table so that menu, keys and the F1 list agree), and an "Export…" button in the project header.
@@ -24,7 +24,12 @@
 T093, T094, T095, T096.
 
 ## Decisions
-(none yet)
+- The save dialog is the AWT `FileDialog` in save mode: the system asks before it replaces a file. A name without the extension of the format gets it. `AppModel.exportPicker` holds it (a property, like `exit`), so that `App` and `Dialogs` did not need another parameter and tests put a fake in its place.
+- The options of each format are kept in the dialog while it is open (switching to Markdown and back does not lose a choice), and remembered in the settings when an export starts, not when the dialog closes.
+- The note is "N of M pages are still unchecked. They are exported as they are." For a part of the book it says "pages in the range". A page with a status this version does not know counts as checked, like in the jumps of S09.
+- While an export runs, the choices are locked and the dialog cannot be closed except by "Cancel", which stops the export; the dialog stays open after a cancel.
+- The suggested file name is the title with the same cleaning as the project folder name (`NewProject.folderName`), and the extension of the format.
+- The page range is typed as two numbers; there is no "whole book" switch, because the fields start as the whole book.
 
 ## Progress
-Not started.
+Done. `ExportModel.kt` (with `ExportBook`), `ExportDialog.kt` (also `AppModel.openExport/closeExport`), `ExportPicker.kt`, `AppAction.EXPORT` (Ctrl+E) in `Shortcuts`, `Menus` (a new File menu), `ProjectKeys`, the button in `ProjectScreen`, README, architecture overview. Tests: `ExportModelTest` (10), `ExportDialogUiTest` (7), `MenusTest` (+1, two adjusted for the File menu). Build green. Not checked by hand: the look of the dialog and the system save dialog (listed for the story report).

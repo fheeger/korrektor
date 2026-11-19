@@ -46,6 +46,7 @@ fun Dialogs(
 ) {
     if (model.newProjectOpen) NewProjectDialog(model, pdfPicker, folderPicker)
     if (model.editMetadataOpen) EditMetadataDialog(model)
+    if (model.exportOpen && model.project != null) ExportDialog(model, model.exportPicker)
     if (model.shortcutsOpen) ShortcutListDialog { model.shortcutsOpen = false }
     if (model.closeProblem != null) SaveFailedDialog(model, folderPicker)
 }
