@@ -68,6 +68,7 @@ An overview of the code structure. Every ticket that changes the structure updat
 - `korrektor.pdf`: PDFium for Kotlin (T016, D04). Nothing outside this package touches the native library.
   - `PdfiumLib.kt`: the C functions of PDFium that are used, bound with JNA direct mapping (internal).
   - `Pdfium.kt`: loads and initialises the library on first use, and the one lock every call runs under. Also `PdfException`, the error with a message for the user.
+  - `PdfiumLocator.kt` (S12): where the library is looked for: first the app's resources folder (`compose.application.resources.dir`, set by the launcher of the packaged app), then `jna.library.path` (development and tests). A missing library is reported with the file name and the folders searched.
   - `PdfDocument.kt`: an open PDF (`PdfDocument.open(path)`): page count, pages. If opening fails, the reason (not a PDF, needs a password, damaged) comes from looking at the file.
   - `PdfPage.kt`: a page: size after rotation, rotation, the visible area (`bounds`), `text()`, `render(width)` to an image of the whole page and `renderRegion(scale, region)` (a `PixelRegion` of x, y, width and height) to an image of a part of it at a scale (only the part is allocated; the scale and the size of the whole page are limited, see the constants in `PdfPage.kt`), and `largestImageDensity()`: the pixels per point of the page's largest picture (the scan), which is the native resolution. Also `PdfRect`.
   - `PdfTextPage.kt`: the characters of a page's text layer with their boxes, as PDFium reports them (`PdfChar`).

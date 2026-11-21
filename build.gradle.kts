@@ -128,8 +128,43 @@ tasks.withType<JavaExec>().configureEach {
     systemProperty("jna.library.path", pdfiumDir.get().asFile.absolutePath)
 }
 
+// The packaged app (S12): what goes next to the program. The PDFium library for this platform and the license texts of
+// what is shipped; the Compose launcher gives the folder to the app in `compose.application.resources.dir`.
+val packagingResources = layout.buildDirectory.dir("packaging/resources")
+val preparePackagingResources =
+    tasks.register<Sync>("preparePackagingResources") {
+        dependsOn(downloadPdfium)
+        into(packagingResources.map { it.dir("common") })
+        from(pdfiumDir) { include("*.dll", "*.so", "*.dylib") }
+        from(pdfiumDir) {
+            include("LICENSE", "licenses/**")
+            into("licenses/pdfium")
+        }
+        from("src/main/resources/fonts/Junicode-OFL.txt") { into("licenses/junicode") }
+    }
+
 compose.desktop {
     application {
         mainClass = "korrektor.MainKt"
+        nativeDistributions {
+            packageName = "korrektor"
+            // Windows allows only numbers (major.minor.build); the suffix "-beta.N" is part of the zip's name only.
+            packageVersion = project.version.toString().substringBefore('-')
+            appResourcesRootDir.set(packagingResources)
+        }
     }
+}
+
+tasks.matching { it.name == "prepareAppResources" || it.name == "createDistributable" }.configureEach {
+    dependsOn(preparePackagingResources)
+}
+
+// The release build (S12): the app folder as a zip, with the license and the list of third-party software.
+tasks.register<Zip>("releaseZip") {
+    dependsOn("createDistributable")
+    archiveFileName.set("korrektor-${project.version}-windows.zip")
+    destinationDirectory.set(layout.buildDirectory.dir("release"))
+    from(layout.buildDirectory.dir("compose/binaries/main/app/korrektor")) { into("korrektor") }
+    from("LICENSE") { into("korrektor") }
+    from("docs/third-party.md") { into("korrektor") }
 }
