@@ -2,7 +2,7 @@
 
 A desktop app (later also for tablets) that turns historical PDFs into clean, searchable text by correcting their OCR.
 
-This is a hobby project in early development.
+This is a hobby project. **Version 0.1.0-beta.1 is the first beta:** it works from a PDF with OCR to the exported text, but it is still rough, and the project format may change in a later version, so keep the original PDF.
 
 - Vision: [concept/vision.md](concept/vision.md)
 - Features: [concept/features.md](concept/features.md)
@@ -11,9 +11,21 @@ This is a hobby project in early development.
 - The text layer of PDFs with OCR, as the import sees it: [docs/pdf-text-layer.md](docs/pdf-text-layer.md)
 - Development process: [concept/process.md](concept/process.md)
 - Backlog: [backlog/overview.md](backlog/overview.md)
+- Changes: [CHANGELOG.md](CHANGELOG.md), and how a release is made: [docs/releasing.md](docs/releasing.md)
+
+## Install
+korrektor runs on Windows 10 and 11 (64 bit). Nothing has to be installed, and no Java is needed.
+
+1. Download `korrektor-<version>-windows.zip` from the [releases page](https://github.com/fheeger/korrektor/releases).
+2. Unzip it anywhere you like (not into a folder you cannot write to, such as `C:\Program Files`), and start `korrektor\korrektor.exe`.
+3. The first time, Windows SmartScreen says that it protected your PC, because the app is not signed. Click "More info" and then "Run anyway".
+
+Your projects are the folders you choose when you create them; the app's own settings (the last page and zoom of each project, the export choices) are in `%APPDATA%\korrektor\settings.json`. Both stay where they are when you update: delete the old `korrektor` folder and unzip the new one. Because this is a beta, a newer version may not be able to open projects of an older one; the [changelog](CHANGELOG.md) says so under *File format*. To remove the app, delete its folder (and `settings.json` if you like).
+
+The version is shown in *Help ▸ About korrektor*.
 
 ## Using korrektor
-Start the app from the project folder with `./gradlew run`. Features arrive with the stories in the [backlog](backlog/overview.md).
+Start `korrektor.exe` (see [Install](#install)); a developer starts the app with `./gradlew run` (see [Development](#development)).
 
 - **Create a project:** click "New project…", choose a PDF, and check the title (it is suggested from the file name). Author, year and source are optional free text, for example `ca. 1790`. The project folder is created next to the PDF unless you change the location. Creating copies the PDF into the project and then imports its text page by page: a progress bar shows "Importing page n of N", and "Cancel" stops it and deletes the new project again, leaving the folder as it was. When it is done the project opens; if the PDF had pages without text (or pages that could not be read), a notice says which, and you can dismiss it. The window cannot be closed while a project is being made.
 - **Edit the metadata:** with a project open, click "Edit metadata…", change title, author, year or source, and click "Save". The window title follows. The title cannot be blank. The project folder keeps its name.

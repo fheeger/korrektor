@@ -10,6 +10,9 @@ plugins {
     id("org.jetbrains.kotlinx.kover") version "0.9.11"
 }
 
+// The one place of the app version (S12). The running app reads it from app.properties (see AppInfo).
+version = "0.1.0-beta.1"
+
 repositories {
     mavenCentral()
     google()
@@ -107,8 +110,15 @@ val downloadPdfium =
         }
     }
 
+// Puts the version into src/main/resources/app.properties.
+tasks.processResources {
+    inputs.property("version", project.version.toString())
+    filesMatching("app.properties") { expand("version" to project.version.toString()) }
+}
+
 tasks.test {
     useJUnitPlatform()
+    systemProperty("korrektor.expectedVersion", project.version.toString())
     dependsOn(downloadPdfium)
     systemProperty("jna.library.path", pdfiumDir.get().asFile.absolutePath)
 }
@@ -118,8 +128,74 @@ tasks.withType<JavaExec>().configureEach {
     systemProperty("jna.library.path", pdfiumDir.get().asFile.absolutePath)
 }
 
+// The packaged app (S12): what goes next to the program. The PDFium library for this platform and the license texts of
+// what is shipped; the Compose launcher gives the folder to the app in `compose.application.resources.dir`.
+val packagingResources = layout.buildDirectory.dir("packaging/resources")
+val preparePackagingResources =
+    tasks.register<Sync>("preparePackagingResources") {
+        dependsOn(downloadPdfium)
+        into(packagingResources.map { it.dir("common") })
+        from(pdfiumDir) { include("*.dll", "*.so", "*.dylib") }
+        from(pdfiumDir) {
+            include("LICENSE", "licenses/**")
+            into("licenses/pdfium")
+        }
+        from("src/main/resources/fonts/Junicode-OFL.txt") { into("licenses/junicode") }
+        // The text of the Apache License 2.0 for Compose, Skiko, Kotlin and kotlinx, which ask for a copy to be shipped.
+        from("docs/licenses/Apache-2.0.txt") { into("licenses/apache-2.0") }
+        // Skiko's native library is Skia (BSD 3-clause) and its data file is ICU (Unicode License v3); both ask for
+        // their notice to be shipped. The texts of the other parts of Skia (FreeType, HarfBuzz, libpng, zlib, ...) are
+        // in the PDFium folder, where the same libraries are named.
+        from("docs/licenses/Skia-BSD-3-Clause.txt") { into("licenses/skiko") }
+        from("docs/licenses/ICU-Unicode-License-v3.txt") { into("licenses/skiko") }
+    }
+
 compose.desktop {
     application {
         mainClass = "korrektor.MainKt"
+        nativeDistributions {
+            packageName = "korrektor"
+            // Windows allows only numbers (major.minor.build); the suffix "-beta.N" is part of the zip's name only.
+            packageVersion = project.version.toString().substringBefore('-')
+            appResourcesRootDir.set(packagingResources)
+        }
+    }
+}
+
+tasks.matching { it.name == "prepareAppResources" || it.name == "createDistributable" }.configureEach {
+    dependsOn(preparePackagingResources)
+    // The Compose plugin does not see changes in these files, so a changed license or library would not be packaged.
+    inputs.dir(packagingResources)
+}
+
+// The release build (S12): the app folder as a zip, with the license and the list of third-party software.
+tasks.register<Zip>("releaseZip") {
+    dependsOn("createDistributable")
+    archiveFileName.set("korrektor-${project.version}-windows.zip")
+    destinationDirectory.set(layout.buildDirectory.dir("release"))
+    from(layout.buildDirectory.dir("compose/binaries/main/app/korrektor")) { into("korrektor") }
+    from("LICENSE") { into("korrektor") }
+    from("docs/third-party.md") { into("korrektor") }
+    // A release without its library or its license texts must not be made (a change in the packaging would only
+    // show up when someone unpacks the zip).
+    doLast {
+        val names = zipTree(archiveFile.get().asFile).files.map { it.invariantSeparatorsPath }
+        val required =
+            listOf(
+                "korrektor/korrektor.exe",
+                "korrektor/LICENSE",
+                "korrektor/third-party.md",
+                "korrektor/app/resources/licenses/apache-2.0/Apache-2.0.txt",
+                "korrektor/app/resources/licenses/skiko/Skia-BSD-3-Clause.txt",
+                "korrektor/app/resources/licenses/junicode/Junicode-OFL.txt",
+                "korrektor/app/resources/licenses/pdfium/LICENSE",
+            )
+        val missing = required.filter { r -> names.none { it.endsWith(r) } }
+        val library = names.none { it.endsWith("korrektor/app/resources/pdfium.dll") || it.endsWith("/libpdfium.so") }
+        if (missing.isNotEmpty() || library) {
+            throw GradleException(
+                "The zip is missing: ${missing.joinToString()}${if (library) " and the PDFium library" else ""}",
+            )
+        }
     }
 }

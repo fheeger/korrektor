@@ -160,6 +160,8 @@ The concrete tools (test framework, formatter, linter) are chosen with the techn
 | Project file format | `docs/project-format.md` | Written in S01, updated by every ticket that changes the format |
 | Important decisions | `docs/decisions.md` | When a big decision is made |
 | For users | `README.md`, section "Using korrektor" | Updated by every ticket that changes behaviour |
+| Changelog | `CHANGELOG.md` | Every story or loose ticket PR that users notice; turned into a version section at a release |
+| Releases | `docs/releasing.md` | When the release steps change |
 
 ### Project file format
 Projects are exchanged and must stay stable (V3), so the format has its own specification: files, fields, versioning. Every change to the format updates the specification in the same ticket.
@@ -178,4 +180,4 @@ Projects are exchanged and must stay stable (V3), so the format has its own spec
 ### Rules
 - A ticket is only done when the documents it affects are updated. The end-of-story code review checks this too.
 - Everything is in English: documentation, code, comments, commits.
-- No changelog until there are releases. Until then, the story PRs and the backlog serve that purpose.
+- `CHANGELOG.md` lists the changes for users, in the style of Keep a Changelog (Added, Changed, Fixed). Every story PR and every loose ticket PR adds its entries under `Unreleased` if users notice the change; fixes from a story's own review are covered by the story's entry. A release turns `Unreleased` into a version section.

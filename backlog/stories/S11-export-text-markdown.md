@@ -1,6 +1,6 @@
 # S11 Export plain text and Markdown
 
-**Features:** G1 · **Status:** in review
+**Features:** G1 · **Status:** done
 
 As a reader of historical sources, I want to export the corrected text as plain text or Markdown
 so that I can read, search and reuse it outside the app.

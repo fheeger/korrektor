@@ -33,12 +33,7 @@ internal object Pdfium {
             PdfiumLib.initLibrary()
             ready = true
         } catch (e: UnsatisfiedLinkError) {
-            val problem =
-                PdfException(
-                    "The PDFium library could not be loaded (${e.message}). " +
-                        "The build downloads it to build/pdfium; run it again with network access.",
-                    e,
-                )
+            val problem = PdfException(PdfiumLocator.loadFailure(PdfiumLocator.directories(), e.message), e)
             failure = problem
             throw problem
         }
