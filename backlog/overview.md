@@ -22,7 +22,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [S09](stories/S09-page-status.md) | Page status | C5 | done |
 | [S10](stories/S10-find-and-replace.md) | Find and replace with a preview | D2 | done |
 | [S11](stories/S11-export-text-markdown.md) | Export plain text and Markdown | G1 | done |
-| [S12](stories/S12-beta-release.md) | Beta release 0.1.0-beta.1 | – | in progress |
+| [S12](stories/S12-beta-release.md) | Beta release 0.1.0-beta.1 | – | in review |
 
 ## Tickets
 | ID | Ticket | Type | Story | Status |
