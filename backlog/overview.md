@@ -130,6 +130,6 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T101](tickets/T101-version-and-about.md) | App version in one place, and the About dialog | task | S12 | done |
 | [T102](tickets/T102-packaged-build.md) | Packaged build: the app folder with PDFium, and the zip | task | S12 | done |
 | [T103](tickets/T103-release-workflow.md) | Release workflow: manual trigger, tests, zip, draft pre-release | task | S12 | ready for development |
-| [T104](tickets/T104-changelog.md) | CHANGELOG.md and its first entry | task | S12 | ready for development |
+| [T104](tickets/T104-changelog.md) | CHANGELOG.md and its first entry | task | S12 | done |
 | [T105](tickets/T105-release-docs.md) | Release docs: releasing.md, README install section, format note, licenses check | task | S12 | ready for development |
 | [T106](tickets/T106-clean-machine-check.md) | Check the zip in a clean Windows environment | task | S12 | ready for development |
