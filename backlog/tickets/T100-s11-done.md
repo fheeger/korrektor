@@ -1,6 +1,6 @@
 # T100 Mark S11 as done
 
-**Type:** task · **Status:** ready for development · **Story:** S12 · **Task:** S12.1
+**Type:** task · **Status:** done · **Story:** S12 · **Task:** S12.1
 
 ## What needs doing
 - `overview.md` and the story file S11 say `done` (the user merged the story PR).
@@ -18,4 +18,4 @@ none
 (none yet)
 
 ## Progress
-Not started.
+Done in the refine commit (S11 marked done with the story files).
