@@ -1,6 +1,6 @@
 # T105 Release docs: releasing.md, README install section, format note, licenses check
 
-**Type:** task · **Status:** ready for development · **Story:** S12 · **Task:** S12.6
+**Type:** task · **Status:** done · **Story:** S12 · **Task:** S12.6
 
 ## What needs doing
 - `docs/releasing.md`: the version policy (0.x, SemVer with `-beta.N`), the release steps (update the version, turn `Unreleased` into the version, tag, run the workflow, check the draft, the user publishes) and where the build comes from.
@@ -19,7 +19,9 @@ Documents. The licenses check lists the zip contents from T102.
 T102, T104
 
 ## Decisions
-(none yet)
+- The Apache License 2.0 is not in the PDFium folder under its own name, so a copy is kept in `docs/licenses/Apache-2.0.txt` and shipped in the zip under `app/resources/licenses/apache-2.0/` (Compose, Skiko, Kotlin and kotlinx ask for it).
+- Found while checking the zip: the Compose task `createDistributable` did not notice a change in the resources folder, so a local rebuild kept old files. The folder is now an input of the task (T102 code, fixed here because the license copy exposed it).
+- `releasing.md` describes the draft-and-publish steps of T103: the maintainer publishes the draft, which creates the tag.
 
 ## Progress
-Not started.
+Done. `docs/releasing.md`, the README (Install section, beta note, links, start of "Using korrektor"), the note in `docs/project-format.md`, `docs/third-party.md` (what the zip holds), the license copy. The zip was listed: every component named in `third-party.md` is there, with its license text.

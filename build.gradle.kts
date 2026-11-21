@@ -141,6 +141,8 @@ val preparePackagingResources =
             into("licenses/pdfium")
         }
         from("src/main/resources/fonts/Junicode-OFL.txt") { into("licenses/junicode") }
+        // The text of the Apache License 2.0 for Compose, Skiko, Kotlin and kotlinx, which ask for a copy to be shipped.
+        from("docs/licenses/Apache-2.0.txt") { into("licenses/apache-2.0") }
     }
 
 compose.desktop {
@@ -157,6 +159,8 @@ compose.desktop {
 
 tasks.matching { it.name == "prepareAppResources" || it.name == "createDistributable" }.configureEach {
     dependsOn(preparePackagingResources)
+    // The Compose plugin does not see changes in these files, so a changed license or library would not be packaged.
+    inputs.dir(packagingResources)
 }
 
 // The release build (S12): the app folder as a zip, with the license and the list of third-party software.
