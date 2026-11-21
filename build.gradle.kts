@@ -10,6 +10,9 @@ plugins {
     id("org.jetbrains.kotlinx.kover") version "0.9.11"
 }
 
+// The one place of the app version (S12). The running app reads it from app.properties (see AppInfo).
+version = "0.1.0-beta.1"
+
 repositories {
     mavenCentral()
     google()
@@ -107,8 +110,15 @@ val downloadPdfium =
         }
     }
 
+// Puts the version into src/main/resources/app.properties.
+tasks.processResources {
+    inputs.property("version", project.version.toString())
+    filesMatching("app.properties") { expand("version" to project.version.toString()) }
+}
+
 tasks.test {
     useJUnitPlatform()
+    systemProperty("korrektor.expectedVersion", project.version.toString())
     dependsOn(downloadPdfium)
     systemProperty("jna.library.path", pdfiumDir.get().asFile.absolutePath)
 }

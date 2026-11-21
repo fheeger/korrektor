@@ -1,6 +1,6 @@
 # T101 App version in one place, and the About dialog
 
-**Type:** task · **Status:** ready for development · **Story:** S12 · **Task:** S12.2
+**Type:** task · **Status:** done · **Story:** S12 · **Task:** S12.2
 
 ## What needs doing
 - `build.gradle.kts` holds the version `0.1.0-beta.1` (`version = ...`). The app reads it at run time from a generated resource file, so the running app and the build cannot disagree.
@@ -22,4 +22,4 @@ none
 (none yet)
 
 ## Progress
-Not started.
+Done. `AppInfo`, `AboutDialog`, the Help entry, the Gradle version and its check in `AboutTest`; architecture overview updated. Build green.
