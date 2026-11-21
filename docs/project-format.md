@@ -34,6 +34,7 @@ A project is a folder named `<title>.korrektur`:
 - **New fields do not change the version.** Fields (such as the metadata of S02 or a page status of S09), region types and new files can be added at any time.
 - **The version is raised only for incompatible changes**, for example a changed meaning of an existing field. A reader that finds a higher version than it supports must refuse to open the project, say so, and change nothing. It must not guess.
 - A project whose `format` is missing or different is not a korrektur project and is refused.
+- **During 0.x the format may still change** in ways that old projects cannot follow, and there is no migration yet. The app version that breaks old projects says so in the changelog under *File format* ([releasing.md](releasing.md)).
 
 ## Writing rules
 
