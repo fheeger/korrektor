@@ -6,11 +6,14 @@ import kotlinx.serialization.json.JsonPrimitive
 import java.nio.file.Path
 
 /**
- * The settings of the app, as opposed to those of a project: for now the page and zoom last viewed in each project.
- * They live in one JSON file in the user's config folder and never in a project, whose format stays as it is (V3):
+ * The settings of the app, as opposed to those of a project: the page and zoom last viewed in each project, the
+ * position of the divider and the options of the last export of each format (S11). They live in one JSON file in the
+ * user's config folder and never in a project, whose format stays as it is (V3):
  *
  * ```
- * {"version": 1, "projects": {"<project folder>": {"page": 12, "zoom": {"mode": "fixed", "scale": 1.5}}}}
+ * {"version": 1, "projects": {"<project folder>": {"page": 12, "zoom": {"mode": "fixed", "scale": 1.5}}},
+ *  "ui": {"split": 0.5},
+ *  "export": {"text": {"pageMarkers": true, "header": true, "keepLineBreaks": true}, "markdown": {...}}}
  * ```
  *
  * The settings are a convenience, so nothing here may stop the app. A missing or empty file means no settings; a file
@@ -26,7 +29,7 @@ class AppSettings(
     private val file: Path?,
     private val maxProjects: Int = MAX_PROJECTS,
 ) {
-    private val lock = Any()
+    internal val lock = Any()
     private val store = SettingsFile(file)
     private val versionEntry = SettingsJson.VERSION to JsonPrimitive(SettingsJson.VERSION_NUMBER)
     private var root: JsonObject? = null
@@ -71,7 +74,7 @@ class AppSettings(
 
     private fun ui(): JsonObject = current()[SettingsJson.UI] as? JsonObject ?: EMPTY
 
-    private fun save(settings: JsonObject) {
+    internal fun save(settings: JsonObject) {
         root = JsonObject(settings + versionEntry)
         store.write(root!!)
     }
@@ -80,7 +83,7 @@ class AppSettings(
 
     private fun projects(): JsonObject = current()[SettingsJson.PROJECTS] as? JsonObject ?: EMPTY
 
-    private fun current(): JsonObject = root ?: store.read().also { root = it }
+    internal fun current(): JsonObject = root ?: store.read().also { root = it }
 
     companion object {
         const val MAX_PROJECTS = 200

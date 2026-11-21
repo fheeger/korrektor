@@ -37,7 +37,8 @@ fun App(
                 if (project == null) {
                     StartScreen(onOpenProject = openProject, onNewProject = model::openNewProject)
                 } else {
-                    val actions = ProjectActions(model::openNewProject, openProject, model::openEditMetadata)
+                    val actions =
+                        ProjectActions(model::openNewProject, openProject, model::openEditMetadata, model::openExport)
                     ProjectScreen(project, model.metadata, actions) { room ->
                         ProjectPanels(model, project, projectKeys, room)
                     }

@@ -29,6 +29,10 @@ dependencies {
     detektPlugins("io.nlopez.compose.rules:detekt:0.4.28")
     // Only to read page sizes of the sample PDF in tests (T008). PDF rendering uses PDFium (D02).
     testImplementation("org.apache.pdfbox:pdfbox:3.0.8")
+    // Only to check in tests that the Markdown export is read back as the text that was exported (T094).
+    testImplementation("org.commonmark:commonmark:0.24.0")
+    testImplementation("org.commonmark:commonmark-ext-gfm-tables:0.24.0")
+    testImplementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.24.0")
 }
 
 kotlin {
