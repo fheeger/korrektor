@@ -14,6 +14,16 @@ class ChangelogSectionTest {
         val out: String,
     )
 
+    /**
+     * Git's bash on Windows. A plain "bash" there can be the one of the Windows Subsystem for Linux, which sits earlier
+     * in the PATH and fails when no Linux distribution is installed (as on the CI runners).
+     */
+    private fun bash(): String {
+        if (!System.getProperty("os.name").startsWith("Windows")) return "bash"
+        val roots = listOfNotNull(System.getenv("ProgramFiles"), System.getenv("ProgramFiles(x86)"))
+        return roots.map { File(it, "Git/bin/bash.exe") }.firstOrNull { it.isFile }?.path ?: "bash"
+    }
+
     private fun run(
         version: String,
         changelog: String,
@@ -21,7 +31,7 @@ class ChangelogSectionTest {
         val file = Files.createTempFile("changelog", ".md").toFile().apply { writeText(changelog) }
         val process =
             try {
-                ProcessBuilder("bash", File("scripts/changelog-section.sh").path, version, file.path)
+                ProcessBuilder(bash(), File("scripts/changelog-section.sh").path, version, file.path)
                     .redirectErrorStream(true)
                     .start()
             } catch (_: java.io.IOException) {
