@@ -51,8 +51,12 @@ internal object PdfiumLib {
             "imagePixelSize" to "FPDFImageObj_GetImagePixelSize",
         )
 
-    /** Loads the library (found through `jna.library.path`, see the build) and binds the functions. */
+    /**
+     * Loads the library and binds the functions. It is found in the app's resources folder (the packaged app) or in
+     * `jna.library.path` (development and tests, see the build), see [PdfiumLocator].
+     */
     fun load() {
+        PdfiumLocator.find(PdfiumLocator.directories())?.let { NativeLibrary.addSearchPath("pdfium", it.absolutePath) }
         val mapper = FunctionMapper { _, method -> NAMES.getValue(method.name) }
         val library = NativeLibrary.getInstance("pdfium", mapOf(Library.OPTION_FUNCTION_MAPPER to mapper))
         Native.register(PdfiumLib::class.java, library)
