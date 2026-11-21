@@ -28,7 +28,28 @@ internal object PdfiumLocator {
     /** The first of [directories] that holds the library, or null. */
     fun find(directories: List<File>): File? = directories.firstOrNull { File(it, fileName).isFile }
 
-    /** What to tell the user when the library cannot be loaded: the file name and the places that were searched. */
+    /**
+     * What to tell the user when the library could not be loaded: either it was not found (the file name and the places
+     * searched) or it was found and could not be loaded (a damaged file, or one that something blocks).
+     */
+    fun loadFailure(
+        directories: List<File>,
+        reason: String?,
+    ): String {
+        val found = find(directories)
+        val what =
+            if (found == null) {
+                "The PDFium library could not be loaded: ${searched(directories)}. " +
+                    "A packaged app has it next to the program; a development build downloads it to build/pdfium, " +
+                    "so run the build again with network access."
+            } else {
+                "The PDFium library ${File(found, fileName).absolutePath} exists but could not be loaded " +
+                    "(a damaged file, or a program that blocks it?): $reason"
+            }
+        return what
+    }
+
+    /** What to tell the user when the library cannot be found: the file name and the places that were searched. */
     fun searched(directories: List<File>): String =
         if (directories.isEmpty()) {
             "$fileName was not looked for in a folder next to the app, and no library path is set"

@@ -3,7 +3,7 @@
 **Type:** task · **Status:** done · **Story:** S12 · **Task:** S12.4
 
 ## What needs doing
-- `.github/workflows/release.yml` with `workflow_dispatch` and the input `tag` (for example `v0.1.0-beta.1`). It checks out the given ref (default `main`), reads the version from `build.gradle.kts`, runs `./gradlew build` and `releaseZip`, and creates a draft GitHub release (a pre-release if the version has a suffix) with the zip and the section of that version from `CHANGELOG.md` as its text.
+- `.github/workflows/release.yml` with `workflow_dispatch` and the input `ref` (a branch, tag or commit; default `main`). It checks out the given ref (default `main`), reads the version from `build.gradle.kts`, runs `./gradlew build` and `releaseZip`, and creates a draft GitHub release (a pre-release if the version has a suffix) with the zip and the section of that version from `CHANGELOG.md` as its text.
 - Permission `contents: write` for this workflow only.
 
 ## Acceptance criteria

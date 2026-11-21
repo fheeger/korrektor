@@ -20,24 +20,39 @@ class ChangelogSectionTest {
      */
     private fun bash(): String {
         if (!System.getProperty("os.name").startsWith("Windows")) return "bash"
-        val roots = listOfNotNull(System.getenv("ProgramFiles"), System.getenv("ProgramFiles(x86)"))
+        val roots =
+            listOfNotNull(
+                System.getenv("ProgramFiles"),
+                System.getenv("ProgramFiles(x86)"),
+                System.getenv("LOCALAPPDATA")?.let { "$it/Programs" },
+            )
         return roots.map { File(it, "Git/bin/bash.exe") }.firstOrNull { it.isFile }?.path ?: "bash"
+    }
+
+    /** The bash of WSL starts but cannot run anything without a distribution; such a bash is not a reason to fail. */
+    private fun assumeBashWorks() {
+        val works =
+            try {
+                ProcessBuilder(bash(), "-c", "exit 0").redirectErrorStream(true).start().let {
+                    it.inputStream.readBytes()
+                    it.waitFor(30, TimeUnit.SECONDS) && it.exitValue() == 0
+                }
+            } catch (_: java.io.IOException) {
+                false
+            }
+        assumeTrue(works, "bash is not available")
     }
 
     private fun run(
         version: String,
         changelog: String,
     ): Result {
+        assumeBashWorks()
         val file = Files.createTempFile("changelog", ".md").toFile().apply { writeText(changelog) }
         val process =
-            try {
-                ProcessBuilder(bash(), File("scripts/changelog-section.sh").path, version, file.path)
-                    .redirectErrorStream(true)
-                    .start()
-            } catch (_: java.io.IOException) {
-                assumeTrue(false, "bash is not available")
-                error("unreachable")
-            }
+            ProcessBuilder(bash(), File("scripts/changelog-section.sh").path, version, file.path)
+                .redirectErrorStream(true)
+                .start()
         val out = process.inputStream.readBytes().toString(Charsets.UTF_8)
         check(process.waitFor(30, TimeUnit.SECONDS)) { "the script did not finish" }
         return Result(process.exitValue(), out)
