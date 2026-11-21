@@ -11,7 +11,7 @@ How korrektor is released. The first release is `0.1.0-beta.1` (S12). Only Windo
 ## What a release contains
 `korrektor-<version>-windows.zip` holds one folder, `korrektor`:
 - `korrektor.exe`, the Java runtime it needs (`runtime/`) and the libraries (`app/`). Nothing has to be installed.
-- `app/resources/pdfium.dll`, the PDF library, and the license texts of what is shipped: `app/resources/licenses/` (PDFium and its parts, the Junicode font, the Apache License 2.0), `runtime/legal/` (the Java runtime), `LICENSE` (GPL-3.0) and `third-party.md`.
+- `app/resources/pdfium.dll`, the PDF library, and the license texts of what is shipped: `app/resources/licenses/` (PDFium and its parts, the Junicode font, Skia and ICU, the Apache License 2.0), `runtime/legal/` (the Java runtime), `LICENSE` (GPL-3.0) and `third-party.md`.
 
 The build is not signed, so Windows SmartScreen warns when the exe is started for the first time ("More info", then "Run anyway").
 
@@ -19,7 +19,7 @@ The build is not signed, so Windows SmartScreen warns when the exe is started fo
 1. **Prepare** on a branch (a ticket, or the last ticket of a story): set the new `version` in `build.gradle.kts`, and in `CHANGELOG.md` turn the *Unreleased* section into a section `## <version>` (leave an empty *Unreleased* above it). The build fails if the changelog has no notes for the version (`ChangelogSectionTest`). Merge it into `main`.
 2. **Build:** *Actions ▸ Release ▸ Run workflow* on `main`. The workflow reads the version, takes the notes from the changelog, builds, runs all the tests and creates a **draft** release `v<version>` with the zip attached and the notes as its text (a pre-release if the version has a suffix). It creates no tag and publishes nothing.
 3. **Check:** download the zip from the draft, unpack it somewhere without Java and try it with the sample PDF: create a project, correct a line, close and reopen, export (the list in [T106](../backlog/tickets/T106-clean-machine-check.md) is a good one).
-4. **Publish:** only the maintainer does this. Publishing the draft creates the tag `v<version>` on the commit that was built.
+4. **Publish:** only the maintainer does this. Publishing the draft creates the tag `v<version>` on the commit that was built (the workflow's `ref`, not necessarily the head of `main`).
 
 The zip can also be built on its own with `./gradlew releaseZip` (the result is in `build/release/`).
 

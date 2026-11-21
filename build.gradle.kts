@@ -143,6 +143,11 @@ val preparePackagingResources =
         from("src/main/resources/fonts/Junicode-OFL.txt") { into("licenses/junicode") }
         // The text of the Apache License 2.0 for Compose, Skiko, Kotlin and kotlinx, which ask for a copy to be shipped.
         from("docs/licenses/Apache-2.0.txt") { into("licenses/apache-2.0") }
+        // Skiko's native library is Skia (BSD 3-clause) and its data file is ICU (Unicode License v3); both ask for
+        // their notice to be shipped. The texts of the other parts of Skia (FreeType, HarfBuzz, libpng, zlib, ...) are
+        // in the PDFium folder, where the same libraries are named.
+        from("docs/licenses/Skia-BSD-3-Clause.txt") { into("licenses/skiko") }
+        from("docs/licenses/ICU-Unicode-License-v3.txt") { into("licenses/skiko") }
     }
 
 compose.desktop {
@@ -171,4 +176,26 @@ tasks.register<Zip>("releaseZip") {
     from(layout.buildDirectory.dir("compose/binaries/main/app/korrektor")) { into("korrektor") }
     from("LICENSE") { into("korrektor") }
     from("docs/third-party.md") { into("korrektor") }
+    // A release without its library or its license texts must not be made (a change in the packaging would only
+    // show up when someone unpacks the zip).
+    doLast {
+        val names = zipTree(archiveFile.get().asFile).files.map { it.invariantSeparatorsPath }
+        val required =
+            listOf(
+                "korrektor/korrektor.exe",
+                "korrektor/LICENSE",
+                "korrektor/third-party.md",
+                "korrektor/app/resources/licenses/apache-2.0/Apache-2.0.txt",
+                "korrektor/app/resources/licenses/skiko/Skia-BSD-3-Clause.txt",
+                "korrektor/app/resources/licenses/junicode/Junicode-OFL.txt",
+                "korrektor/app/resources/licenses/pdfium/LICENSE",
+            )
+        val missing = required.filter { r -> names.none { it.endsWith(r) } }
+        val library = names.none { it.endsWith("korrektor/app/resources/pdfium.dll") || it.endsWith("/libpdfium.so") }
+        if (missing.isNotEmpty() || library) {
+            throw GradleException(
+                "The zip is missing: ${missing.joinToString()}${if (library) " and the PDFium library" else ""}",
+            )
+        }
+    }
 }

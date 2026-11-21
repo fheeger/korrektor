@@ -45,9 +45,10 @@ jobs:
         run: |
           prerelease=""
           case "$VERSION" in *-*) prerelease="--prerelease" ;; esac
-          # --target: the tag v<version> is created on this commit when the draft is published.
+          # --target: the tag v<version> is created on the commit that was built (the checked-out ref, which is not
+          # GITHUB_SHA when another ref than the workflow's own branch was asked for) when the draft is published.
           gh release create "v$VERSION" "build/release/korrektor-$VERSION-windows.zip" \
             --draft $prerelease \
-            --target "$GITHUB_SHA" \
+            --target "$(git rev-parse HEAD)" \
             --title "korrektor $VERSION" \
             --notes-file "$RUNNER_TEMP/notes.md"

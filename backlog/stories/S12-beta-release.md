@@ -8,7 +8,7 @@ S12 prepares the first public beta, `0.1.0-beta.1`: one version number, a Window
 
 ## Acceptance criteria
 1. The app has one version, `0.1.0-beta.1`, defined in a single place (`build.gradle.kts`). A small About dialog (Help menu) shows the version, the license and a link to the repository.
-2. A manually triggered GitHub Actions workflow builds `korrektor-0.1.0-beta.1-windows.zip` from a tag. The zip holds a folder with `korrektor.exe`, the bundled Java runtime and the PDFium DLL. The workflow creates a **draft** GitHub pre-release with the zip attached and the changelog section as its text.
+2. A manually triggered GitHub Actions workflow builds `korrektor-0.1.0-beta.1-windows.zip` from a branch, tag or commit (the version is the one in `build.gradle.kts`; the tag `v<version>` is made when the draft is published). The zip holds a folder with `korrektor.exe`, the bundled Java runtime and the PDFium DLL. The workflow creates a **draft** GitHub pre-release with the zip attached and the changelog section as its text.
 3. The unzipped app runs on a Windows machine without Java or the project's tooling. It can create a project from the sample PDF, edit, save, reopen and export. This is checked on a clean Windows environment (Windows Sandbox is acceptable, and is reported as such).
 4. PDFium is found next to the app in the packaged build, not via `build/pdfium`. If it is missing, the app says so with a clear message.
 5. `CHANGELOG.md` exists in the style of Keep a Changelog, with an `Unreleased` section and a `0.1.0-beta.1` section. The first entry lists the MVP functions in a few lines for users.
@@ -19,13 +19,14 @@ S12 prepares the first public beta, `0.1.0-beta.1`: one version number, a Window
 10. All earlier stories are `done` and CI is green on the story branch.
 
 ## Tasks
-- [ ] S12.1 Mark S11 `done` in the backlog → [T100](../tickets/T100-s11-done.md)
-- [ ] S12.2 App version in one place, and the About dialog → [T101](../tickets/T101-version-and-about.md)
-- [ ] S12.3 Packaged build: the app folder with the PDFium DLL, found at run time, and the zip → [T102](../tickets/T102-packaged-build.md)
-- [ ] S12.4 Release workflow: manual trigger, tests, zip, draft pre-release → [T103](../tickets/T103-release-workflow.md)
-- [ ] S12.5 `CHANGELOG.md` with its first entry, and the changelog rule in `concept/process.md` → [T104](../tickets/T104-changelog.md)
-- [ ] S12.6 `docs/releasing.md`, README install section, note in the format specification, licenses check → [T105](../tickets/T105-release-docs.md)
-- [ ] S12.7 Check the zip in a clean Windows environment with the sample, by hand → [T106](../tickets/T106-clean-machine-check.md)
+- [x] S12.1 Mark S11 `done` in the backlog → [T100](../tickets/T100-s11-done.md)
+- [x] S12.2 App version in one place, and the About dialog → [T101](../tickets/T101-version-and-about.md)
+- [x] S12.3 Packaged build: the app folder with the PDFium DLL, found at run time, and the zip → [T102](../tickets/T102-packaged-build.md)
+- [x] S12.4 Release workflow: manual trigger, tests, zip, draft pre-release → [T103](../tickets/T103-release-workflow.md)
+- [x] S12.5 `CHANGELOG.md` with its first entry, and the changelog rule in `concept/process.md` → [T104](../tickets/T104-changelog.md)
+- [x] S12.6 `docs/releasing.md`, README install section, note in the format specification, licenses check → [T105](../tickets/T105-release-docs.md)
+- [x] S12.7 Check the zip in a clean Windows environment with the sample, by hand → [T106](../tickets/T106-clean-machine-check.md)
+- [x] S12.8 Fixes from the code review → [T107](../tickets/T107-s12-review-fixes.md)
 
 ## Decisions
 - Version scheme: SemVer with a `-beta.N` suffix, tags `vX.Y.Z-beta.N`.

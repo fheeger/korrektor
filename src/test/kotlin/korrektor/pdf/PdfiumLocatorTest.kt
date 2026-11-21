@@ -47,6 +47,17 @@ class PdfiumLocatorTest {
     }
 
     @Test
+    fun aLibraryThatIsThereButCannotBeLoadedIsNotReportedAsMissing() {
+        val folder = folderWithLibrary()
+        val message = PdfiumLocator.loadFailure(listOf(folder), "bad image")
+        assertTrue("exists but could not be loaded" in message, message)
+        assertTrue("bad image" in message, message)
+        assertTrue("not found" !in message, message)
+        val missing = PdfiumLocator.loadFailure(listOf(Files.createTempDirectory("pdfium-empty").toFile()), "x")
+        assertTrue("not found" in missing, missing)
+    }
+
+    @Test
     fun theLibraryOfTheBuildIsFoundInTheTestSetup() {
         // The test task sets jna.library.path to build/pdfium; this is the folder that the packaged app copies from.
         assertNotNull(PdfiumLocator.find(PdfiumLocator.directories()))
