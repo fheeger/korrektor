@@ -22,7 +22,7 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [S09](stories/S09-page-status.md) | Page status | C5 | done |
 | [S10](stories/S10-find-and-replace.md) | Find and replace with a preview | D2 | done |
 | [S11](stories/S11-export-text-markdown.md) | Export plain text and Markdown | G1 | done |
-| [S12](stories/S12-beta-release.md) | Beta release 0.1.0-beta.1 | – | in review |
+| [S12](stories/S12-beta-release.md) | Beta release 0.1.0-beta.1 | – | done |
 
 ## Tickets
 | ID | Ticket | Type | Story | Status |
@@ -134,3 +134,4 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T105](tickets/T105-release-docs.md) | Release docs: releasing.md, README install section, format note, licenses check | task | S12 | done |
 | [T106](tickets/T106-clean-machine-check.md) | Check the zip in a clean Windows environment | task | S12 | done |
 | [T107](tickets/T107-s12-review-fixes.md) | Fixes from the S12 code review | task | S12 | done |
+| [T108](tickets/T108-insert-special-characters.md) | Insert special characters: Insert menu and shortcuts | task | – | in progress |
