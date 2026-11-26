@@ -3,6 +3,7 @@ package korrektor
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import korrektor.characters.CharacterInput
 import korrektor.editor.AutoSaver
 import korrektor.editor.BookEditor
 import korrektor.editor.HistoryRecovery
@@ -38,6 +39,9 @@ class AppModel(
     /** How the history entries of the open project are written; tests put a failing one in its place. */
     private val historyWriter: (Project) -> (List<HistoryEntry>) -> Unit = ::appendToHistory,
 ) {
+    /** Where special characters go: the focused text field, and the keys that insert them (T108). */
+    val characters = CharacterInput()
+
     /** The position of the divider between scan and text, the same for every project. */
     val layout = LayoutState(settings)
 

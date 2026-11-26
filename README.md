@@ -38,6 +38,11 @@ Start `korrektor.exe` (see [Install](#install)); a developer starts the app with
   - Lines: **Up** and **Down** move to the line above and below (the cursor keeps its column; on the first or last line of a page they open the previous or next page), **Ctrl+Home** and **Ctrl+End** go to the first and last line of the page. The yellow box on the scan follows.
   - Pages: **Ctrl+Down** and **Ctrl+Up** open the next and previous page (the cursor is in its first line), **Ctrl+G** goes to the page number field (type a number, **Enter** opens it, **Escape** goes back to the text).
   - Editing a line: **Enter** splits the line at the cursor (at the end of a line it adds an empty line), **Backspace** at the start joins the line with the one above (on an empty line it deletes it), **Delete** at the end joins the line below into it.
+  - Special characters: the *Insert* menu and these keys put a character at the cursor of a line, the find field or the replace field (a selection is replaced; in a line it is saved and undone like typing). The menu is grey while no such field has the cursor. Frequent characters have one combination, **Ctrl+Shift** and: **S** `ſ`, **A** `aͤ`, **O** `oͤ`, **U** `uͤ`, **E** `æ`, **W** `œ`, **M** `—`, **H** `⸗`. For the others press **Ctrl+K**, let go, then one key (**Esc** cancels; a key without a character cancels too and types nothing):
+    - Historic: **Shift+A** `Aͤ`, **Shift+O** `Oͤ`, **Shift+U** `Uͤ`, **V** `uͦ`, **R** `ꝛ`
+    - Letters: **Shift+E** `Æ`, **Shift+W** `Œ`, **E** `ë`, **Y** `Ë`, **I** `ï`, **Shift+I** `Ï`
+    - Dashes and quotes: **N** `–`, **1** `„`, **2** `“`, **3** `”`, **4** `‚`, **5** `‘`, **6** `’`, **7** `»`, **8** `«`, **9** `›`, **0** `‹`
+    - Symbols: **P** `§`, **D** `†`, **Shift+D** `‡`, **L** `£`, **B** `℔`, **G** `°`, **X** `×`, **H** `½`, **Q** `¼`, **T** `¾`
   - Zoom: **Ctrl+Plus** (also **Ctrl+=**) and **Ctrl+Minus**, **Ctrl+0** for the whole page, **Ctrl+1** for the page width.
   - The shortcuts are not changeable yet. On macOS the page shortcuts will use another modifier, because the system uses Ctrl+Up and Ctrl+Down.
 

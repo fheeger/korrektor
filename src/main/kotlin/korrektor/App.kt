@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import korrektor.characters.CharacterArea
 
 /** The whole window: an error banner when needed, the start screen or the open project, and the dialog. */
 @Composable
@@ -29,18 +30,25 @@ fun App(
     val keys = keyActions ?: projectKeys
     KorrektorTheme {
         Surface(modifier.fillMaxSize()) {
-            Column(if (model.project != null) Modifier.shortcutKeys(keys) else Modifier) {
-                model.error?.let { ErrorBanner(message = it, onDismiss = model::dismissError) }
-                model.notice?.let { NoticeBanner(message = it, onDismiss = model::dismissNotice) }
-                SaveWarning(model.saver)
-                val project = model.project
-                if (project == null) {
-                    StartScreen(onOpenProject = openProject, onNewProject = model::openNewProject)
-                } else {
-                    val actions =
-                        ProjectActions(model::openNewProject, openProject, model::openEditMetadata, model::openExport)
-                    ProjectScreen(project, model.metadata, actions) { room ->
-                        ProjectPanels(model, project, projectKeys, room)
+            CharacterArea(model.characters) {
+                Column(if (model.project != null) Modifier.shortcutKeys(keys, model.characters) else Modifier) {
+                    model.error?.let { ErrorBanner(message = it, onDismiss = model::dismissError) }
+                    model.notice?.let { NoticeBanner(message = it, onDismiss = model::dismissNotice) }
+                    SaveWarning(model.saver)
+                    val project = model.project
+                    if (project == null) {
+                        StartScreen(onOpenProject = openProject, onNewProject = model::openNewProject)
+                    } else {
+                        val actions =
+                            ProjectActions(
+                                model::openNewProject,
+                                openProject,
+                                model::openEditMetadata,
+                                model::openExport,
+                            )
+                        ProjectScreen(project, model.metadata, actions) { room ->
+                            ProjectPanels(model, project, projectKeys, room)
+                        }
                     }
                 }
             }

@@ -65,3 +65,12 @@ None.
 
 ## Decisions
 - The user approved the characters and shortcuts, without ç and Ç, which a German keyboard can already type.
+- A field offers itself for characters while it has the focus, instead of the app simulating key presses. So the insertion goes the same way as typed text. Other fields (page number, the dialogs) do not take characters.
+- A key that was used for a character is followed by an event that types the key's letter. It is held back, otherwise Ctrl+K, R would give `ꝛr`. The UI tests send real AWT events to check this.
+- A letter inserted with its combining mark (`uͤ`) counts as one key for undo, so that a word with it is not undone in pieces.
+- The Insert entries are grey while no field takes characters.
+- All menu entries show a name, not only the unclear ones.
+- The test of the real menu has to show a window for a moment, because a hidden one does not update its menu. It does nothing without a screen.
+
+## Progress
+Built, with tests and documents. `./gradlew build` (tests, Detekt, ktlint) is green. Next: code review, PR.

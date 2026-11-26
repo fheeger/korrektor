@@ -5,6 +5,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import korrektor.characters.CharacterMenus
+import korrektor.characters.INSERT_MENU
 import korrektor.editor.uncheckedAfter
 import korrektor.editor.uncheckedBefore
 import korrektor.search.selectedCount
@@ -17,6 +19,9 @@ import kotlinx.coroutines.launch
 const val APP_NAME = "korrektor"
 
 private const val HELP_MENU = "Help"
+
+// The Insert menu comes after this one.
+private const val EDIT_MENU = "Edit"
 
 /** The entry of the Help menu that opens the About dialog. */
 const val ABOUT_ITEM = "About $APP_NAME"
@@ -63,6 +68,9 @@ fun main() =
                             Separator()
                             Item(ABOUT_ITEM, onClick = { model.aboutOpen = true })
                         }
+                    }
+                    if (menu.title == EDIT_MENU) {
+                        Menu(INSERT_MENU) { CharacterMenus(model.characters) }
                     }
                 }
             }

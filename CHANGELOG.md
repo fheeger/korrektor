@@ -4,6 +4,9 @@ All notable changes to korrektor are listed here, for users. The format follows 
 
 ## Unreleased
 
+### Added
+- **Special characters:** an *Insert* menu and keyboard shortcuts for characters that historical print needs, such as `ſ`, `uͤ`, `ꝛ`, `⸗`, quotes and symbols, in a line and in the find and replace fields. **F1** lists the shortcuts.
+
 ## 0.1.0-beta.1
 
 The first public beta. It covers the whole path from a PDF to clean text: import a PDF that already has OCR, correct it page by page next to the scan, and export the text. Windows only. The project format may still change before 1.0, and a later version may not be able to open projects of this one.

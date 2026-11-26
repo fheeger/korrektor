@@ -29,6 +29,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import korrektor.characters.SpecialCharacters
 
 private val MAX_HEIGHT = 640.dp
 
@@ -80,6 +81,10 @@ fun ShortcutList(
                 }
                 Text("In a line", Modifier.padding(top = 8.dp), style = MaterialTheme.typography.titleMedium)
                 for ((key, what) in Shortcuts.editorKeys) Entry(key, what, "editor key $key")
+                Text("Special characters", Modifier.padding(top = 8.dp), style = MaterialTheme.typography.titleMedium)
+                for (character in SpecialCharacters.all) {
+                    Entry(character.shortcut, "${character.text}   ${character.name}", "character ${character.name}")
+                }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 TextButton(onClick = onClose) { Text("Close") }

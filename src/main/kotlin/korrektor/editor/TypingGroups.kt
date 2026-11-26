@@ -9,16 +9,21 @@ const val TYPING_PAUSE_MS = 1_000L
 /**
  * What one edit of the text of a line did, found by cutting off the common start and end of the old and new text:
  * [removed] characters at [at] were replaced by [inserted] ones. [startsWord] is true if the edit types a space after
- * a character that is not a space: the space begins the next word.
+ * a character that is not a space: the space begins the next word. [marks] of the inserted characters are combining
+ * marks that came with a letter, like the small e of "uͤ".
  */
 data class TextEdit(
     val at: Int,
     val removed: Int,
     val inserted: Int,
     val startsWord: Boolean,
+    val marks: Int = 0,
 ) {
-    /** One character typed or deleted: what the keys do. A paste or a replaced selection is more. */
-    val isOneKey: Boolean get() = removed + inserted == 1
+    /**
+     * One character typed or deleted: what the keys do. A paste or a replaced selection is more. A letter inserted
+     * together with its combining mark is one character.
+     */
+    val isOneKey: Boolean get() = removed + inserted - marks == 1
 }
 
 /** The place of typing that is going on: its page and line, when it last changed, and the span it covers. */
@@ -48,7 +53,9 @@ object TypingGroups {
         while (tail < limit - at && old[old.length - 1 - tail] == new[new.length - 1 - tail]) tail++
         val inserted = new.length - at - tail
         val spaceAfterWord = inserted == 1 && new[at] == ' ' && at > 0 && new[at - 1] != ' '
-        return TextEdit(at, old.length - at - tail, inserted, spaceAfterWord)
+        val marks = new.substring(at, at + inserted).count { it.category == CharCategory.NON_SPACING_MARK }
+        // A mark typed on its own is a character like any other.
+        return TextEdit(at, old.length - at - tail, inserted, spaceAfterWord, if (marks < inserted) marks else 0)
     }
 
     /** Whether [edit] on [lineId] of [page] at time [now] goes on with the typing in [run]. */

@@ -39,6 +39,8 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import korrektor.characters.inserting
+import korrektor.characters.takesSpecialCharacters
 import kotlinx.coroutines.launch
 
 /**
@@ -115,22 +117,24 @@ private fun QueryRow(
         field = field.copy(selection = TextRange(0, field.text.length))
         focus.requestFocus()
     }
+    val accept = { typed: TextFieldValue ->
+        field = typed
+        if (typed.text != model.query.text) model.change(model.query.copy(text = typed.text))
+    }
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         Toggle(if (model.showReplace) "▾" else "▸", model.showReplace, "replace toggle") {
             model.showReplace = it
         }
         TextBox(
             field,
-            { typed ->
-                field = typed
-                if (typed.text != model.query.text) model.change(model.query.copy(text = typed.text))
-            },
+            accept,
             "Find",
             Modifier
                 .weight(1f)
                 .focusRequester(focus)
                 // While the field has the keyboard, stepping through the hits does not take it away (see `focusHeld`).
                 .onFocusChanged { model.editor.focusHeld = it.isFocused }
+                .takesSpecialCharacters { accept(field.inserting(it)) }
                 .onPreviewKeyEvent { event -> fieldKey(event, model, onStep, onLeave) }
                 .testTag("search field"),
         )
@@ -190,15 +194,17 @@ private fun ReplaceRow(
     ) {
         Box(Modifier.width(TOGGLE_ALIGN))
         var field by remember { mutableStateOf(TextFieldValue(model.replacement)) }
+        val accept = { typed: TextFieldValue ->
+            field = typed
+            model.replacement = typed.text
+        }
         TextBox(
             field,
-            {
-                field = it
-                model.replacement = it.text
-            },
+            accept,
             "Replace with",
             Modifier
                 .weight(1f)
+                .takesSpecialCharacters { accept(field.inserting(it)) }
                 .onPreviewKeyEvent { event -> fieldKey(event, model, onStep, onLeave) }
                 .testTag("replace field"),
         )
