@@ -1,6 +1,6 @@
 # S12 Beta release 0.1.0-beta.1
 
-**Features:** – (distribution) · **Status:** in review
+**Features:** – (distribution) · **Status:** done
 
 As the author (and a few early testers), I want to download a Windows build of korrektor and run it without a development setup, so that I can correct real books and report what breaks.
 

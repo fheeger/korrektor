@@ -51,6 +51,8 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import korrektor.characters.inserting
+import korrektor.characters.takesSpecialCharacters
 import korrektor.format.Line
 
 /** The width of one digit of the line numbers, in dp: the number column is as wide as the largest number needs. */
@@ -249,20 +251,23 @@ private fun LineRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         NumberCell(line.id, state, numberWidth) { focus.requestFocus() }
+        // What the user typed or inserted from the Insert menu or with its keys.
+        val accept = { typed: TextFieldValue ->
+            val clean = typed.text.replace('\n', ' ').replace('\r', ' ')
+            field = if (clean == typed.text) typed else typed.copy(text = clean)
+            actions.editor.caret = field.selection.end
+            // Always passed on: `line` may be one keystroke behind, and the editor ignores a text it already has.
+            actions.changeText(line.id, clean)
+        }
         BasicTextField(
             value = field,
-            onValueChange = { typed ->
-                val clean = typed.text.replace('\n', ' ').replace('\r', ' ')
-                field = if (clean == typed.text) typed else typed.copy(text = clean)
-                actions.editor.caret = field.selection.end
-                // Always passed on: `line` may be one keystroke behind, and the editor ignores a text it already has.
-                actions.changeText(line.id, clean)
-            },
+            onValueChange = accept,
             modifier =
                 Modifier
                     .weight(1f)
                     .focusRequester(focus)
                     .onFocusChanged { if (it.isFocused) actions.activate(line.id) }
+                    .takesSpecialCharacters { accept(field.inserting(it)) }
                     .onPreviewKeyEvent { event -> lineKey(event, line.id, field, actions.editor) }
                     .testTag("line text ${line.id}"),
             singleLine = true,

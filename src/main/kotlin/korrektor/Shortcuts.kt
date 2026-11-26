@@ -11,6 +11,7 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import korrektor.characters.CharacterInput
 
 /** What the keyboard can do besides typing. What each action does is decided where [KeyActions] is implemented. */
 enum class AppAction {
@@ -314,6 +315,30 @@ private val KEY_NAMES =
         Key.NumPadEnter to "NumPad Enter",
         Key.F1 to "F1",
         Key.F3 to "F3",
+        Key.A to "A",
+        Key.B to "B",
+        Key.D to "D",
+        Key.I to "I",
+        Key.K to "K",
+        Key.L to "L",
+        Key.N to "N",
+        Key.O to "O",
+        Key.P to "P",
+        Key.Q to "Q",
+        Key.S to "S",
+        Key.T to "T",
+        Key.U to "U",
+        Key.V to "V",
+        Key.W to "W",
+        Key.X to "X",
+        Key.Two to "2",
+        Key.Three to "3",
+        Key.Four to "4",
+        Key.Five to "5",
+        Key.Six to "6",
+        Key.Seven to "7",
+        Key.Eight to "8",
+        Key.Nine to "9",
     )
 
 /**
@@ -321,7 +346,7 @@ private val KEY_NAMES =
  * plus the AltGraph modifier, without Alt, so that AltGr+0 (`}` on a German keyboard) would look like Ctrl+0; such a
  * key is a character, never a shortcut.
  */
-private fun KeyEvent.makesACharacter(): Boolean =
+internal fun KeyEvent.makesACharacter(): Boolean =
     isAltPressed || isMetaPressed || (nativeKeyEvent as? java.awt.event.KeyEvent)?.isAltGraphDown == true
 
 /**
@@ -335,11 +360,19 @@ fun interface KeyActions {
 /**
  * The one key handler for the open project: it sits above everything, and (as the preview of a key event goes from
  * the outside in) sees the shortcut before the line, the page field or a button can, wherever the focus is. A key
- * that is a shortcut is used up: the focused element never sees it.
+ * that is a shortcut is used up: the focused element never sees it. The keys of the special [characters] come first,
+ * because after their leader the next key is theirs, whatever it is.
  */
-fun Modifier.shortcutKeys(actions: KeyActions): Modifier =
+fun Modifier.shortcutKeys(
+    actions: KeyActions,
+    characters: CharacterInput,
+): Modifier =
     onPreviewKeyEvent { event ->
-        val action = Shortcuts.resolve(event)
-        if (action != null) actions.perform(action)
-        action != null || Shortcuts.isIgnored(event)
+        if (characters.onKey(event)) {
+            true
+        } else {
+            val action = Shortcuts.resolve(event)
+            if (action != null) actions.perform(action)
+            action != null || Shortcuts.isIgnored(event)
+        }
     }

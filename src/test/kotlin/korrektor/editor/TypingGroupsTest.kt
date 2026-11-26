@@ -106,6 +106,16 @@ class TypingGroupsTest {
     }
 
     @Test
+    fun aLetterInsertedWithItsMarkIsOneKey() {
+        // "u" with a small e above, from the Insert menu, in the middle of a word: one step with the typing around it.
+        assertTrue(edit("b", "buͤ").isOneKey)
+        assertEquals(listOf(true, true), run("", "b", "buͤ", "buͤc"))
+        assertTrue(edit("u", "uͤ").isOneKey, "a mark on its own")
+        assertFalse(edit("b", "buv").isOneKey)
+        assertFalse(edit("b", "buͤv").isOneKey)
+    }
+
+    @Test
     fun aRunStartsOnlyWithAKey() {
         assertNotNull(TypingGroups.started(1, "l1", edit("a", "ab"), 5))
         assertNull(TypingGroups.started(1, "l1", edit("a", "aPASTE"), 5))

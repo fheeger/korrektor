@@ -1,6 +1,9 @@
 # Test material (not redistributed, see README)
 samples/
 
+# OCR benchmark projects (contain copies of the source PDFs)
+benchmark/
+
 # Local Claude Code settings
 .claude/settings.local.json
 

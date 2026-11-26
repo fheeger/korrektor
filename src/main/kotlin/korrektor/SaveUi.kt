@@ -51,3 +51,10 @@ fun Dialogs(
     if (model.aboutOpen) AboutDialog { model.aboutOpen = false }
     if (model.closeProblem != null) SaveFailedDialog(model, folderPicker)
 }
+
+/**
+ * Whether one of the [Dialogs] is shown. A dialog is a layer of the same window: the line behind it keeps the focus,
+ * and the menu bar can still be used.
+ */
+val AppModel.dialogOpen: Boolean
+    get() = newProjectOpen || editMetadataOpen || exportOpen || shortcutsOpen || aboutOpen || closeProblem != null
