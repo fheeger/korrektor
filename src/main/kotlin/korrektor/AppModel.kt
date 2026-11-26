@@ -101,6 +101,9 @@ class AppModel(
     /** Whether the list of keyboard shortcuts is showing: F1 opens it, F1 again closes it. */
     var shortcutsOpen: Boolean by mutableStateOf(false)
 
+    /** Whether the About dialog is showing. */
+    var aboutOpen: Boolean by mutableStateOf(false)
+
     /** A message for the user, shown until it is dismissed. */
     var error: String? by mutableStateOf(null)
         internal set

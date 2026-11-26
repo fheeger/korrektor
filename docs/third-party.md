@@ -21,6 +21,15 @@ korrektor is released under the GPL-3.0. It uses the following components, all w
 - **License:** SIL Open Font License 1.1 (copyright 2025 Peter S. Baker), which allows bundling and redistributing the font with software under another license, as long as the font is not sold on its own and keeps its name and license. The license text is next to the font (`Junicode-OFL.txt`). A distributed app must ship it.
 - **Coverage:** every Latin letter, digit, punctuation mark and combining mark in the text layers of the two sample books has a glyph (`HistoricFontsTest`). What it lacks is OCR noise from other scripts (Cyrillic, Hebrew, Arabic, Devanagari, …) and a few symbols; the text engine draws these from a system font.
 
+## In the release zip (S12)
+
+The Windows zip (see [releasing.md](releasing.md)) holds, besides PDFium, JNA and Junicode above:
+
+- **The Java runtime** (`runtime/`): a trimmed copy of the JDK 21 that built the app (Eclipse Temurin, OpenJDK). License: GPL v2 with the Classpath Exception, which allows shipping it with software under another license. Its license texts are in `runtime/legal/`.
+- **Compose Multiplatform** (JetBrains and Google), **Skiko** (the Skia graphics library with its native part for Windows), the **Kotlin** standard library and **kotlinx** libraries (coroutines, serialization, datetime), and the AndroidX libraries that Compose is made of (`app/*.jar`): all Apache 2.0 (this includes the small jars `jbr-api`, `jspecify` and JetBrains `annotations`). The text of that license is in `app/resources/licenses/apache-2.0/` (a copy is kept in `docs/licenses/`).
+- **Skia and ICU inside Skiko:** `skiko-windows-x64.dll` is Skia (BSD 3-clause, Google; it contains FreeType, HarfBuzz, libpng, zlib, libjpeg-turbo and others, whose license texts are in `app/resources/licenses/pdfium/licenses/`, the same libraries as in PDFium) and `icudtl.dat` is the ICU data (Unicode License v3). Their notices are in `app/resources/licenses/skiko/`. The Skiko jars carry no license file of their own, so these texts were taken from the Skia and ICU projects.
+- The license of korrektor (`LICENSE`), this list, and the license texts of PDFium and the font in `app/resources/licenses/`.
+
 ## For development only
 
 - **Apache PDFBox** (Apache 2.0): used by the tests to generate small PDFs and as an independent check of PDF contents. It is not part of the app.

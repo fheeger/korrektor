@@ -37,7 +37,7 @@ fun SaveWarning(
     )
 }
 
-/** The dialogs that are open: new project, metadata, the shortcuts, and "your changes are not saved". */
+/** The dialogs that are open: new project, metadata, the shortcuts, About, and "your changes are not saved". */
 @Composable
 fun Dialogs(
     model: AppModel,
@@ -48,5 +48,6 @@ fun Dialogs(
     if (model.editMetadataOpen) EditMetadataDialog(model)
     if (model.exportOpen && model.project != null) ExportDialog(model, model.exportPicker)
     if (model.shortcutsOpen) ShortcutListDialog { model.shortcutsOpen = false }
+    if (model.aboutOpen) AboutDialog { model.aboutOpen = false }
     if (model.closeProblem != null) SaveFailedDialog(model, folderPicker)
 }

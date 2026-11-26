@@ -4,3 +4,4 @@ gradlew text eol=lf
 *.json text eol=lf
 *.jsonl text eol=lf
 src/test/resources/export/* text eol=lf
+*.sh text eol=lf

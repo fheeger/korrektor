@@ -1,0 +1,54 @@
+name: Release
+
+# Run by hand (Actions > Release > Run workflow). It builds the zip for the version in build.gradle.kts and creates a
+# DRAFT release; nothing is published until the maintainer publishes the draft, which also creates the tag.
+# See docs/releasing.md.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag or commit to build (the version is taken from build.gradle.kts there)
+        default: main
+        required: true
+
+permissions:
+  contents: write # only to create the draft release
+
+jobs:
+  release:
+    name: release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Read the version and the notes
+        id: version
+        shell: bash
+        run: |
+          version="$(sed -n 's/^version = "\(.*\)"$/\1/p' build.gradle.kts)"
+          if [ -z "$version" ]; then echo "No version found in build.gradle.kts" >&2; exit 1; fi
+          # Fails before the build if CHANGELOG.md has no notes for this version.
+          scripts/changelog-section.sh "$version" > "$RUNNER_TEMP/notes.md"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - run: ./gradlew build releaseZip
+      - name: Create the draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          prerelease=""
+          case "$VERSION" in *-*) prerelease="--prerelease" ;; esac
+          # --target: the tag v<version> is created on the commit that was built (the checked-out ref, which is not
+          # GITHUB_SHA when another ref than the workflow's own branch was asked for) when the draft is published.
+          gh release create "v$VERSION" "build/release/korrektor-$VERSION-windows.zip" \
+            --draft $prerelease \
+            --target "$(git rev-parse HEAD)" \
+            --title "korrektor $VERSION" \
+            --notes-file "$RUNNER_TEMP/notes.md"

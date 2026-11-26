@@ -16,6 +16,11 @@ import kotlinx.coroutines.launch
 /** Name shown in the window title. */
 const val APP_NAME = "korrektor"
 
+private const val HELP_MENU = "Help"
+
+/** The entry of the Help menu that opens the About dialog. */
+const val ABOUT_ITEM = "About $APP_NAME"
+
 fun main() =
     application {
         val model = remember { AppModel(settings = AppSettings(AppSettings.defaultFile())) }
@@ -52,6 +57,11 @@ fun main() =
                             for (item in group) {
                                 Item(item.text, enabled = item.enabled, onClick = { keys.perform(item.action) })
                             }
+                        }
+                        // No shortcut, so it is not in the table of shortcuts that the menus are made from.
+                        if (menu.title == HELP_MENU) {
+                            Separator()
+                            Item(ABOUT_ITEM, onClick = { model.aboutOpen = true })
                         }
                     }
                 }

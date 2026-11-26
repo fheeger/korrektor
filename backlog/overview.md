@@ -21,7 +21,8 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [S08](stories/S08-undo-redo.md) | Undo/redo | F1 | done |
 | [S09](stories/S09-page-status.md) | Page status | C5 | done |
 | [S10](stories/S10-find-and-replace.md) | Find and replace with a preview | D2 | done |
-| [S11](stories/S11-export-text-markdown.md) | Export plain text and Markdown | G1 | in review |
+| [S11](stories/S11-export-text-markdown.md) | Export plain text and Markdown | G1 | done |
+| [S12](stories/S12-beta-release.md) | Beta release 0.1.0-beta.1 | – | in review |
 
 ## Tickets
 | ID | Ticket | Type | Story | Status |
@@ -125,3 +126,11 @@ Refining a story means writing its acceptance criteria and tasks. After review i
 | [T097](tickets/T097-export-dialog.md) | The export dialog: File menu, Ctrl+E, format, range, options, file, note about unchecked pages | task | S11 | done |
 | [T098](tickets/T098-export-tests.md) | Export tests: the sample, both formats with options on and off, a Markdown renderer, speed in a 1000-page book | task | S11 | done |
 | [T099](tickets/T099-s11-review-fixes.md) | Fixes from the S11 code review | task | S11 | done |
+| [T100](tickets/T100-s11-done.md) | Mark S11 as done | task | S12 | done |
+| [T101](tickets/T101-version-and-about.md) | App version in one place, and the About dialog | task | S12 | done |
+| [T102](tickets/T102-packaged-build.md) | Packaged build: the app folder with PDFium, and the zip | task | S12 | done |
+| [T103](tickets/T103-release-workflow.md) | Release workflow: manual trigger, tests, zip, draft pre-release | task | S12 | done |
+| [T104](tickets/T104-changelog.md) | CHANGELOG.md and its first entry | task | S12 | done |
+| [T105](tickets/T105-release-docs.md) | Release docs: releasing.md, README install section, format note, licenses check | task | S12 | done |
+| [T106](tickets/T106-clean-machine-check.md) | Check the zip in a clean Windows environment | task | S12 | done |
+| [T107](tickets/T107-s12-review-fixes.md) | Fixes from the S12 code review | task | S12 | done |
