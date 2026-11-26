@@ -20,9 +20,11 @@ class CharacterTarget(
 
 /**
  * Where special characters go (the text field that has the focus, if it takes them) and the keys that insert them,
- * including the wait for the second key after [LEADER].
+ * including the wait for the second key after [LEADER]. While [blocked], no field takes characters.
  */
-class CharacterInput {
+class CharacterInput(
+    private val blocked: () -> Boolean = { false },
+) {
     private var target by mutableStateOf<CharacterTarget?>(null)
 
     /** Whether [LEADER] was pressed and the next key picks the character. */
@@ -34,7 +36,7 @@ class CharacterInput {
     private var swallowTyped = false
 
     /** Whether a field that takes characters has the focus. */
-    val ready: Boolean get() = target != null
+    val ready: Boolean get() = target != null && !blocked()
 
     /** [field] got the focus. */
     fun focused(field: CharacterTarget) {
@@ -55,7 +57,7 @@ class CharacterInput {
     /** Puts [character] into the focused field; nothing happens without one. */
     fun insert(character: SpecialCharacter) {
         waiting = false
-        target?.insert?.invoke(character.text)
+        if (ready) target?.insert?.invoke(character.text)
     }
 
     /** Handles a key event before anything else sees it. Returns whether it is used up. */
@@ -89,9 +91,13 @@ class CharacterInput {
     // character (Escape too) is used up as well: it types nothing.
     private fun secondKey(event: KeyEvent): Boolean {
         if (event.key in MODIFIER_KEYS) return false
-        waiting = false
-        if (!event.makesACharacter()) {
-            AFTER_LEADER[KeyCombo(event.key, shift = event.isShiftPressed)]?.let(::insert)
+        // The leader held down repeats itself: that must not end the wait it started.
+        val leaderAgain = KeyCombo(event.key, event.isCtrlPressed, event.isShiftPressed) == LEADER
+        if (!leaderAgain) {
+            waiting = false
+            if (!event.makesACharacter()) {
+                AFTER_LEADER[KeyCombo(event.key, shift = event.isShiftPressed)]?.let(::insert)
+            }
         }
         return true
     }

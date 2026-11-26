@@ -68,9 +68,9 @@ None.
 - A field offers itself for characters while it has the focus, instead of the app simulating key presses. So the insertion goes the same way as typed text. Other fields (page number, the dialogs) do not take characters.
 - A key that was used for a character is followed by an event that types the key's letter. It is held back, otherwise Ctrl+K, R would give `ꝛr`. The UI tests send real AWT events to check this.
 - A letter inserted with its combining mark (`uͤ`) counts as one key for undo, so that a word with it is not undone in pieces.
-- The Insert entries are grey while no field takes characters.
+- The Insert entries are grey while no field takes characters, and while a dialog is open: the line behind it keeps the focus, so it would be changed unseen. A new dialog has to be added to `AppModel.dialogOpen`.
 - All menu entries show a name, not only the unclear ones.
 - The test of the real menu has to show a window for a moment, because a hidden one does not update its menu. It does nothing without a screen.
 
 ## Progress
-Built, with tests and documents. `./gradlew build` (tests, Detekt, ktlint) is green. Next: code review, PR.
+Built, with tests and documents. `./gradlew build` (tests, Detekt, ktlint) is green. The Opus review found no blocking bugs. Fixed: Ctrl+K held into auto-repeat switched the wait off and on; the Insert menu could write into the line behind a dialog; AltGr without Alt had no test. Left for the check by hand: a dead key (`^`, `´`) as the second key might still accent the next letter (suspected, not reproduced); that using the real menu leaves the cursor in the field.

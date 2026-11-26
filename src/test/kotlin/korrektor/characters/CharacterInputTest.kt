@@ -69,6 +69,26 @@ class CharacterInputTest {
     }
 
     @Test
+    fun theLeaderHeldDownKeepsWaiting() {
+        repeat(4) { assertTrue(leader()) }
+        assertTrue(input.waiting)
+        down(Key.R)
+        assertEquals(listOf("ꝛ"), inserted)
+    }
+
+    @Test
+    fun whileBlockedNothingIsInserted() {
+        var blocked = true
+        val other = CharacterInput { blocked }.apply { focused(field) }
+        assertFalse(other.ready)
+        other.insert(SpecialCharacters.all.first())
+        assertEquals(emptyList(), inserted)
+        blocked = false
+        other.insert(SpecialCharacters.all.first())
+        assertEquals(listOf("ſ"), inserted)
+    }
+
+    @Test
     fun anAltGrKeyIsNeverACharacterOfOurs() {
         assertFalse(down(Key.S, ctrl = true, shift = true, alt = true))
         leader()

@@ -172,6 +172,40 @@ class CharacterUiTest {
         }
 
     @Test
+    fun aDialogKeepsTheLineBehindItFromTakingCharacters() =
+        withOpenProject { model, _ ->
+            focus("line text l1")
+            runOnIdle { model.openEditMetadata() }
+            waitForIdle()
+            assertEquals(false, model.characters.ready)
+            runOnIdle { model.characters.insert(SpecialCharacters.all.first()) }
+            waitForIdle()
+            assertEquals(
+                "Erste Zeile",
+                model.editor!!
+                    .lines
+                    .first()
+                    .text,
+            )
+        }
+
+    @Test
+    fun altGrWithoutAltIsNotACombination() =
+        withOpenProject { model, _ ->
+            // Windows may report AltGr as Ctrl plus AltGraph, without Alt.
+            val line = focus("line text l1")
+            line.stroke(AwtKeyEvent.VK_S, modifiers = ctrlShift or AwtKeyEvent.ALT_GRAPH_DOWN_MASK)
+            waitForIdle()
+            assertEquals(
+                "Erste Zeile",
+                model.editor!!
+                    .lines
+                    .first()
+                    .text,
+            )
+        }
+
+    @Test
     fun cancellingTypesNothing() =
         withOpenProject { _, _ ->
             val line = focus("line text l1")

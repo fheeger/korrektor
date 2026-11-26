@@ -40,7 +40,7 @@ class AppModel(
     private val historyWriter: (Project) -> (List<HistoryEntry>) -> Unit = ::appendToHistory,
 ) {
     /** Where special characters go: the focused text field, and the keys that insert them (T108). */
-    val characters = CharacterInput()
+    val characters = CharacterInput(blocked = { dialogOpen })
 
     /** The position of the divider between scan and text, the same for every project. */
     val layout = LayoutState(settings)
